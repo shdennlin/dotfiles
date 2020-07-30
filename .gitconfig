@@ -1,0 +1,153 @@
+[filter "lfs"]
+	process = git-lfs filter-process
+	required = true
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+[user]
+	name = Shawn Dennis Lin
+	username = shdennlin
+	email = shawndennislin
+
+[core]
+	longpaths = true
+	editor = vim
+[credential]
+	helper = store
+
+[alias]
+
+	a = add
+	an = add -n #--dry-run
+	av = add -v #--verbose
+	aa = add -A #--all
+	au = add -u #--update
+	auv = add -uv 
+	aav = add -Av 
+	#############
+	b = branch
+	#############
+	c = commit
+	ca = commit -a #--all
+	cm = commit -m #--message
+	cam = commit -am #--all --message
+	cem = commit --allow-empty -m
+	cd = commit --amend
+	cad = commit -a --amend
+	ced = commit --allow-empty --amend
+	cdm = commit --amend --message
+	ci = commit --interactive
+	#############
+	co = checkout
+	con = checkout --no-guess
+	com = checkout master
+	cob = checkout -b #create and checkout a new branch
+	coB = checkout -B #create/reset and checkout a branch
+	#############
+	cl = clone
+	#############
+	d = diff
+	dh = diff HEAD
+	#############
+	f = fetch
+	#############
+	g = grep
+	#############
+	l = log --oneline
+	l3 = log -3 --oneline
+	l5 = log -5 --oneline
+	l10 = log -10 --oneline
+
+	lg = log --graph --oneline
+	lg3 = log --graph --oneline -3
+	lg5 = log --graph --oneline -5
+	lg10 = log --graph --oneline -10
+
+	lgg=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lgg3=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -3
+	lgg5=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -5
+	lgg10=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -10
+
+	ls = shortlog
+	ls3 = shortlog -3
+	ls5 = shortlog -5
+	ls10 = shortlog -10
+	#############
+	m = merge
+	ma = merge --abort
+	mc = merge --continue
+	ms = merge --skip
+	#############
+	ps = push
+	psu = push -u
+	psf = push -f
+	pst = push --tags
+	psfl =  push --force-with-lease
+	pssu = push --set-upstream
+	pssuom = push --set-upstream origin master
+
+	pso = push origin
+	psao = push --all origin
+	psuo = push -u origin
+	psfo = push -f origin
+	psflo =  push --force-with-lease origin
+
+	psom = push origin master
+	psaom = push --all origin master
+	psfom = push -f origin master
+	psuom = push -u origin master
+	#############
+	pl = pull
+	plb = pull --rebase
+
+	plo = pull origin
+	plbo = pull --rebase origin
+	plom = pull origin master
+	plbom = pull --rebase origin master
+	ploma = pull origin master --allow-unrelated-histories
+	#############
+	rb = rebase
+	rba = rebase --abort
+	rbc = rebase --continue
+	rbi = rebase --interactive
+	rbs = rebase --skip	
+	#############
+	rs = reset
+	rsh = reset HEAD
+	rsh = reset --hard
+	rsm = reset --mixed
+	rss = reset --soft
+	rshh = reset --hard HEAD
+	rsmh = reset --mixed HEAD
+	rssh = reset --soft HEAD
+	rshom = reset --hard origin/master
+	#############
+	rmc = rm --cached
+	#############
+	rf = reflog
+	rf3 = reflog -3
+	rf5 = reflog -5
+	rf10 = reflog -10
+	rf20 = reflog -20
+	#############
+	r = remote
+	ra = remote add
+	rr = remote rm
+	rv = remote -v
+	rn = remote rename
+	rp = remote prune
+	rsh = remote show
+	rao = remote add origin
+	rau = remote add upstream
+	rro = remote remove origin
+	rru = remote remove upstream
+	rso = remote show origin
+	rsu = remote show upstream
+	rpo = remote prune origin
+	rpu = remote prune upstream
+	#############
+	s = status --column
+	sb = status --column -b #branch
+	#############
+	w = whatchanged
+	#############
+

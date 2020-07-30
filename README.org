@@ -1,0 +1,8 @@
+* Shawn's dotfiles
+** file:
+  1. .gitconfig
+  2. .vimrc
+  3. .bashrc
+
+   
+   
