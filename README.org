@@ -1,10 +1,7 @@
 #+STARTUP: indent
-#+TITLE: My .dotfiles
+#+TITLE: Shawn's dotfiles
 
-* Shawn's dotfiles
-  
-** Table of Content                                       :TOC_2_gh:noexport:
-- [[#shawns-dotfiles][Shawn's dotfiles]]
+** Table of Content                                      :TOC_2_gh:noexport:
   - [[#include-file--function][include file & function]]
   - [[#how-to-use][how to use:]]
 
@@ -20,7 +17,3 @@
   cd ~/.dotfiles
   bash install.sh
 #+END_SRC
-
-
-   
-   
