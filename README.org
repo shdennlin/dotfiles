@@ -1,8 +1,26 @@
+#+STARTUP: indent
+#+TITLE: My .dotfiles
+
 * Shawn's dotfiles
-** file:
-  1. .gitconfig
-  2. .vimrc
-  3. .bashrc
+  
+** Table of Content                                       :TOC_2_gh:noexport:
+- [[#shawns-dotfiles][Shawn's dotfiles]]
+  - [[#include-file--function][include file & function]]
+  - [[#how-to-use][how to use:]]
+
+** include file & function
+  1. Remap key: change ctrl_L and alt_L
+  2. .gitconfig
+  3. .vimrc
+  4. .bash_aliases
+
+** how to use: 
+#+BEGIN_SRC shell
+  git clone https://github.com/shdennlin/dotfiles.git ~/.dotfiles/.
+  cd ~/.dotfiles
+  bash install.sh
+#+END_SRC
+
 
    
    
