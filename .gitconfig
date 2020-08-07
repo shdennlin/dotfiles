@@ -27,12 +27,10 @@
 	b = branch
 	#############
 	c = commit
-	ca = commit -a #--all
 	cm = commit -m #--message
-	cam = commit -am #--all --message
 	cem = commit --allow-empty -m
 	cd = commit --amend
-	cad = commit -a --amend
+	cdn = commit --amend --no-edit
 	ced = commit --allow-empty --amend
 	cdm = commit --amend --message
 	ci = commit --interactive
