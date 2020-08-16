@@ -2,6 +2,12 @@ command_exists () {
     type "$1" &> /dev/null ;
 }
 
+gdrive_download () {
+  CONFIRM=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate "https://docs.google.com/uc?export=download&id=$1" -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')
+  wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$CONFIRM&id=$1" -O $2
+  rm -rf /tmp/cookies.txt
+}
+
 # show git branch in terminal
 export PS1='\[\033[01;32m\]\[\033[0m\033[0;32m\]\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1)$ '
 # ============alias=============
@@ -32,6 +38,12 @@ alias ll='ls -lhF --color=always'
 alias la='ls -AF --color=always'
 alias lal='ls -lAhF --color=always'
 alias lls='ls -lAhF --color=always | less -r'
+
+alias lt='ls -t --color=always'
+alias llt='ls -lhFt --color=always'
+alias lat='ls -AFt --color=always'
+alias lalt='ls -lAhFt --color=always'
+alias llst='ls -lAhFt --color=always | less -r'
 
 alias less='less -r'
 
