@@ -13,7 +13,7 @@ export PS1='\[\033[01;32m\]\[\033[0m\033[0;32m\]\[\033[01;32m\]\u@\h\[\033[00m\]
 # ============alias=============
 
 if command_exists bpytop ; then
-    alias top='bpytop'
+  alias top='bpytop'
 fi
 
 alias ca='conda activate'
@@ -26,11 +26,17 @@ alias ....='cd ../../..'
 alias .....='cd ../../../..'
 alias ......='cd ../../../../..'
 
+if command_exists xclip ; then
+  alias c="xclip -selection clipboard"
+  alias csn="tr -d '\n' | xclip -selection clipboard"
+  alias pc="pwd | tr -d '\n' | xclip -selection clipboard"
+fi
+
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_CN.UTF-8 emacs'
 
 alias g='git'
-alias gp='grep -E'
+alias gp='grep -E --color=always'
 alias gd='gdrive'
 
 alias l='ls --color=always'
