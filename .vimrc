@@ -57,6 +57,7 @@ set cursorline
 set tabstop=4
 set shiftwidth=4
 set autoindent
+set clipboard=unnamedplus
 
 set guifont=consolas:h12 " for windows
 colorscheme slate
@@ -99,8 +100,9 @@ inoremap " ""<Esc>i
 inoremap ' ''<Esc>i
 inoremap [ []<Esc>i
 inoremap {<CR> {<CR>}<Esc>ko
-imap jk <Esc>
-"filetype indent on
+map jk <Esc>
+map! jk <Esc>
+nunmap jk
 
 hi LineNr cterm=bold ctermfg=DarkGrey ctermbg=NONE
 
@@ -110,6 +112,7 @@ filetype off                  " required
 
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim/
+set rtp+=~/.vim/bundle/tagbar
 call vundle#begin()
 
 Plugin 'gmarik/Vundle.vim' " 插件管理器本人
@@ -124,10 +127,44 @@ Plugin 'itchyny/lightline.vim' " 下方狀態列表
 Plugin 'scrooloose/nerdcommenter' " 快速註解
 Plugin 'joshdick/onedark.vim' " vim 主題
 Plugin 'Glench/Vim-Jinja2-Syntax' " python Jinja 模塊語法高亮
-
 Plugin 'Valloric/YouCompleteMe' " 補全提示
 " vim 需要支持python
 " 安裝方式: cd ~/.vim/bundle/YouCompleteMe &&  python3 install.py --ts-completer
+Plugin 'pelodelfuego/vim-swoop'
+Plugin 'terryma/vim-expand-region'
+Plugin 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
+Plugin 'majutsushi/tagbar' 
+
 call vundle#end()            " required
 filetype plugin indent on    " required
 
+"" set leader key
+"nnoremap <SPACE> <Nop>
+"map <Space> <Leader>
+
+" set WhichKey
+let g:mapleader = "\<Space>"
+let g:maplocalleader = ','
+nnoremap <silent> <leader>      :<c-u>WhichKey '<Space>'<CR>
+nnoremap <silent> <localleader> :<c-u>WhichKey  ','<CR>"
+
+" set Swoop
+nmap <C-S> :call Swoop()<CR>
+nmap <Leader>ss :call Swoop()<CR>
+
+" set region_expend
+nmap <Leader>v <Plug>(expand_region_expand)
+nmap <Leader>V <Plug>(expand_region_shrink)
+vmap v <Plug>(expand_region_expand)
+vmap V <Plug>(expand_region_shrink)
+
+" set NERDTree
+nmap <Leader>0 :NERDTree<CR>
+
+" set Tagbar
+nmap <Leader>bi :TagbarToggle<CR>
+
+" set some function
+nmap <Leader>fs :w<CR>
+nmap <Leader>qq :q<CR>
+nmap <Leader>qs :wq<CR>
