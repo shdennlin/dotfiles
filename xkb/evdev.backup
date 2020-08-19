@@ -68,8 +68,10 @@ default xkb_keycodes "evdev" {
 	<LALT> = 64;
 	<LCTL> = 37;
 	<SPCE> = 65;
-	<RCTL> = 105;
-	<RALT> = 108;
+	//<RCTL> = 105;
+	//<RALT> = 108;
+	<RCTL> = 108;
+	<RALT> = 105;
 	// Microsoft keyboard extra keys
 	<LWIN> = 133;
 	<RWIN> = 134;
