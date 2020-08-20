@@ -4,6 +4,7 @@
 ** Table of Content                                      :TOC_2_gh:noexport:
   - [[#include-file--function][include file & function]]
   - [[#how-to-use][how to use:]]
+  - [[#reference][Reference]]
 
 ** include file & function
   1. Remap key: change ctrl_L and alt_L
@@ -17,3 +18,5 @@
   cd ~/.dotfiles
   bash install.sh
 #+END_SRC
+** Reference
++ [[https://gist.github.com/pksunkara/988716][Sample of git config file]]

@@ -44,7 +44,7 @@
 	cl = clone
 	#############
 	d = diff
-	dh = diff HEAD
+	dc = diff --cached
 	#############
 	f = fetch
 	#############

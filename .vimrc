@@ -149,7 +149,6 @@ nnoremap <silent> <leader>      :<c-u>WhichKey '<Space>'<CR>
 nnoremap <silent> <localleader> :<c-u>WhichKey  ','<CR>"
 
 " set Swoop
-nmap <C-S> :call Swoop()<CR>
 nmap <Leader>ss :call Swoop()<CR>
 
 " set region_expend
@@ -168,3 +167,6 @@ nmap <Leader>bi :TagbarToggle<CR>
 nmap <Leader>fs :w<CR>
 nmap <Leader>qq :q<CR>
 nmap <Leader>qs :wq<CR>
+nmap <C-L> z.
+imap <C-L> <Esc>z.i
+

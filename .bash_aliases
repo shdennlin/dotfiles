@@ -29,9 +29,11 @@ alias ......='cd ../../../../..'
 
 if command_exists xclip ; then
   alias c="xclip -selection clipboard"
-  alias csn="tr -d '\n' | xclip -selection clipboard"
-  alias pc="pwd | tr -d '\n' | xclip -selection clipboard"
+  alias cn="tr -d '\n' | xclip -selection clipboard"
+  alias pcn="pwd | tr -d '\n' | xclip -selection clipboard"
 fi
+
+alias dua="du -chd 1 | sort -h"
 
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_CN.UTF-8 emacs'
