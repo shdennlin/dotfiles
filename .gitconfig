@@ -40,6 +40,7 @@
 	com = checkout master
 	cob = checkout -b #create and checkout a new branch
 	coB = checkout -B #create/reset and checkout a branch
+	cof = checkout --
 	#############
 	cl = clone
 	#############
@@ -50,7 +51,8 @@
 	#############
 	g = grep
 	#############
-	l = log --oneline
+	la = log --oneline
+	l = log -10 --oneline
 	l3 = log -3 --oneline
 	l5 = log -5 --oneline
 	l10 = log -10 --oneline
@@ -60,12 +62,14 @@
 	lg5 = log --graph --oneline -5
 	lg10 = log --graph --oneline -10
 
-	lgg=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lgga=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+	lgg=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -10
 	lgg3=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -3
 	lgg5=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -5
 	lgg10=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -10
 
-	ls = shortlog
+	lsa = shortlog
+	ls = shortlog -10
 	ls3 = shortlog -3
 	ls5 = shortlog -5
 	ls10 = shortlog -10
@@ -110,7 +114,7 @@
 	rbs = rebase --skip	
 	#############
 	rs = reset
-	rsh = reset HEAD
+	rsH = reset HEAD
 	rsh = reset --hard
 	rsm = reset --mixed
 	rss = reset --soft

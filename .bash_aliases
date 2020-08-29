@@ -33,7 +33,7 @@ if command_exists xclip ; then
   alias pcn="pwd | tr -d '\n' | xclip -selection clipboard"
 fi
 
-alias dua="du -chd 1 | sort -h"
+alias dus="du -chd 1 | sort -h"
 
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_CN.UTF-8 emacs'
@@ -57,7 +57,11 @@ alias llst='ls -lAhFt --color=always | less -r'
 alias less='less -r'
 
 alias psgp='ps -ef | gp -E'
+
+alias k='kill'
 alias k9='kill -9'
+alias pk='pkill'
+alias pk9='pkill -9'
 
 alias vi='vim'
 
