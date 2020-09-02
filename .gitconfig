@@ -46,6 +46,7 @@
 	#############
 	d = diff
 	dc = diff --cached
+	dHH = diff HEAD^ HEAD
 	#############
 	f = fetch
 	#############
@@ -62,11 +63,11 @@
 	lg5 = log --graph --oneline -5
 	lg10 = log --graph --oneline -10
 
-	lgga=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
-	lgg=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -10
-	lgg3=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -3
-	lgg5=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -5
-	lgg10=log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative -10
+	lgga =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short
+	lgg  =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -10
+	lgg3 =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -3
+	lgg5 =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -5
+	lgg10=log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -10
 
 	lsa = shortlog
 	ls = shortlog -10
@@ -147,7 +148,8 @@
 	rpo = remote prune origin
 	rpu = remote prune upstream
 	#############
-	s = status --column
+	s  = status --column
+	ss = status -s --column
 	sb = status --column -b #branch
 	#############
 	w = whatchanged
