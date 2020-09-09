@@ -64,6 +64,8 @@ alias pk='pkill'
 alias pk9='pkill -9'
 
 alias vi='vim'
+alias vbb='vi ~/.dotfiles/.bash_aliases'
+alias vgg='vi ~/.dotfiles/.gitconfig'
 
 # ============ path =============
 export PATH=$PATH:/usr/local/go/bin
