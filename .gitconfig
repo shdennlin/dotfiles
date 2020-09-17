@@ -58,7 +58,8 @@
 	l5 = log -5 --oneline
 	l10 = log -10 --oneline
 
-	lg = log --graph --oneline
+	lga = log --graph --oneline
+	lg = log --graph --oneline -10
 	lg3 = log --graph --oneline -3
 	lg5 = log --graph --oneline -5
 	lg10 = log --graph --oneline -10
