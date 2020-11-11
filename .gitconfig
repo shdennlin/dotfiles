@@ -48,6 +48,8 @@
 	dc = diff --cached
 	dHH = diff HEAD^ HEAD
 	#############
+	dlc = checkout . && git clean -xdf #discard local changes
+	#############
 	f = fetch
 	#############
 	g = grep
