@@ -155,6 +155,8 @@
 	ss = status -s --column
 	sb = status --column -b #branch
 	#############
+	sub = submodule
+	#############
 	w = whatchanged
 	#############
 
