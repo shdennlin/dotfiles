@@ -37,7 +37,7 @@
 	cor  = checkout release
 	cof  = checkout feature
 
-	cl  = clean -xdf	   #Discard file
+	clf  = clean -xdf	   #Discard file
 	cla = checkout . && git clean -xdf #Discard local changes
 	######## commit ########
 	cm  = commit -m       #commit message
