@@ -25,12 +25,17 @@
 	ba  = branch -a
 	bm  = branch -m       #branch rename
 	bd  = branch -d       #branch delete
+	######## checkout ########
 	co  = checkout        #checkout branch
 	cob = checkout -b     #checkout new branch       
-	######## checkout ########
+
 	com  = checkout main
 	comm = checkout master
 	cod  = checkout develop
+	cos  = checkout source
+	coh  = checkout hotfix
+	cor  = checkout release
+	cof  = checkout feature
 
 	cl  = clean -xdf	   #Discard file
 	cla = checkout . && git clean -xdf #Discard local changes
