@@ -12,6 +12,8 @@
 [core]
 	longpaths = true
 	editor = vim
+	autocrlf = input
+	safecrlf = true
 
 [credential]
 	helper = store
