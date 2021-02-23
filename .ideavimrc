@@ -3,10 +3,12 @@ vmap jk <esc>
 map! jk <esc>
 nunmap jk
 
-
 nnoremap <SPACE> <Nop>
 map <SPACE> <LEADER>
 
 nmap <Leader>fs :w<CR>
 nmap <C-L> z.
 imap <C-L> <Esc>z.i
+
+:set relativenumber
+:set number 
