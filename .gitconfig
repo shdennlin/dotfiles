@@ -108,3 +108,5 @@
 	sb = status --column -b #branch
 	######## sub ########
 	sub = submodule
+[init]
+	defaultBranch = main
