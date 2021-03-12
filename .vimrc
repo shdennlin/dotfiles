@@ -101,6 +101,7 @@ inoremap ' ''<Esc>i
 inoremap [ []<Esc>i
 inoremap {<CR> {<CR>}<Esc>ko
 map jk <Esc>
+vmap jk <Esc>
 map! jk <Esc>
 nunmap jk
 

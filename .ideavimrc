@@ -1,0 +1,26 @@
+:set relativenumber
+:set number 
+
+imap jk <esc>
+vmap jk <esc>
+map! jk <esc>
+nunmap jk
+
+" These create newlines like o and O but stay in normal mode
+nmap zj o<Esc>k
+nmap zk O<Esc>j
+
+nmap <C-L> z.
+imap <C-L> <Esc>z.i
+
+set surround
+set easymotion
+set commentary
+
+let mapleader ="\<Space>"
+map <Leader>fs :w<CR>
+map <Leader><Space> :action SearchEverywhere<cr>
+" map <Leader>ff :action FindInPath﻿<cr>
+" map <Leader>v :action ExpandRegion<cr>
+
+map <Leader>fed :source ./.ideavimrc<cr>

@@ -22,10 +22,14 @@ alias catg='conda activate tf-gpu'
 
 alias cl='clear'
 alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-alias ......='cd ../../../../..'
+alias .2='cd ../..'
+alias .3='cd ../../..'
+alias .4='cd ../../../..'
+alias .5='cd ../../../../..'
+alias .6='cd ../../../../../..'
+alias .7='cd ../../../../../../..'
+alias .8='cd ../../../../../../../..'
+alias .9='cd ../../../../../../../../..'
 
 if command_exists xclip ; then
   alias c="xclip -selection clipboard"
@@ -34,6 +38,8 @@ if command_exists xclip ; then
 fi
 
 alias dus="du -chd 1 | sort -h"
+
+alias dk="docker"
 
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_CN.UTF-8 emacs'
@@ -57,6 +63,8 @@ alias llst='ls -lAhFt --color=always | less -r'
 alias less='less -r'
 
 alias psgp='ps -ef | gp -E'
+
+alias su='sudo'
 
 alias k='kill'
 alias k9='kill -9'

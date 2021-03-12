@@ -3,160 +3,113 @@
 	required = true
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
+
 [user]
+	email = shawndennislin@gmail.com
 	name = Shawn Dennis Lin
 	username = shdennlin
-	email = shawndennislin@gmail.com
 
 [core]
 	longpaths = true
 	editor = vim
+	autocrlf = input
+	safecrlf = true
+
 [credential]
 	helper = store
 
 [alias]
+	######## add ########
+	a   = add
+	aa  = add -A
+	########  branch ########
+	b   = branch
+	ba  = branch -a
+	bm  = branch -m       #branch rename
+	bd  = branch -d       #branch delete
+	######## checkout ########
+	co  = checkout        #checkout branch
+	cob = checkout -b     #checkout new branch       
 
-	a = add
-	an = add -n #--dry-run
-	av = add -v #--verbose
-	aa = add -A #--all
-	au = add -u #--update
-	auv = add -uv 
-	aav = add -Av 
-	#############
-	b = branch
-	#############
-	c = commit
-	cm = commit -m #--message
-	cem = commit --allow-empty -m
-	cd = commit --amend
-	cdn = commit --amend --no-edit
-	ced = commit --allow-empty --amend
-	cdm = commit --amend --message
-	ci = commit --interactive
-	#############
-	co = checkout
-	con = checkout --no-guess
-	com = checkout master
-	cob = checkout -b #create and checkout a new branch
-	coB = checkout -B #create/reset and checkout a branch
-	cof = checkout --
-	#############
+	com  = checkout main
+	comm = checkout master
+	cod  = checkout develop
+	cos  = checkout source
+	coh  = checkout hotfix
+	cor  = checkout release
+	cof  = checkout feature
+
+	clf  = clean -xdf	   #Discard file
+	cla = checkout . && git clean -xdf #Discard local changes
+	######## commit ########
+	cm  = commit -m       #commit message
+	ca  = commit --amend
+	cam = commit -m --amend
+	ci  = commit --interactive
+	######## clone ########
 	cl = clone
-	#############
-	d = diff
-	dc = diff --cached
+	######## diff ########
+	d   = diff
+	dc  = diff --cached
 	dHH = diff HEAD^ HEAD
-	#############
-	dlc = checkout . && git clean -xdf #discard local changes
-	#############
+	######## fetch ########
 	f = fetch
-	#############
+	######## grep ########
 	g = grep
-	#############
-	la = log --oneline
-	l = log -10 --oneline
-	l3 = log -3 --oneline
-	l5 = log -5 --oneline
-	l10 = log -10 --oneline
-
-	lga = log --graph --oneline
-	lg = log --graph --oneline -10
-	lg3 = log --graph --oneline -3
-	lg5 = log --graph --oneline -5
-	lg10 = log --graph --oneline -10
-
-	lgga =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short
-	lgg  =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -10
-	lgg3 =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -3
-	lgg5 =log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -5
-	lgg10=log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -10
-
-	lsa = shortlog
-	ls = shortlog -10
-	ls3 = shortlog -3
-	ls5 = shortlog -5
-	ls10 = shortlog -10
-	#############
-	m = merge
-	ma = merge --abort
-	mc = merge --continue
-	ms = merge --skip
-	#############
-	ps = push
-	psu = push -u
-	psf = push -f
-	pst = push --tags
-	psfl =  push --force-with-lease
-	pssu = push --set-upstream
-	pssuom = push --set-upstream origin master
-
-	pso = push origin
-	psao = push --all origin
-	psuo = push -u origin
-	psfo = push -f origin
-	psflo =  push --force-with-lease origin
-
-	psom = push origin master
-	psaom = push --all origin master
-	psfom = push -f origin master
-	psuom = push -u origin master
-	#############
+	######## pull ########
 	pl = pull
-	plb = pull --rebase
-
+	plr = pull --rebase
 	plo = pull origin
-	plbo = pull --rebase origin
-	plom = pull origin master
-	plbom = pull --rebase origin master
-	ploma = pull origin master --allow-unrelated-histories
-	#############
-	rb = rebase
-	rba = rebase --abort
-	rbc = rebase --continue
-	rbi = rebase --interactive
-	rbs = rebase --skip	
-	#############
-	rs = reset
-	rsH = reset HEAD
-	rsh = reset --hard
-	rsm = reset --mixed
-	rss = reset --soft
-	rshh = reset --hard HEAD
-	rsmh = reset --mixed HEAD
-	rssh = reset --soft HEAD
-	rshom = reset --hard origin/master
-	#############
-	rmc = rm --cached
-	#############
-	rf = reflog
-	rf3 = reflog -3
-	rf5 = reflog -5
-	rf10 = reflog -10
-	rf20 = reflog -20
-	#############
-	r = remote
-	ra = remote add
-	rr = remote rm
-	rv = remote -v
-	rn = remote rename
-	rp = remote prune
-	rsh = remote show
-	rao = remote add origin
-	rau = remote add upstream
-	rro = remote remove origin
-	rru = remote remove upstream
-	rso = remote show origin
-	rsu = remote show upstream
-	rpo = remote prune origin
-	rpu = remote prune upstream
-	#############
+	plor = pull --rebase origin
+	######## log ########
+	l   = log --graph --oneline -10
+	lga = log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short
+	lg = log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -10
+	lb  = log --graph --oneline --branches --remotes 
+	la  = log --graph --oneline --all -15
+	laa  = log --graph --oneline --all
+	######## merge ########
+	m   = merge
+	me  = merge --edit      #merge and edit message
+	mn  = merge --no-commit #merge but don't commit
+	ma  = merge --abort
+	mc  = merge --continue
+	msk = merge --skip
+	######## remote ########
+	rm   = remote
+	rma  = remote add
+	rmao = remote add origin
+	rmn  = remote rename
+	rmx  = remote remove
+	rmv  = remote -v
+	rms  = remote set-url
+	rmp  = remote prune origin
+	######## reset and restore ########
+	rsH = reset HEAD   #Unstage
+	rs  = reset			   #Unstage all
+	rt  = restore		   #Discard
+	######## reflog ########
+	rfa = reflog
+	rf  = reflog -20
+	######## rebase ########
+	rb   = rebase
+	rbi  = rebase --interactive
+	rba  = rebase --abort
+	rbc  = rebase --continue
+	rbsk = rebase --skip	
+	######## push ########
+	ps   = push
+	psu  = push -u
+	psuo = push -u origin
+	psf  = push -f
+	######## status ########
 	s  = status --column
 	ss = status -s --column
 	sb = status --column -b #branch
-	#############
+	######## sub ########
 	sub = submodule
 	#############
 	w = whatchanged
 	#############
-
+[init]
+	defaultBranch = main
