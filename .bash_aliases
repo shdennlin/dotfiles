@@ -42,7 +42,7 @@ alias dus="du -chd 1 | sort -h"
 alias dk="docker"
 
 # slove emacs Chinese display problem
-alias emacs='env LC_CTYPE=zh_CN.UTF-8 emacs'
+alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
 
 alias g='git'
 alias gp='grep -E --color=always'
