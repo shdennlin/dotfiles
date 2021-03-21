@@ -1,11 +1,9 @@
-#! /bin/sh
-
+#!/bin/sh
 
 install_A_check='_'
 echo -n "Do you want to install all(y/n): "
 read install_A_check
-while [[ $install_A_check != @('y'|'n') ]];
-do
+while [[ $install_A_check != @('y'|'n') ]]; do
     echo -n "(INV Ans)Do you want to install all(y/n): "
     read install_A_check
 done
@@ -19,8 +17,7 @@ check_and_link(){
         echo -n "Do you want to link $1 (y/n): "
         read check
     fi
-    while [[ $check != @('y'|'n') ]];
-    do
+    while [[ $check != @('y'|'n') ]]; do
         echo -n "(INV Ans)Do you want to link $1 (y/n): "
         read check
     done
@@ -59,8 +56,7 @@ change_key_map(){
         if [ $check = 'y' ] ; then
             link_map_to_home
         fi
-        while [[ $check != @('y'|'n') ]];
-        do
+        while [[ $check != @('y'|'n') ]]; do
             echo -n "(INV Ans)Do you want to change change the R_ctrl and R_alt buttons(y/n): "
             read check
             if [ $check = 'y' ] ; then
