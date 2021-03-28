@@ -166,7 +166,7 @@ nmap <Leader>bi :TagbarToggle<CR>
 
 " set some function
 nmap <Leader>fs :w<CR>
-nmap <Leader>qq :q<CR>
+nmap <Leader>qq :qa<CR>
 nmap <Leader>qs :wq<CR>
 nmap <C-L> z.
 imap <C-L> <Esc>z.i

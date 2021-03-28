@@ -8,9 +8,6 @@ gdd () {
   wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$CONFIRM&id=$1" -O $2
   rm -rf /tmp/cookies.txt
 }
-
-# show git branch in terminal
-export PS1='\[\033[01;32m\]\[\033[0m\033[0;32m\]\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1)$ '
 # ============alias=============
 
 if command_exists bpytop ; then
@@ -62,6 +59,8 @@ alias llst='ls -lAhFt --color=always | less -r'
 
 alias less='less -r'
 
+alias lsofp='sudo lsof -i -P -n | grep LISTEN'
+
 alias psgp='ps -ef | gp -E'
 
 alias su='sudo'
@@ -71,10 +70,11 @@ alias k9='kill -9'
 alias pk='pkill'
 alias pk9='pkill -9'
 
-alias vi='vim'
-alias vbb='vi ~/.dotfiles/.bash_aliases'
-alias vgg='vi ~/.dotfiles/.gitconfig'
+alias rm='rm -rf'
 
-# ============ path =============
-export PATH=$PATH:/usr/local/go/bin
-export GOBIN=$GOPATH/bin
+alias vi='vim'
+alias vib='vi ~/.dotfiles/.bash_aliases'
+alias vig='vi ~/.dotfiles/.gitconfig'
+
+# show git branch in terminal
+export PS1='\[\033[01;32m\]\[\033[0m\033[0;32m\]\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]$(__git_ps1)$ '
