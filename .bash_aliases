@@ -42,7 +42,7 @@ alias dk="docker"
 alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
 
 alias g='git'
-alias gp='grep -E --color=always'
+alias gp='grep -Ei --color=always'
 alias gd='gdrive'
 
 alias l='ls --color=always'
@@ -71,6 +71,7 @@ alias pk='pkill'
 alias pk9='pkill -9'
 
 alias rm='rm -rf'
+alias rmv='rm -rfv'
 
 alias vi='vim'
 alias vib='vi ~/.dotfiles/.bash_aliases'
