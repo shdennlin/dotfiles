@@ -64,6 +64,9 @@ alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 alias psgp='ps -ef | gp -E'
 
 alias su='sudo'
+alias suvi='sudo -E vi'
+alias srcb='source ~/.bashrc'
+
 
 alias k='kill'
 alias k9='kill -9'
