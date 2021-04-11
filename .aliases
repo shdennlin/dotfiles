@@ -1,0 +1,15 @@
+command_exists () {
+    type "$1" &> /dev/null ;
+}
+
+if command_exists xclip ; then
+    alias c="xclip -selection clipboard"
+    alias cn="tr -d '\n' | xclip -selection clipboard"
+    alias pcn="pwd | tr -d '\n' | xclip -selection clipboard"
+fi
+
+alias cl='clear'
+
+# slove emacs Chinese display problem
+alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
+alias suvi='sudo -E vi'
