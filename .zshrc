@@ -85,6 +85,7 @@ plugins=(
     autojump
     command-not-found
     docker
+    fzf
     git
     globalias
     sudo
