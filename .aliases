@@ -2,14 +2,43 @@ command_exists () {
     type "$1" &> /dev/null ;
 }
 
-if command_exists xclip ; then
-    alias c="xclip -selection clipboard"
-    alias cn="tr -d '\n' | xclip -selection clipboard"
-    alias pcn="pwd | tr -d '\n' | xclip -selection clipboard"
-fi
+change_alias () {
+    if $(type "$2" &> /dev/null) ; then
+        alias "$1"="$3"
+    fi
+}
 
-alias cl='clear'
+change_alias 'c' 'xclip' 'xclip -selection clipboard'
+change_alias 'cn' 'xclip' 'tr -d '\n' | xclip -selection clipboard'
+change_alias 'pcn' 'xclip' 'pwd | tr -d '\n' | xclip -selection clipboard'
+
+change_alias 'wget' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
+change_alias 'fd' 'fdfind' 'fdfind'
+change_alias 'ls' 'exa' 'exa'
+change_alias 'cat' 'batcat' 'batcat'
+change_alias 'cat' 'bat' 'bat'
 
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
+
+# Common shell functions
+alias less='less -r'
+alias tf='tail -f'
+alias cl='clear'
+
+# Zippin
+alias gz='tar -zcvf'
+
+alias ka9='killall -9'
+alias k9='kill -9'
+
 alias suvi='sudo -E vi'
+
+alias d='docker'
+
+alias lsofp='sudo lsof -i -P -n | grep LISTEN'
+
+# quick edit config
+alias via='vi ~/.dotfiles/.aliases'
+alias vig='vi ~/.dotfiles/.gitconfig'
+alias viz='vi ~/.dotfiles/.zshrc'
