@@ -8,13 +8,18 @@ change_alias () {
     fi
 }
 
-change_alias 'c' 'xclip' 'xclip -selection clipboard'
-change_alias 'cn' 'xclip' 'tr -d '\n' | xclip -selection clipboard'
-change_alias 'pcn' 'xclip' 'pwd | tr -d '\n' | xclip -selection clipboard'
+change_alias 'c' 'xclip' "xclip -selection clipboard"
+change_alias 'cn' 'xclip' "tr -d '\n' | xclip -selection clipboard"
+change_alias 'pcn' 'xclip' "pwd | tr -d '\n' | xclip -selection clipboard"
 
 change_alias 'wget' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdfind' 'fdfind'
+
 change_alias 'ls' 'exa' 'exa'
+change_alias 'l'  'exa' 'exa -lahH'
+change_alias 'll' 'exa' 'exa -lhH'
+change_alias 'la' 'exa' 'exa -a'
+
 change_alias 'cat' 'batcat' 'batcat'
 change_alias 'cat' 'bat' 'bat'
 

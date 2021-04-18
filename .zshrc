@@ -144,7 +144,6 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
-export PYTHONPATH=$HOME/anaconda3/bin/
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
 export GEM_HOME=$HOME/.gem
 
