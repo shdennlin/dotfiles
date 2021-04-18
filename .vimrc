@@ -104,6 +104,9 @@ map jk <Esc>
 vmap jk <Esc>
 map! jk <Esc>
 nunmap jk
+" These create newlines like o and O but stay in normal mode
+nmap zj o<Esc>k
+nmap zk O<Esc>j
 
 hi LineNr cterm=bold ctermfg=DarkGrey ctermbg=NONE
 
