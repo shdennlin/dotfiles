@@ -30,6 +30,7 @@ alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
 alias less='less -r'
 alias tf='tail -f'
 alias cl='clear'
+alias rm='rm -rf'
 
 # Zippin
 alias gz='tar -zcvf'
