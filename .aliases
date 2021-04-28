@@ -16,12 +16,12 @@ change_alias 'wget' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdfind' 'fdfind'
 
 change_alias 'ls' 'exa' 'exa'
-change_alias 'l'  'exa' 'exa -lahH'
-change_alias 'll' 'exa' 'exa -lhH'
+change_alias 'l'  'exa' 'exa -laghH'
+change_alias 'll' 'exa' 'exa -lghH'
 change_alias 'la' 'exa' 'exa -a'
 
-change_alias 'cat' 'batcat' 'batcat'
-change_alias 'cat' 'bat' 'bat'
+change_alias 'bcat' 'batcat' 'batcat'
+change_alias 'bcat' 'bat' 'bat'
 
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
@@ -47,3 +47,5 @@ alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 alias via='vi ~/.dotfiles/.aliases'
 alias vig='vi ~/.dotfiles/.gitconfig'
 alias viz='vi ~/.dotfiles/.zshrc'
+
+alias sshn='ssh -i ~/.ssh/itintern itintern.nb.ubuntu@'
