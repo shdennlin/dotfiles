@@ -11,6 +11,10 @@
 	email = shawndennislin@gmail.com
 	name = shdennlin
 	username = shdennlin
+	signingkey = "6BE84229F0824CD72A164D7EBB84136A314C11F5"
+
+[commit]
+	gpgsign = true
 
 [core]
 	longpaths = true
