@@ -40,7 +40,7 @@ alias k9='kill -9'
 
 alias suvi='sudo -E vi'
 
-alias d='docker'
+alias dk='docker'
 
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 
