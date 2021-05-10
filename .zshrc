@@ -83,6 +83,8 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
     autojump
+    aterminal
+    common-aliases
     command-not-found
     docker
     fzf
