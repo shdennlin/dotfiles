@@ -38,3 +38,4 @@ Icon?
 Thumbs.db
 
 *.lock
+.env
