@@ -117,7 +117,7 @@ if [ $zsh = 'y' ]; then
     # install zsh
     sudo apt install -y zsh
     # set zsh as default in user
-    chsh -s $(which zsh)
+    sudo chsh -s /bin/zsh $USER
     /bin/zsh
     # login
     echo $SHELL
@@ -130,6 +130,7 @@ if [ $zsh = 'y' ]; then
     git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
     sudo apt install autojump
     sudo apt-get install fzf
+    bash < <(curl -s -S -L https://raw.githubusercontent.com/guiferpa/aterminal/master/installer.sh)
 fi
 
 if [ $keymap = 'y' ] || [ computer_type = 'm' ]; then
