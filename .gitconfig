@@ -21,7 +21,7 @@
 	editor = vim
 	autocrlf = input
 	safecrlf = true
-	pager = less -FR
+	pager =
 
 [credential]
 	helper = store

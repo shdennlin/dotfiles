@@ -78,10 +78,10 @@ echo ""
 if [ $git = 'y' ]; then
     if [ $computer_type = 'm' ]; then
         ln -f .gitconfig $HOME
-        echo "${INFO}link .git successful"
+        echo "${INFO}link .gitconfig successful"
     else
         cp -f .gitconfig $HOME
-        echo "${INFO}cp .git successful"
+        echo "${INFO}cp .gitconfig successful"
     fi
 fi
 
