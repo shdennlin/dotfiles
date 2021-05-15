@@ -28,6 +28,11 @@ fi
 computer_type=$(read_env "computer_type")
 
 echo "${GREEN}This will install:"
+git=$(read_env "git")
+if [ $git = 'y' ]; then
+    echo "copy .gitconfig  to $HOME"
+fi
+
 alias_file=$(read_env "alias_file")
 if [ $alias_file = 'y' ]; then
     echo "copy .bash_aliases  to $HOME"
@@ -70,6 +75,16 @@ echo ""
 
 #===== install =====
 
+if [ $git = 'y' ]; then
+    if [ $computer_type = 'm' ]; then
+        ln -f .gitconfig $HOME
+        echo "${INFO}link .git successful"
+    else
+        cp -f .gitconfig $HOME
+        echo "${INFO}cp .git successful"
+    fi
+fi
+
 if [ $alias_file = 'y' ]; then
     if [ $computer_type = 'm' ]; then
         ln -f .aliases $HOME
@@ -79,7 +94,6 @@ if [ $alias_file = 'y' ]; then
         echo "${INFO}cp .aliases successful"
     fi
 fi
-
 
 if [ $vim_config = 'y' ]; then
     if [ $computer_type = 'm' ]; then
