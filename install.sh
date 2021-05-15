@@ -86,7 +86,7 @@ if [ $vim_config = 'y' ]; then
         ln -f .vimrc $HOME
         echo "${INFO}link .vimrc successful"
     else
-        cp -f .vimrc_slave $HOME
+        cp -f .vimrc_slave $HOME/.vimrc
         echo "${INFO}cp .vimrc_slave successful"
     fi
 fi
@@ -108,7 +108,7 @@ if [ $zsh = 'y' ]; then
         ln -f .p10k.zsh $HOME
         echo "${INFO}link .p10k.zsh successful"
     else
-        cp -f .zshrc_slave $HOME
+        cp -f .zshrc_slave $HOME/.zshrc
         echo "${INFO}cp .zshrc_slave successful"
         cp -f .p10k.zsh $HOME
         echo "${INFO}cp .p10k.zsh successful"
