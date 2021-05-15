@@ -114,6 +114,22 @@ if [ $zsh = 'y' ]; then
         echo "${INFO}cp .p10k.zsh successful"
     fi
 
+    # install zsh
+    sudo apt install -y zsh
+    # set zsh as default in user
+    chsh -s $(which zsh)
+    /bin/zsh
+    # login
+    echo $SHELL
+    # install ohmyzsh
+    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+    # install theme
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+    git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
+    sudo apt install autojump
+    sudo apt-get install fzf
 fi
 
 if [ $keymap = 'y' ] || [ computer_type = 'm' ]; then
