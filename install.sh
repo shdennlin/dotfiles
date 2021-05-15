@@ -132,9 +132,6 @@ if [ $zsh = 'y' ]; then
     sudo apt install -y zsh
     # set zsh as default in user
     sudo chsh -s /bin/zsh $USER
-    /bin/zsh
-    # login
-    echo $SHELL
     # install ohmyzsh
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
     # install theme
