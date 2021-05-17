@@ -75,6 +75,10 @@ echo ""
 
 #===== install =====
 
+command_exists () {
+    command -v "$1" >/dev/null 2>&1
+}
+
 if [ $git = 'y' ]; then
     if [ $computer_type = 'm' ]; then
         ln -f .gitconfig $HOME
@@ -129,19 +133,21 @@ if [ $zsh = 'y' ]; then
     fi
 
     # install zsh
-    sudo apt install -y zsh
-    # set zsh as default in user
-    sudo chsh -s /bin/zsh $USER
-    # install ohmyzsh
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-    # install theme
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-    git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
-    sudo apt install autojump
-    sudo apt-get install fzf
-    curl -s -S -L https://raw.githubusercontent.com/guiferpa/aterminal/master/installer.sh | bash
+    if ! command_exists 'zsh' ; then # if command exist
+        sudo apt install -y zsh
+        # set zsh as default in user
+        sudo chsh -s /bin/zsh $USER
+        # install ohmyzsh
+        sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+        # install theme
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+        git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+        git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+        git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
+        sudo apt install autojump
+        sudo apt-get install fzf
+        curl -s -S -L https://raw.githubusercontent.com/guiferpa/aterminal/master/installer.sh | bash
+    fi
 fi
 
 if [ $keymap = 'y' ] || [ computer_type = 'm' ]; then
