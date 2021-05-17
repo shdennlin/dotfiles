@@ -129,7 +129,10 @@ source $ZSH/oh-my-zsh.sh
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-source /home/shdennlin/.aliases
+[[ ! -f ~/.aliases ]] || source ~/.aliases
+
+# https://blog.miniasp.com/post/2020/05/04/How-to-use-GPG-sign-git-commit-and-tag-object
+export GPG_TTY=$(tty)
 
 # >>> conda initialize >>>
 # !! Contents within this block are managed by 'conda init' !!
