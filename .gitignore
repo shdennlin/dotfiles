@@ -39,3 +39,4 @@ Thumbs.db
 
 *.lock
 .env
+.gitconfig.local
