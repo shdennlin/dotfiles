@@ -92,10 +92,14 @@ fi
 if [ $alias_file = 'y' ]; then
     if [ $computer_type = 'm' ]; then
         ln -f .aliases $HOME
+        ln -f .bash_alias $HOME
         echo "${INFO}link .aliases successful"
+        echo "${INFO}link .bash_alias successful"
     else
         cp -f .aliases $HOME
+        ln -f .bash_aliases $HOME
         echo "${INFO}cp .aliases successful"
+        echo "${INFO}cp .bash_alias successful"
     fi
 fi
 
