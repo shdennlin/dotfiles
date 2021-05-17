@@ -1,0 +1,9 @@
+# gpg --full-generate-key
+# gpg --list-secret-keys --keyid-format LONG
+# gpg --armor --export XXXX
+
+[user]
+  signingkey =
+
+[commit]
+	gpgsign = true
