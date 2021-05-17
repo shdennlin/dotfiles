@@ -26,34 +26,39 @@ fi
 
 #===== check install file =====
 computer_type=$(read_env "computer_type")
+if [ $computer_type = 'm' ]; then
+    cl='link'
+else
+    cl='cp'
+fi
 
 echo "${GREEN}This will install:"
 git=$(read_env "git")
 if [ $git = 'y' ]; then
-    echo "copy .gitconfig  to $HOME"
+    echo "${cl} .gitconfig  to $HOME"
 fi
 
 alias_file=$(read_env "alias_file")
 if [ $alias_file = 'y' ]; then
-    echo "copy .bash_aliases  to $HOME"
-    echo "copy .aliases       to $HOME"
+    echo "${cl} .bash_aliases  to $HOME"
+    echo "${cl} .aliases       to $HOME"
 fi
 
 vim_config=$(read_env "vim_config")
 if [ $vim_config = 'y' ]; then
-    echo "copy .vimrc         to $HOME"
+    echo "${cl} .vimrc         to $HOME"
 fi
 
 ideavimrc=$(read_env "ideavimrc")
 if [ $ideavimrc = 'y' ]; then
-    echo "copy .ideavimrc     to $HOME"
+    echo "${cl} .ideavimrc     to $HOME"
 fi
 
 zsh=$(read_env "zsh")
 if [ $zsh = 'y' ]; then
-    echo "copy .zshrc         to $HOME"
-    echo "copy .p10k.zsh      to $HOME"
-    echo "install zsh and dependencies"
+    echo "${cl} .zshrc         to $HOME"
+    echo "${cl} .p10k.zsh      to $HOME"
+    echo "install zsh and dependencies(if you doesn't not isntall)"
 fi
 
 keymap=$(read_env "keymap")
@@ -92,9 +97,9 @@ fi
 if [ $alias_file = 'y' ]; then
     if [ $computer_type = 'm' ]; then
         ln -f .aliases $HOME
-        ln -f .bash_alias $HOME
+        ln -f .bash_aliases $HOME
         echo "${INFO}link .aliases successful"
-        echo "${INFO}link .bash_alias successful"
+        echo "${INFO}link .bash_aliases successful"
     else
         cp -f .aliases $HOME
         ln -f .bash_aliases $HOME
