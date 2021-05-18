@@ -26,57 +26,18 @@ fi
 
 #===== check install file =====
 computer_type=$(read_env "computer_type")
-if [ $computer_type = 'm' ]; then
+if [ $computer_type = 'm' ]; then #master or slave
     cl='link'
 else
     cl='cp'
 fi
 
-echo "${GREEN}This will install:"
 git=$(read_env "git")
-if [ $git = 'y' ]; then
-    echo "${cl} .gitconfig  to $HOME"
-fi
-
 alias_file=$(read_env "alias_file")
-if [ $alias_file = 'y' ]; then
-    echo "${cl} .bash_aliases  to $HOME"
-    echo "${cl} .aliases       to $HOME"
-fi
-
 vim_config=$(read_env "vim_config")
-if [ $vim_config = 'y' ]; then
-    echo "${cl} .vimrc         to $HOME"
-fi
-
 ideavimrc=$(read_env "ideavimrc")
-if [ $ideavimrc = 'y' ]; then
-    echo "${cl} .ideavimrc     to $HOME"
-fi
-
 zsh=$(read_env "zsh")
-if [ $zsh = 'y' ]; then
-    echo "${cl} .zshrc         to $HOME"
-    echo "${cl} .p10k.zsh      to $HOME"
-    echo "install zsh and dependencies(if you doesn't not isntall)"
-fi
-
 keymap=$(read_env "keymap")
-if [ $keymap = 'y' ] || [ computer_type = 'm' ]; then
-    echo "change keymap R_ctrl and R_alt"
-fi
-echo "${NC}"
-
-#===== check correct =====
-while true; do
-    read -p "correct?(y/n)" yn
-    case $yn in
-        [Yy]* ) correct='y'; break;;
-        [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-echo ""
 
 #===== install =====
 
@@ -96,7 +57,7 @@ if [ $git = 'y' ]; then
         cp -f .gitconfig $HOME
         echo "${INFO}cp .gitconfig successful"
         if [ -f .gitconfig.local ]; then
-            ln -f .gitconfig.local $HOME
+            cp -f .gitconfig.local $HOME
             echo "${INFO}link .gitconfig.local successful"
         fi
     fi
