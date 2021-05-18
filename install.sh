@@ -88,9 +88,17 @@ if [ $git = 'y' ]; then
     if [ $computer_type = 'm' ]; then
         ln -f .gitconfig $HOME
         echo "${INFO}link .gitconfig successful"
+        if [ -f .gitconfig.local ]; then
+            ln -f .gitconfig.local $HOME
+            echo "${INFO}link .gitconfig.local successful"
+        fi
     else
         cp -f .gitconfig $HOME
         echo "${INFO}cp .gitconfig successful"
+        if [ -f .gitconfig.local ]; then
+            ln -f .gitconfig.local $HOME
+            echo "${INFO}link .gitconfig.local successful"
+        fi
     fi
 fi
 
