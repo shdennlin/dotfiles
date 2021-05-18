@@ -33,6 +33,8 @@ alias less='less -r'
 alias tf='tail -f'
 alias cl='clear'
 alias rm='rm -rf'
+alias du='du -h'
+alias df='df -h'
 
 # Zippin
 alias gz='tar -zcvf'
