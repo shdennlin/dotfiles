@@ -87,6 +87,7 @@ plugins=(
     common-aliases
     command-not-found
     docker
+    docker-compose
     fzf
     git
     globalias
