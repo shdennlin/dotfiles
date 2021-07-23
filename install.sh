@@ -98,18 +98,6 @@ if [ $ideavimrc = 'y' ]; then
 fi
 
 if [ $zsh = 'y' ]; then
-    if [ $computer_type = 'm' ]; then
-        ln -f .zshrc $HOME
-        echo "${INFO}link .zshrc successful"
-        ln -f .p10k.zsh $HOME
-        echo "${INFO}link .p10k.zsh successful"
-    else
-        cp -f .zshrc_slave $HOME/.zshrc
-        echo "${INFO}cp .zshrc_slave successful"
-        cp -f .p10k.zsh $HOME
-        echo "${INFO}cp .p10k.zsh successful"
-    fi
-
     # install zsh
     if ! command_exists 'zsh' ; then # if command exist
         sudo apt install -y zsh
@@ -122,9 +110,24 @@ if [ $zsh = 'y' ]; then
         git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
         git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
         git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
-        sudo apt install autojump
-        sudo apt-get install fzf
+        sudo apt install -y autojump
+        sudo apt-get install -y fzf
+		. ~/.bashrc
+		. ~/.zshrc
+		sudo apt install -y curl
         curl -s -S -L https://raw.githubusercontent.com/guiferpa/aterminal/master/installer.sh | bash
+    fi
+
+    if [ $computer_type = 'm' ]; then
+        ln -f .zshrc $HOME
+        echo "${INFO}link .zshrc successful"
+        ln -f .p10k.zsh $HOME
+        echo "${INFO}link .p10k.zsh successful"
+    else
+        cp -f .zshrc_slave $HOME/.zshrc
+        echo "${INFO}cp .zshrc_slave successful"
+        cp -f .p10k.zsh $HOME
+        echo "${INFO}cp .p10k.zsh successful"
     fi
 fi
 
