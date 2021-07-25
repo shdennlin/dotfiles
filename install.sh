@@ -100,6 +100,7 @@ fi
 if [ $zsh = 'y' ]; then
     # install zsh
     if ! command_exists 'zsh' ; then # if command exist
+		sudo apt install -y curl
         sudo apt install -y zsh
         # set zsh as default in user
         sudo chsh -s /bin/zsh $USER
@@ -112,8 +113,6 @@ if [ $zsh = 'y' ]; then
         git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
         sudo apt install -y autojump
         sudo apt-get install -y fzf
-
-		sudo apt install -y curl
         curl -s -S -L https://raw.githubusercontent.com/guiferpa/aterminal/master/installer.sh | bash
     fi
 
