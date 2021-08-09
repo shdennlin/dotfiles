@@ -83,14 +83,19 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
     autojump
-    aterminal
-    common-aliases
     command-not-found
+    common-aliases
+    copybuffer
+    copydir
+    copyfile
+    dirhistory
     docker
     docker-compose
     fzf
     git
     globalias
+    history
+    jsontools
     sudo
     systemadmin
     systemd
