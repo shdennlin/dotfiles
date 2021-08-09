@@ -113,7 +113,6 @@ if [ $zsh = 'y' ]; then
         git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
         sudo apt install -y autojump
         sudo apt-get install -y fzf
-        curl -s -S -L https://raw.githubusercontent.com/guiferpa/aterminal/master/installer.sh | bash
     fi
 
     if [ $computer_type = 'm' ]; then
