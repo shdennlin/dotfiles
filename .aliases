@@ -49,7 +49,7 @@ alias dk='docker'
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 alias netport='sudo netstat -tulpn | grep LISTEN'
 
-alias psgp='ps -ef | gp -E'
+alias psgp='ps -ef | grep -E'
 
 # quick edit config
 alias vi='vim'
@@ -58,4 +58,7 @@ alias viz='vi ~/.zshrc'
 alias via='vi ~/.aliases'
 alias viba='vi ~/.bash_aliases'
 
-alias sshn='ssh -i ~/.ssh/itintern itintern.nb.ubuntu@'
+# open ptt
+alias ptt='~/ptt_autologin.sh'
+
+[[ ! -f ~/.local_profiles ]] || source ~/.local_profiles
