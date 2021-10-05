@@ -40,3 +40,4 @@ Thumbs.db
 *.lock
 .env
 .gitconfig.local
+.local_profiles
