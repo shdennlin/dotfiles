@@ -116,17 +116,10 @@ if [ $zsh = 'y' ]; then
         sudo apt-get install -y fzf
     fi
 
-    if [ $computer_type = 'm' ]; then
-        ln -f .zshrc $HOME
-        echo "${INFO}link .zshrc successful"
-        ln -f .p10k.zsh $HOME
-        echo "${INFO}link .p10k.zsh successful"
-    else
-        cp -f .zshrc_slave $HOME/.zshrc
-        echo "${INFO}cp .zshrc_slave successful"
-        cp -f .p10k.zsh $HOME
-        echo "${INFO}cp .p10k.zsh successful"
-    fi
+    ln -f .zshrc $HOME
+    echo "${INFO}link .zshrc successful"
+    ln -f .p10k.zsh $HOME
+    echo "${INFO}link .p10k.zsh successful"
 fi
 
 if [ $keymap = 'y' ] || [ computer_type = 'm' ]; then
