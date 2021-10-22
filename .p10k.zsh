@@ -31,7 +31,7 @@
   # The list of segments shown on the left. Fill it with the most important segments.
   typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(
     # =========================[ Line #1 ]=========================
-    # os_icon               # os identifier
+    os_icon               # os identifier
     dir                     # current directory
     vcs                     # git status
     # =========================[ Line #2 ]=========================
@@ -99,8 +99,8 @@
     time                    # current time
     # =========================[ Line #2 ]=========================
     newline
-    # ip                    # ip address and bandwidth usage for a specified network interface
-    public_ip               # public IP address
+    ip                    # ip address and bandwidth usage for a specified network interface
+    # public_ip             # public IP address
     # proxy                 # system-wide http/https/ftp proxy
     # battery               # internal battery
     # wifi                  # wifi speed
