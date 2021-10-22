@@ -71,7 +71,7 @@ if [ $alias_file = 'y' ]; then
         echo "${INFO}link .bash_aliases successful"
     else
         cp -f .aliases $HOME
-        ln -f .bash_aliases $HOME
+        cp -f .bash_aliases $HOME
         echo "${INFO}cp .aliases successful"
         echo "${INFO}cp .bash_alias successful"
     fi
@@ -116,10 +116,17 @@ if [ $zsh = 'y' ]; then
         sudo apt-get install -y fzf
     fi
 
-    ln -f .zshrc $HOME
-    echo "${INFO}link .zshrc successful"
-    ln -f .p10k.zsh $HOME
-    echo "${INFO}link .p10k.zsh successful"
+    if [ $computer_type = 'm' ]; then
+        ln -f .zshrc $HOME
+        echo "${INFO}link .zshrc successful"
+        ln -f .p10k.zsh $HOME
+        echo "${INFO}link .p10k.zsh successful"
+    else
+        cp -f .zshrc $HOME
+        echo "${INFO}link .zshrc successful"
+        cp -f .p10k.zsh $HOME
+        echo "${INFO}link .p10k.zsh successful"
+    fi
 fi
 
 if [ $keymap = 'y' ] || [ computer_type = 'm' ]; then
