@@ -139,23 +139,3 @@ source $ZSH/oh-my-zsh.sh
 
 # https://blog.miniasp.com/post/2020/05/04/How-to-use-GPG-sign-git-commit-and-tag-object
 export GPG_TTY=$(tty)
-
-# >>> conda initialize >>>
-# !! Contents within this block are managed by 'conda init' !!
-__conda_setup="$('/home/shdennlin/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
-    eval "$__conda_setup"
-else
-    if [ -f "/home/shdennlin/anaconda3/etc/profile.d/conda.sh" ]; then
-        . "/home/shdennlin/anaconda3/etc/profile.d/conda.sh"
-    else
-        export PATH="/home/shdennlin/anaconda3/bin:$PATH"
-    fi
-fi
-unset __conda_setup
-# <<< conda initialize <<<
-
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/
-export GEM_HOME=$HOME/.gem
-
-export PATH=$PATH:$JAVA_HOME/bin
