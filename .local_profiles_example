@@ -1,1 +1,7 @@
 # put any waht you want
+
+# fcitx
+# export INPUT_METHOD="fcitx"
+# export XMODIFIERS=@im=fcitx
+# export QT_IM_MODULE=fcitx
+# export GTK_IM_MODULE=fcitx
