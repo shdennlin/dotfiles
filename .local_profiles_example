@@ -1,5 +1,7 @@
 # put any waht you want
 
+export LC_CTYPE=zh_TW.UTF-8
+
 # fcitx
 # export INPUT_METHOD="fcitx"
 # export XMODIFIERS=@im=fcitx
