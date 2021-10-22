@@ -123,9 +123,9 @@ if [ $zsh = 'y' ]; then
         echo "${INFO}link .p10k.zsh successful"
     else
         cp -f .zshrc $HOME
-        echo "${INFO}link .zshrc successful"
+        echo "${INFO}cp .zshrc successful"
         cp -f .p10k.zsh $HOME
-        echo "${INFO}link .p10k.zsh successful"
+        echo "${INFO}cp .p10k.zsh successful"
     fi
 fi
 
