@@ -3,7 +3,23 @@
 export LC_CTYPE=zh_TW.UTF-8
 
 # fcitx
-# export INPUT_METHOD="fcitx"
-# export XMODIFIERS=@im=fcitx
-# export QT_IM_MODULE=fcitx
-# export GTK_IM_MODULE=fcitx
+export INPUT_METHOD="fcitx"
+export XMODIFIERS=@im=fcitx
+export QT_IM_MODULE=fcitx
+export GTK_IM_MODULE=fcitx
+
+# pyenv
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"    # if `pyenv` is not already on PATH
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+export PYTHON_CONFIGURE_OPTS="--enable-shared"
+# virtualenv
+eval "$(pyenv virtualenv-init -)"
+# pyenv virtualenvwrapper
+pyenv virtualenvwrapper_lazy
+export workon="/home/shdennlin/.virtualenv"
+
+export PATH="/home/shdennlin/.local/bin:$PATH"
+export PATH="/usr/local/cuda-11.3/bin:$PATH"
+export PATH="/snap/bin:$PATH"
