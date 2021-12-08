@@ -20,6 +20,7 @@ change_alias 'fd' 'fdfind' 'fdfind'
 
 change_alias 'ls' 'exa' 'exa'
 change_alias 'l'  'exa' 'exa -laghH'
+change_alias 'la' 'exa' 'exa -a'
 change_alias 'll' 'exa' 'exa -lghH'
 
 change_alias 'bcat' 'batcat' 'batcat'
