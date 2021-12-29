@@ -82,8 +82,8 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-    alias-finder
-    autojump
+    aliases
+    #autojump
     command-not-found
     common-aliases
     copybuffer
@@ -94,15 +94,17 @@ plugins=(
     docker
     docker-compose
     fzf
+	fasd
     git
     gitfast
     globalias
     history
     jsontools
+    poetry
     sudo
     systemadmin
     systemd
-    z
+    #z
     zsh-autosuggestions
     zsh-completions
     zsh-syntax-highlighting
@@ -142,3 +144,5 @@ export LANG=en_US.UTF-8
 
 # https://blog.miniasp.com/post/2020/05/04/How-to-use-GPG-sign-git-commit-and-tag-object
 export GPG_TTY=$(tty)
+export EDITOR=vim
+fpath+=~/.zfunc
