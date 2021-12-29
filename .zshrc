@@ -104,6 +104,7 @@ plugins=(
     sudo
     systemadmin
     systemd
+	tmux
     #z
     zsh-autosuggestions
     zsh-completions
