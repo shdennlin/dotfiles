@@ -11,12 +11,17 @@
   2. .gitconfig
   3. .vimrc
   4. .bash_aliases
+  5. zsh install and plugins download
 
 ** how to use: 
 #+BEGIN_SRC shell
-  git clone https://github.com/shdennlin/dotfiles.git ~/.dotfiles/.
-  cd ~/.dotfiles
-  bash install.sh
+cd ~ && git clone https://github.com/shdennlin/dotfiles.git ~/.dotfiles/
+cd ~/.dotfiles
+cp .env.example .env
+# modify .env file
+vim .env
+./install.sh
 #+END_SRC
+
 ** Reference
 + [[https://gist.github.com/pksunkara/988716][Sample of git config file]]
