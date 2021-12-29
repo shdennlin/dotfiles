@@ -26,6 +26,8 @@ change_alias 'll' 'exa' 'exa -lghH'
 change_alias 'bcat' 'batcat' 'batcat'
 change_alias 'bcat' 'bat' 'bat'
 
+change_alias 'op' 'fasd' 'fasd -a -e xdg-open `pwd`'
+
 # slove emacs Chinese display problem
 alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
 
@@ -37,11 +39,23 @@ alias rm='rm -rf'
 alias du='du -h'
 alias df='df -h'
 
-# Zippin
-alias gz='tar -zcvf'
+# compress & extract
+# https://note.drx.tw/2008/04/command.html
+# tar.gz
+alias targz='tar zcvf'
+alias etargz='tar zxvf'
+# tar.xz
+alias tarxz='tar Jcvf'
+alias etarxz='tar Jxvf'
+# tar.bz2
+alias tarbz2='tar jcvf'
+alias etarbz2='tar jxvf'
+# zip
+alias zip='zip =r'
 
 alias ka9='killall -9'
 alias k9='kill -9'
+alias pk9='pkill -9'
 
 alias suvi='sudo -E vi'
 
@@ -58,8 +72,6 @@ alias vig='vi ~/.gitconfig'
 alias viz='vi ~/.zshrc'
 alias via='vi ~/.aliases'
 alias viba='vi ~/.bash_aliases'
-
-alias src='omz reload'
 
 # open ptt
 alias ptt='~/ptt_autologin.sh'
