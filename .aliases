@@ -51,7 +51,10 @@ alias etarxz='tar Jxvf'
 alias tarbz2='tar jcvf'
 alias etarbz2='tar jxvf'
 # zip
-alias zip='zip =r'
+alias zip='zip -r'
+# zstd
+# https://github.com/facebook/zstd
+# https://linuxhint.com/zstd-files-compression-bash-script/
 
 alias ka9='killall -9'
 alias k9='kill -9'
