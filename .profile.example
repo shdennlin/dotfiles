@@ -1,5 +1,3 @@
-# put any waht you want
-
 export LC_CTYPE=zh_TW.UTF-8
 
 # fcitx
@@ -18,8 +16,13 @@ export PYTHON_CONFIGURE_OPTS="--enable-shared"
 eval "$(pyenv virtualenv-init -)"
 # pyenv virtualenvwrapper
 pyenv virtualenvwrapper_lazy
-export workon="/home/shdennlin/.virtualenv"
+export workon="$HOME/.virtualenv"
 
-export PATH="/home/shdennlin/.local/bin:$PATH"
+# cuda
 export PATH="/usr/local/cuda-11.3/bin:$PATH"
+
+# snap
 export PATH="/snap/bin:$PATH"
+
+# npm
+export PATH="$HOME/.npm-global/bin:$PATH"
