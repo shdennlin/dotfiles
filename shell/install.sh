@@ -23,6 +23,7 @@ if [ $zsh = 'y' ]; then
 
     # install ohmyzsh
     if [ ! -d "$HOME/.oh-my-zsh" ] ; then
+        sudo apt install curl
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended --keep-zshrc
     fi
     if [[ ! "zsh" == $(grep "^$USER" /etc/passwd | sed 's/.*://' | sed 's/.*\///') ]] ; then
