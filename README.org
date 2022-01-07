@@ -4,6 +4,7 @@
 ** Table of Content                                      :TOC_2_gh:noexport:
   - [[#include-file--function][include file & function]]
   - [[#how-to-use][how to use:]]
+  - [[#env-file-config][env file config]]
   - [[#reference][Reference]]
 
 ** include file & function
@@ -11,17 +12,30 @@
   2. .gitconfig
   3. .vimrc
   4. .bash_aliases
-  5. zsh install and plugins download
 
 ** how to use: 
-#+BEGIN_SRC shell
+1. Download and modify env file
+#+BEGIN_SRC sh
 cd ~ && git clone https://github.com/shdennlin/dotfiles.git ~/.dotfiles/
 cd ~/.dotfiles
 cp .env.example .env
-# modify .env file
 vim .env
-./install.sh
 #+END_SRC
 
+2. Install
+#+begin_src sh
+./install.sh
+#+end_src
+
+** env file config
+#+begin_src sh
+computer_type=m # master or slave
+git=y # yse or no
+alias_file=y # yse or no
+zsh=y # yse or no
+vim_config=y # yse or no
+ideavimrc=y # yse or no
+keymap=y # yse or no
+#+end_src
 ** Reference
 + [[https://gist.github.com/pksunkara/988716][Sample of git config file]]
