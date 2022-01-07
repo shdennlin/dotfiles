@@ -21,7 +21,6 @@
 	autocrlf = input
 	safecrlf = true
 	pager =
-	quotepath = false # slove chinese display in status
 
 [credential]
 	helper = store
