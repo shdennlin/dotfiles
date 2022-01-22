@@ -92,6 +92,7 @@ plugins=(
     dirhistory
     docker
     docker-compose
+    extract
     fzf
     fasd
     git
@@ -104,6 +105,7 @@ plugins=(
     systemadmin
     systemd
     tmux
+    universalarchive
     zsh-autosuggestions
     zsh-completions
     zsh-syntax-highlighting
