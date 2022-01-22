@@ -38,6 +38,7 @@ alias cl='clear'
 alias rm='rm -rf'
 alias du='du -h'
 alias df='df -h'
+alias rsync='rsync -avh'
 
 # compress & extract
 # https://note.drx.tw/2008/04/command.html
