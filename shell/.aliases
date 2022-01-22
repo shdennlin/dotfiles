@@ -1,3 +1,4 @@
+current_shell=$(echo $SHELL)
 command_exists () {
     command -v "$1" >/dev/null 2>&1
 }
@@ -56,6 +57,16 @@ alias zip='zip -r'
 # zstd
 # https://github.com/facebook/zstd
 # https://linuxhint.com/zstd-files-compression-bash-script/
+alias tarzst='tar --zstd -cvf'
+alias etarzst='tar --zstd -xvf'
+alias ttarzst='tar --zstd -tvf'
+# tar -t with depth
+if grep -q "zsh" <<< "$current_shell";  then
+	alias -g D2="| awk -F/ '{if (NF<2) print }'"
+	alias -g D3="| awk -F/ '{if (NF<3) print }'"
+	alias -g D4="| awk -F/ '{if (NF<4) print }'"
+fi
+
 
 alias ka9='killall -9'
 alias k9='kill -9'
