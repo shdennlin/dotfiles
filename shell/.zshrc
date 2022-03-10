@@ -86,7 +86,7 @@ plugins=(
     command-not-found
     common-aliases
     copybuffer
-    copydir
+    copypath
     copyfile
     cp
     dirhistory
