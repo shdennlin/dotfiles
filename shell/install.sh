@@ -59,6 +59,8 @@ if [ $zsh = 'y' ]; then
 
     $cl -f $BASEDIR/.zshrc $HOME
     echo -e "${INFO}${cl} -f .zshrc successful"
+    $cl -f $BASEDIR/.zsh_aliases $HOME
+    echo -e "${INFO}${cl} -f .zsh_aliases successful"
     $cl -f $BASEDIR/.p10k.zsh $HOME
     echo -e "${INFO}${cl} -f .p10k.zsh successful"
 fi

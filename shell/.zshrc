@@ -107,6 +107,7 @@ plugins=(
     tmux
     universalarchive
     zsh-autosuggestions
+    zsh_codex
     zsh-completions
     zsh-syntax-highlighting
 )
@@ -117,10 +118,12 @@ source $ZSH/oh-my-zsh.sh
 export LANG=en_US.UTF-8
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-[[ ! -f ~/.aliases ]] || source ~/.aliases
+[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
 [[ ! -f ~/.profile ]] || source ~/.profile
 
 # https://blog.miniasp.com/post/2020/05/04/How-to-use-GPG-sign-git-commit-and-tag-object
 export GPG_TTY=$(tty)
 export EDITOR=vim
 fpath+=~/.zfunc
+
+bindkey '^X' create_completion
