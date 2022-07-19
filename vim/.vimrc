@@ -59,7 +59,7 @@ set shiftwidth=4
 set autoindent
 set clipboard=unnamedplus
 
-set guifont=consolas:h12 " for windows
+set guifont=consolas\ 12 " for windows
 colorscheme slate
 
 :set guioptions-=m  "remove menu bar
@@ -174,3 +174,6 @@ nmap <Leader>qs :wq<CR>
 nmap <C-L> z.
 imap <C-L> <Esc>z.i
 
+" turn off NERDTree when startup
+let NERDTreeQuitOnOpen=1
+let g:nerdtree_tabs_open_on_gui_startup=0
