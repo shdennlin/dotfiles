@@ -10,6 +10,18 @@ change_alias () {
     fi
 }
 
+# parallel copy
+pcp () {
+    if command_exists 'parallel' ; then
+        last=${@:$#} # last parameters
+        other=${@:1:$# -1}  # all parameters except the last
+        echo "parallel --bar cp -r {} $last ::: $other"
+        parallel --bar cp -r {} $last ::: $other
+    else
+        echo "parallel not installed"
+    fi
+}
+
 # ============alias=============
 
 change_alias 'c' 'xclip' "xclip -selection clipboard"
@@ -88,4 +100,4 @@ alias via='vi ~/.aliases'
 alias viba='vi ~/.bash_aliases'
 
 # open ptt
-alias ptt='~/ptt_autologin.sh'
+alias ptt='~/shdennlin-wiki/command/ptt_autologin.sh'
