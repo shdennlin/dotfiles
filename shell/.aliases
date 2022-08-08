@@ -16,7 +16,7 @@ pcp () {
         last=${@:$#} # last parameters
         other=${@:1:$# -1}  # all parameters except the last
         echo "parallel --bar cp -r {} $last ::: $other"
-        parallel --bar cp -r {} $last ::: $other
+        parallel -j8 --bar cp -r {} $last ::: $other
     else
         echo "parallel not installed"
     fi
@@ -98,6 +98,4 @@ alias vig='vi ~/.gitconfig'
 alias viz='vi ~/.zshrc'
 alias via='vi ~/.aliases'
 alias viba='vi ~/.bash_aliases'
-
-# open ptt
-alias ptt='~/shdennlin-wiki/command/ptt_autologin.sh'
+alias vip='vi ~/.profile'

@@ -1,4 +1,6 @@
 alias -g A='| ag'
 alias -g e='--help'
+alias -g el='--help | less'
+
 
 [[ ! -f ~/.aliases ]] || source ~/.aliases

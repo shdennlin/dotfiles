@@ -1,28 +1,73 @@
-export LC_CTYPE=zh_TW.UTF-8
+# ~/.profile: executed by the command interpreter for login shells.
+# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login
+# exists.
+# see /usr/share/doc/bash/examples/startup-files for examples.
+# the files are located in the bash-doc package.
 
-# fcitx
+# the default umask is set in /etc/profile; for setting the umask
+# for ssh logins, install and configure the libpam-umask package.
+#umask 022
+
+# if running bash
+if [ -n "$BASH_VERSION" ]; then
+    # include .bashrc if it exists
+    if [ -f "$HOME/.bashrc" ]; then
+	. "$HOME/.bashrc"
+    fi
+fi
+
+# set PATH so it includes user's private bin if it exists
+if [ -d "$HOME/bin" ] ; then
+    PATH="$HOME/bin:$PATH"
+fi
+
+# set PATH so it includes user's private bin if it exists
+if [ -d "$HOME/.local/bin" ] ; then
+    PATH="$HOME/.local/bin:$PATH"
+fi
+
+## fcitx
 export INPUT_METHOD="fcitx"
 export XMODIFIERS=@im=fcitx
 export QT_IM_MODULE=fcitx
 export GTK_IM_MODULE=fcitx
 
-# pyenv
+## locale
+export LC_CTYPE="zh_TW.UTF-8"
+
+## poetry
+export PATH="$HOME/.poetry/bin:$PATH"
+
+## pyenv
 export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"    # if `pyenv` is not already on PATH
-eval "$(pyenv init --path)"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
-export PYTHON_CONFIGURE_OPTS="--enable-shared"
-# virtualenv
+## pyenv-virtualenv
 eval "$(pyenv virtualenv-init -)"
-# pyenv virtualenvwrapper
 pyenv virtualenvwrapper_lazy
-export workon="$HOME/.virtualenv"
 
-# cuda
-export PATH="/usr/local/cuda-11.3/bin:$PATH"
+export workon="~/.virtualenv"
 
-# snap
-export PATH="/snap/bin:$PATH"
+## jenv
+export PATH="$HOME/.jenv/bin:$PATH"
+eval "$(jenv init -)"
+## maven
+export PATH="$HOME/applications/apache-maven-3.8.6/bin:$PATH"
 
-# npm
-export PATH="$HOME/.npm-global/bin:$PATH"
+## google sdk
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/home/shdennlin/applications/google-cloud-sdk/path.zsh.inc' ]; then . '/home/shdennlin/applications/google-cloud-sdk/path.zsh.inc'; fi
+# The next line enables shell command completion for gcloud.
+if [ -f '/home/shdennlin/applications/google-cloud-sdk/completion.zsh.inc' ]; then . '/home/shdennlin/applications/google-cloud-sdk/completion.zsh.inc'; fi
+
+export PATH=$PATH:"$HOME/sdk/bin"
+
+# nvcc
+export PATH=$PATH:/usr/local/cuda/bin
+
+PROG=croc
+_CLI_ZSH_AUTOCOMPLETE_HACK=1
+source /etc/zsh/zsh_autocomplete_croc
+
+# open ptt
+alias ptt='~/shdennlin-wiki/engineering/command/ptt_autologin.sh'

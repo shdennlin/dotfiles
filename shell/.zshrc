@@ -110,6 +110,7 @@ plugins=(
     zsh_codex
     zsh-completions
     zsh-syntax-highlighting
+	# zsh-vi-mode
 )
 
 source $ZSH/oh-my-zsh.sh
