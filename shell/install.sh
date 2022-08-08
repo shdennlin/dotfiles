@@ -46,6 +46,9 @@ if [ $zsh = 'y' ]; then
     if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ] ; then
         git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
     fi
+    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh_codex" ] ; then
+        git clone --depth=1 https://github.com/tom-doerr/zsh_codex.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh_codex
+    fi
 
     if ! command_exists 'fasd' ; then
         if [[ "debian" == $(cat /etc/os-release | grep "ID_LIKE") ]] ; then
