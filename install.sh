@@ -31,7 +31,6 @@ export git=$(read_env "git")
 export alias_file=$(read_env "alias_file")
 export zsh=$(read_env "zsh")
 export vim_config=$(read_env "vim_config")
-export ideavimrc=$(read_env "ideavimrc")
 export keymap=$(read_env "keymap")
 
 

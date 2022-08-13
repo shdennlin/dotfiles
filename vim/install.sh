@@ -11,7 +11,3 @@ if [ $vim_config = 'y' ]; then
     fi
 fi
 
-if [ $ideavimrc = 'y' ]; then
-    $cl -f $BASEDIR/.ideavimrc $HOME
-    echo -e "${INFO}${cl} -f .ideavimrc successful"
-fi
