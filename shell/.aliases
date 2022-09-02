@@ -86,6 +86,7 @@ alias pk9='pkill -9'
 alias suvi='sudo -E vi'
 
 alias dk='docker'
+alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
 
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 alias netport='sudo netstat -tulpn | grep LISTEN'

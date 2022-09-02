@@ -59,7 +59,7 @@ set shiftwidth=4
 set autoindent
 set clipboard=unnamedplus
 
-set guifont=consolas:h12 " for windows
+set guifont=consolas\ 12 " for windows
 colorscheme slate
 
 :set guioptions-=m  "remove menu bar
@@ -107,3 +107,5 @@ nunmap jk
 " These create newlines like o and O but stay in normal mode
 nmap zj o<Esc>k
 nmap zk O<Esc>j
+
+hi LineNr cterm=bold ctermfg=DarkGrey ctermbg=NONE
