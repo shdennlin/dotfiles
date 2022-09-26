@@ -49,7 +49,9 @@ if [ $zsh = 'y' ]; then
     if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh_codex" ] ; then
         git clone --depth=1 https://github.com/tom-doerr/zsh_codex.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh_codex
     fi
-
+    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab" ] ; then
+		git clone --depth=1 https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fzf-tab
+    fi
     if ! command_exists 'fasd' ; then
         if [[ "debian" == $(cat /etc/os-release | grep "ID_LIKE") ]] ; then
             sudo add-apt-repository ppa:aacebedo/fasd
@@ -58,6 +60,9 @@ if [ $zsh = 'y' ]; then
     fi
     if ! command_exists 'fzf' ; then
         sudo apt install -y fzf
+    fi
+    if ! command_exists 'exa' ; then
+        sudo apt install -y exa
     fi
 
     $cl -f $BASEDIR/.zshrc $HOME

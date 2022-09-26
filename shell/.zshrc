@@ -94,6 +94,7 @@ plugins=(
     docker-compose
     extract
     fzf
+	fzf-tab
     fasd
     git
     gitfast
