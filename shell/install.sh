@@ -1,9 +1,5 @@
 #!/bin/bash
 
-command_exists () {
-    command -v "$@" >/dev/null 2>&1
-}
-
 BASEDIR=$(dirname "$0")
 
 if [ $alias_file = 'y' ]; then
