@@ -30,28 +30,34 @@ if [ $zsh = 'y' ]; then
         chsh -s $(which zsh)
     fi
 
-    # install theme and plugins
-    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ] ; then
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+    # install theme
+    dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k"
+    echo -e "${INFO} process powerlevel10k"
+    if [ ! -d $dir ] ; then
+        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $dir
+    else
+        cd $dir && git pull && cd - > /dev/null
     fi
-    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ] ; then
-        git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-    fi
-    if [ ! -d "${ZSH_CUSTOM:=$HOME/.oh-my-zsh/custom}/plugins/zsh-completions" ] ; then
-        git clone --depth=1 https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:=~/.oh-my-zsh/custom}/plugins/zsh-completions
-    fi
-    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ] ; then
-        git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-    fi
-    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ] ; then
-        git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-    fi
-    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh_codex" ] ; then
-        git clone --depth=1 https://github.com/tom-doerr/zsh_codex.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh_codex
-    fi
-    if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/fzf-tab" ] ; then
-		git clone --depth=1 https://github.com/Aloxaf/fzf-tab ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/fzf-tab
-    fi
+
+    # install plugins
+    declare -a plugins=(
+        "zsh-autosuggestions"       "https://github.com/zsh-users/zsh-autosuggestions.git"
+        "zsh-completions"           "https://github.com/zsh-users/zsh-completions.git"
+        "zsh-syntax-highlighting"   "https://github.com/zsh-users/zsh-syntax-highlighting.git"
+        "zsh_codex"                 "https://github.com/tom-doerr/zsh_codex.git"
+        "fzf-tab"                   "https://github.com/Aloxaf/fzf-tab"
+        )
+    for ((i=0; i<${#plugins[@]}; i+=2)); do
+        dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/${plugins[$i]}"
+        echo -e "${INFO} process ${plugins[$i]}"
+        if [ ! -d $dir ] ; then
+            git clone --depth=1 ${plugins[$(($i+1))]} $dir
+        else
+            echo -e "${plugins[$i]}\t"
+            cd $dir && git pull && cd - > /dev/null
+        fi
+    done
+
     if ! command_exists 'fasd' ; then
         if [[ "debian" == $(cat /etc/os-release | grep "ID_LIKE") ]] ; then
             sudo add-apt-repository ppa:aacebedo/fasd
