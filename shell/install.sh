@@ -1,4 +1,5 @@
 #!/bin/bash
+source ./functions.sh
 
 BASEDIR=$(dirname "$0")
 
@@ -53,19 +54,6 @@ if [ $zsh = 'y' ]; then
             cd $dir && git pull && cd - > /dev/null
         fi
     done
-
-    if ! command_exists 'fasd' ; then
-        if [[ "debian" == $(cat /etc/os-release | grep "ID_LIKE") ]] ; then
-            sudo add-apt-repository ppa:aacebedo/fasd
-        fi
-        sudo apt install -y fasd
-    fi
-    if ! command_exists 'fzf' ; then
-        sudo apt install -y fzf
-    fi
-    if ! command_exists 'exa' ; then
-        sudo apt install -y exa
-    fi
 
     $cl -f $BASEDIR/.zshrc $HOME
     echo -e "${INFO}${cl} -f .zshrc successful"
