@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/bin/bash
+source ./functions.sh
 
 NC='\033[0m' # No Color
 GREEN='\033[0;32m'
