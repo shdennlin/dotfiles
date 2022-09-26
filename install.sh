@@ -33,11 +33,12 @@ export alias_file=$(read_env "alias_file")
 export zsh=$(read_env "zsh")
 export vim_config=$(read_env "vim_config")
 export keymap=$(read_env "keymap")
-
+export useful_package=$(read_env "useful_package")
 
 set -e
 #===== install =====
 ./git/install.sh
+./package/install.sh
 ./shell/install.sh
 ./vim/install.sh
 ./xkb/install.sh
