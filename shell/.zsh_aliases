@@ -1,6 +1,14 @@
+command_exists () {
+    command -v "$1" >/dev/null 2>&1
+}
+
 alias -g A='| ag'
 alias -g e='--help'
 alias -g el='--help | less'
+
+if command_exists 'zoxide' ; then
+	eval "$(zoxide init zsh)"
+fi
 
 
 [[ ! -f ~/.aliases ]] || source ~/.aliases

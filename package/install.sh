@@ -7,6 +7,7 @@ if [ $useful_package = 'y' ]; then
         "exa"       "exa"
         "tmux"      "tmux"
         "batcat"    "bat"
+		"zoxide" 	"zoxide"
         )
     for ((i=0; i<${#package[@]}; i+=2)); do
         if ! command_exists ${package[$i]} ; then

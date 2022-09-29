@@ -95,7 +95,6 @@ plugins=(
     extract
     fzf
 	fzf-tab
-    fasd
     git
     gitfast
     globalias
