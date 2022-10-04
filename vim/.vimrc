@@ -114,6 +114,7 @@ hi LineNr cterm=bold ctermfg=DarkGrey ctermbg=NONE
 set nocompatible              " be iMproved, required
 filetype off                  " required
 
+" git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim/
 set rtp+=~/.vim/bundle/tagbar
@@ -133,7 +134,7 @@ Plugin 'joshdick/onedark.vim' " vim 主題
 Plugin 'Glench/Vim-Jinja2-Syntax' " python Jinja 模塊語法高亮
 Plugin 'Valloric/YouCompleteMe' " 補全提示
 " vim 需要支持python
-" 安裝方式: cd ~/.vim/bundle/YouCompleteMe &&  python3 install.py --ts-completer
+" 安裝方式: cd ~/.vim/bundle/YouCompleteMe &&  python3 install.py
 Plugin 'pelodelfuego/vim-swoop'
 Plugin 'terryma/vim-expand-region'
 Plugin 'liuchengxu/vim-which-key', { 'on': ['WhichKey', 'WhichKey!'] }
