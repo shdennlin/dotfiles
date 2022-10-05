@@ -107,7 +107,8 @@ alias ka9='killall -9'
 alias k9='kill -9'
 alias pk9='pkill -9'
 
-alias suvi='sudo -E vi'
+alias s='sudo'
+alias svi='sudo -E vi'
 
 alias dk='docker'
 alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
