@@ -85,6 +85,9 @@ alias rsync='rsync -avh'
 
 # compress & extract
 # https://note.drx.tw/2008/04/command.html
+# tar
+alias otar='tar cvf'
+alias etar='tar xvf'
 # tar.gz
 alias targz='tar zcvf'
 alias etargz='tar zxvf'
