@@ -79,7 +79,7 @@ alias less='less -r'
 alias tf='tail -f'
 alias cl='clear'
 alias rm='rm -rf'
-alias du='du -h'
+alias du='du -sh'
 alias df='df -h'
 alias rsync='rsync -avh'
 
@@ -115,6 +115,7 @@ alias svi='sudo -E vi'
 
 alias dk='docker'
 alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
+alias dirn='docker image prune --filter="dangling=true"'
 
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 alias netport='sudo netstat -tulpn | grep LISTEN'
@@ -132,7 +133,11 @@ fi
 alias vig='vi ~/.gitconfig'
 alias viz='vi ~/.zshrc'
 alias vip='vi ~/.profile'
+alias via='vi ~/.aliases'
 
 # git
 alias gb='fzf-git-branch'
 alias gco='fzf-git-checkout'
+
+# other
+alias wip='curl ipinfo.io/ip'
