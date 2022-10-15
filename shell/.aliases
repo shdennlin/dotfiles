@@ -72,7 +72,7 @@ change_alias 'bat' 'batcat' 'batcat'
 change_alias 'op' 'fasd' 'fasd -a -e xdg-open `pwd`'
 
 # slove emacs Chinese display problem
-alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
+# alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
 
 # Common shell functions
 alias less='less -r'
@@ -127,9 +127,12 @@ else
 fi
 
 # quick edit config
-if command_exists 'vi' ; then
+if command_exists 'nvim' ; then
+    alias vi='nvim'
+elif command_exists 'vim' ; then
     alias vi='vim'
 fi
+
 alias vig='vi ~/.gitconfig'
 alias viz='vi ~/.zshrc'
 alias vip='vi ~/.profile'

@@ -34,8 +34,14 @@ git=y # yse or no
 alias_file=y # yse or no
 zsh=y # yse or no
 vim_config=y # yse or no
-ideavimrc=y # yse or no
 keymap=y # yse or no
 #+end_src
+
+** neovim
+#+begin_src sh
+# enter vim and type below
+:PackerInstall
+#+end_src
+
 ** Reference
 + [[https://gist.github.com/pksunkara/988716][Sample of git config file]]
