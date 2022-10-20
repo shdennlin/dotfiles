@@ -94,7 +94,7 @@ plugins=(
     docker-compose
     extract
     fzf
-	fzf-tab
+    fzf-tab
     git
     gitfast
     globalias
@@ -106,11 +106,12 @@ plugins=(
     systemd
     tmux
     universalarchive
+    zoxide
     zsh-autosuggestions
     zsh_codex
     zsh-completions
     zsh-syntax-highlighting
-	# zsh-vi-mode
+    # zsh-vi-mode
 )
 
 source $ZSH/oh-my-zsh.sh

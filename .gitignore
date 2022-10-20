@@ -1,3 +1,8 @@
+*.lock
+.env
+*.local
+*.backup
+packer_compiled.lua
 
 # Compiled source #
 ###################
@@ -35,8 +40,3 @@
 ehthumbs.db
 Icon?
 Thumbs.db
-
-*.lock
-.env
-*.local
-*.backup

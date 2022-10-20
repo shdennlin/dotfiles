@@ -25,13 +25,16 @@ return packer.startup(function(use)
 	use { 'nkakouros-original/numbers.nvim',
 		config = function() require('numbers').setup() end
 	}
-
-  use { 'windwp/nvim-autopairs' ,
+  use { 'windwp/nvim-autopairs',
     config = function() require('nvim-autopairs').setup() end 
   }
   use { 'nvim-lualine/lualine.nvim',  -- Statusline
     config = function() require('lualine').setup() end 
   }
+  use { 'kylechui/nvim-surround',
+    config = function() require('nvim-surround').setup() end
+  }
+  
 
   use 'onsails/lspkind-nvim' -- vscode-like pictograms
   use 'neovim/nvim-lspconfig' -- LSP
