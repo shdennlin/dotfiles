@@ -67,7 +67,7 @@
 	ci  = commit --interactive
 	######## clone ########
 	cl  = clone
-	cld = clone --depth 1
+	cl1 = clone --depth 1
 	######## diff ########
 	d   = diff
 	dc  = diff --cached
