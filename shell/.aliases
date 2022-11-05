@@ -137,10 +137,10 @@ fi
 
 alias s='sudo'
 
-alias vig='vi ~/.gitconfig'
-alias viz='vi ~/.zshrc'
-alias vip='vi ~/.profile'
-alias via='vi ~/.aliases'
+alias vig='v ~/.gitconfig'
+alias viz='v ~/.zshrc'
+alias vip='v ~/.profile'
+alias via='v ~/.aliases'
 
 # git
 alias gb='fzf-git-branch'
