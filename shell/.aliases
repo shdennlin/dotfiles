@@ -61,7 +61,7 @@ change_alias 'cn' 'xclip' "tr -d '\n' | xclip -selection clipboard"
 change_alias 'pcn' 'xclip' "pwd | tr -d '\n' | xclip -selection clipboard"
 
 change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
-change_alias 'fd' 'fdfind' 'fdfind'
+change_alias 'fdf' 'fdfind' 'fdfind'
 
 change_alias 'l'  'exa' 'exa -laghH'
 change_alias 'la' 'exa' 'exa -a'
