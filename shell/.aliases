@@ -57,8 +57,6 @@ fzf-git-checkout() {
 # ============alias=============
 
 change_alias 'c' 'xclip' "xclip -selection clipboard"
-change_alias 'cn' 'xclip' "tr -d '\n' | xclip -selection clipboard"
-change_alias 'pcn' 'xclip' "pwd | tr -d '\n' | xclip -selection clipboard"
 
 change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fdf' 'fdfind' 'fdfind'
@@ -148,3 +146,9 @@ alias gco='fzf-git-checkout'
 
 # other
 alias wip='curl ipinfo.io/ip'
+
+# WSL
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+  alias c="/mnt/c/Windows/SysWOW64/clip.exe"
+  alias copypath="echo ${PWD} | /mnt/c/Windows/SysWOW64/clip.exe"
+fi
