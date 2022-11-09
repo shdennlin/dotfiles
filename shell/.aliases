@@ -107,6 +107,9 @@ alias ttarzst='tar --zstd -tvf'
 alias ka9='killall -9'
 alias k9='kill -9'
 alias pk9='pkill -9'
+alias ska9='sudo killall -9'
+alias sk9='sudo kill -9'
+alias spk9='sudo pkill -9'
 
 
 alias dk='docker'
