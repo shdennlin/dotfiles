@@ -62,6 +62,7 @@ change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fdf' 'fdfind' 'fdfind'
 
 change_alias 'l'  'exa' 'exa -laghH'
+change_alias 'ls' 'exa' 'exa'
 change_alias 'la' 'exa' 'exa -a'
 change_alias 'll' 'exa' 'exa -lghH'
 
