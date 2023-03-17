@@ -17,7 +17,7 @@
 
 [core]
 	longpaths = true
-	editor = vim
+	editor = nvim
 	autocrlf = input
 	safecrlf = true
 	ignorecase= false

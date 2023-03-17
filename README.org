@@ -41,6 +41,7 @@ keymap=y # yse or no
 #+begin_src sh
 # enter vim and type below
 :PackerInstall
+:PackerSync
 #+end_src
 
 ** Reference
