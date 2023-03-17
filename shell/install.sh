@@ -41,8 +41,8 @@ if [ $zsh = 'y' ]; then
         "zsh-autosuggestions"       "https://github.com/zsh-users/zsh-autosuggestions.git"
         "zsh-completions"           "https://github.com/zsh-users/zsh-completions.git"
         "zsh-syntax-highlighting"   "https://github.com/zsh-users/zsh-syntax-highlighting.git"
-        "zsh_codex"                 "https://github.com/tom-doerr/zsh_codex.git"
         "fzf-tab"                   "https://github.com/Aloxaf/fzf-tab"
+        "zsh-autocomplete"          "https://github.com/marlonrichert/zsh-autocomplete.git"
         )
     for ((i=0; i<${#plugins[@]}; i+=2)); do
         dir="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/${plugins[$i]}"

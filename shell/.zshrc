@@ -108,8 +108,8 @@ plugins=(
     universalarchive
     zoxide
     zsh-autosuggestions
-    zsh_codex
     zsh-completions
+    zsh-autocomplete
     zsh-syntax-highlighting
     # zsh-vi-mode
 )
@@ -126,5 +126,3 @@ export LANG=en_US.UTF-8
 export GPG_TTY=$TTY
 export EDITOR=nvim
 fpath+=~/.zfunc
-
-bindkey '^X' create_completion
