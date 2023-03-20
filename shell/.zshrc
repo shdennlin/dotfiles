@@ -109,7 +109,6 @@ plugins=(
     zoxide
     zsh-autosuggestions
     zsh-completions
-    zsh-autocomplete
     zsh-syntax-highlighting
     # zsh-vi-mode
 )
