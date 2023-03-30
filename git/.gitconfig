@@ -83,7 +83,7 @@
 	######## grep ########
 	g = grep
 	######## log ########
-	l   = log --graph --oneline -20
+	l   = log --graph --oneline -10
 	la  = log --graph --oneline --all
 
 	lg  = log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -10
