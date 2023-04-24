@@ -115,6 +115,9 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
+# Title
+ZSH_THEME_TERM_TAB_TITLE_IDLE="%n@%m:%15<..<%~%<<"
+
 # User configuration
 export LANG=en_US.UTF-8
 
