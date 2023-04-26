@@ -6,8 +6,10 @@ BASEDIR=$(dirname "$0")
 if [ $alias_file = 'y' ]; then
     $cl -f $BASEDIR/.aliases $HOME
     $cl -f $BASEDIR/.bash_aliases $HOME
+    $cl -f $BASEDIR/.tmux.conf $HOME
     echo -e "${INFO}${cl} -f .aliases successful"
     echo -e "${INFO}${cl} -f .bash_aliases successful"
+    echo -e "${INFO}${cl} -f .tmux.conf successful"
 fi
 
 if [ $zsh = 'y' ]; then
