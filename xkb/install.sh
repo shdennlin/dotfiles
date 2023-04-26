@@ -2,7 +2,7 @@
 
 BASEDIR=$(dirname "$0")
 
-if [ $keymap = 'y' ] || [ $cl = 'ln' ]; then
+if [ $keymap = 'y' ] ; then
     if [ ! -f $BASEDIR/evdev.backup ]; then
         sudo cp "/usr/share/X11/xkb/keycodes/evdev" "$BASEDIR/evdev.backup"
         sudo cp "$BASEDIR/evdev" "/usr/share/X11/xkb/keycodes/"
