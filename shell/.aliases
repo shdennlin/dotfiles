@@ -127,14 +127,11 @@ else
 fi
 
 # quick edit config
+alias sv='sudoedit'
 if command_exists 'nvim' ; then
     alias v='nvim'
-    alias sv='sudoedit nvim'
 elif command_exists 'vim' ; then
     alias v='vim'
-    alias sv='sudoedit vim'
-else
-    alias sv='sudoedit vi'
 fi
 
 alias s='sudo'
