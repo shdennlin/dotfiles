@@ -16,6 +16,7 @@ if [ $vim_config = 'y' ]; then
     fi
 
     rm -rf $HOME/.config/nvim
+    mkdir -pv $HOME/.config
     cp -r $BASEDIR/nvim $HOME/.config/nvim
 
     echo -e "${INFO} cp -r $BASEDIR/nvim $HOME/.config/nvim successful"
