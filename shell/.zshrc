@@ -85,32 +85,29 @@ plugins=(
     aliases
     command-not-found
     common-aliases
-    copybuffer
-    copypath
-    copyfile
-    cp
-    dirhistory
+    #copypath
+    #copyfile
+    cp # command: cpv
     docker
     docker-compose
     extract
-    fzf
-    fzf-tab
+    #fzf
+    #fzf-tab
     git
-    gitfast
     globalias
-    history
-    jsontools
+    nvm
     poetry
     sudo
     systemadmin
     systemd
     tmux
-    universalarchive
+    universalarchive # command: ua
     zoxide
+    zsh-autopair
     zsh-autosuggestions
+    zsh-autocomplete
     zsh-completions
     zsh-syntax-highlighting
-    # zsh-vi-mode
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -128,3 +125,9 @@ export LANG=en_US.UTF-8
 export GPG_TTY=$TTY
 export EDITOR=nvim
 fpath+=~/.zfunc
+
+# zsh-autocomplete
+# Make 'Tab' go straight to the menu and cycle there
+bindkey '\t' menu-select "$terminfo[kcbt]" menu-select
+bindkey -M menuselect '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
+
