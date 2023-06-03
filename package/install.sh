@@ -8,7 +8,7 @@ if [ $useful_package = 'y' ]; then
       "tmux"      "tmux"
       "batcat"    "bat"
       "zoxide" 	  "zoxide"
-      "ag"        "silversearcher-ag"
+      "rg"        "ripgrep"
       "aria2c"    "aria2"
       "fdfind"    "fd-find"
     )

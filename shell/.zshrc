@@ -97,9 +97,11 @@ plugins=(
     globalias
     nvm
     poetry
+    ripgrep
     sudo
     systemadmin
     systemd
+    thefuck
     tmux
     universalarchive # command: ua
     zoxide
@@ -131,3 +133,5 @@ fpath+=~/.zfunc
 bindkey '\t' menu-select "$terminfo[kcbt]" menu-select
 bindkey -M menuselect '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
 
+# thefuck
+eval $(thefuck --alias)
