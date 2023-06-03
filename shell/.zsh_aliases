@@ -2,7 +2,7 @@ command_exists () {
     command -v "$1" >/dev/null 2>&1
 }
 
-alias -g A='| ag'
+alias -g R='| rg'
 alias -g e='--help'
 alias -g el='--help | less'
 
