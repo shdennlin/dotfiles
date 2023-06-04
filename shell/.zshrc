@@ -7,7 +7,7 @@ fi
 
 # Znap init
 [[ -r ~/.zsh-plugins/znap/znap.zsh ]] ||
-    git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git ~/.zsh-plugins/znap
+  git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git ~/.zsh-plugins/znap
 source ~/.zsh-plugins/znap/znap.zsh  # Start Znap
 
 # `znap prompt` makes your prompt visible in just 15-40ms!
@@ -67,4 +67,7 @@ HISTFILE=~/.zsh_history
 HISTSIZE=999999999
 SAVEHIST=$HISTSIZE
 setopt SHARE_HISTORY
+
+# thefuck
+eval $(thefuck --alias)
 # ======================= setting end ========================
