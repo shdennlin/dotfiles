@@ -11,7 +11,7 @@ if [ $useful_package = 'y' ]; then
       "rg"        "ripgrep"
       "aria2c"    "aria2"
       "fdfind"    "fd-find"
-      "fuck"      "thefuck"
+      "thefuck"      "thefuck"
     )
     
     for ((i=0; i<${#package[@]}; i+=2)); do
