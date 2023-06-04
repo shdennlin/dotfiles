@@ -1,7 +1,3 @@
-# when use root, resolve error for below
-# [oh-my-zsh] Insecure completion-dependent directories detected:
-ZSH_DISABLE_COMPFIX=true
-
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -9,128 +5,69 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
+# Znap init
+[[ -r ~/.zsh-plugins/znap/znap.zsh ]] ||
+    git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git ~/.zsh-plugins/znap
+source ~/.zsh-plugins/znap/znap.zsh  # Start Znap
 
-# Path to your oh-my-zsh installation.
-export ZSH="$HOME/.oh-my-zsh"
+# `znap prompt` makes your prompt visible in just 15-40ms!
+# `znap source` starts plugins.
+# `znap eval` makes evaluating generated command output up to 10 times faster.
+# `znap function` lets you lazy-load features you don't always need.
+# `znap install` adds new commands and completions.
+# ====================== plugins start =======================
+#znap prompt sindresorhus/pure
+znap prompt romkatv/powerlevel10k
 
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="powerlevel10k/powerlevel10k"
+znap source zsh-users/zsh-autosuggestions
+znap source zsh-users/zsh-completions
+znap source zsh-users/zsh-syntax-highlighting
+znap source hlissner/zsh-autopair
+znap source olets/zsh-window-title
 
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
+# from oh-my-zsh
+znap install ohmyzsh/ohmyzsh
+znap source ohmyzsh/ohmyzsh lib/directories
+znap source ohmyzsh/ohmyzsh plugins/aliases
+znap source ohmyzsh/ohmyzsh plugins/asdf
+znap source ohmyzsh/ohmyzsh plugins/command-not-found
+znap source ohmyzsh/ohmyzsh plugins/common-aliases
+znap source ohmyzsh/ohmyzsh plugins/cp
+znap source ohmyzsh/ohmyzsh plugins/docker-compose
+znap source ohmyzsh/ohmyzsh plugins/extract # command: extract
+znap source ohmyzsh/ohmyzsh plugins/fzf
+znap source Aloxaf/fzf-tab
+znap source ohmyzsh/ohmyzsh plugins/git
+znap source ohmyzsh/ohmyzsh plugins/globalias
+znap source ohmyzsh/ohmyzsh plugins/sudo
+znap source ohmyzsh/ohmyzsh plugins/systemadmin
+znap source ohmyzsh/ohmyzsh plugins/systemd
+znap source ohmyzsh/ohmyzsh plugins/tmux
+znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
+znap source ohmyzsh/ohmyzsh plugins/zoxide
+# ======================= plugins end ========================
 
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
 
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
+# ======================= source start =======================
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -f ~/.profile ]]     || source ~/.profile
+[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
+# ======================== source end ========================
 
-# Uncomment the following line to disable bi-weekly auto-update checks.
-# DISABLE_AUTO_UPDATE="true"
 
-# Uncomment the following line to automatically update without prompting.
-# DISABLE_UPDATE_PROMPT="true"
-
-# Uncomment the following line to change how often to auto-update (in days).
-# export UPDATE_ZSH_DAYS=13
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
-
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
-
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# Caution: this setting can cause issues with multiline prompts (zsh 5.7.1 and newer seem to work)
-# See https://github.com/ohmyzsh/ohmyzsh/issues/5765
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(
-    aliases
-    asdf
-    command-not-found
-    common-aliases
-    #copypath
-    #copyfile
-    cp # command: cpv
-    docker
-    docker-compose
-    extract
-    #fzf
-    #fzf-tab
-    git
-    globalias
-    poetry
-    ripgrep
-    sudo
-    systemadmin
-    systemd
-    thefuck
-    tmux
-    universalarchive # command: ua
-    zoxide
-    zsh-autopair
-    zsh-autosuggestions
-    zsh-autocomplete
-    zsh-syntax-highlighting
-)
-
-source $ZSH/oh-my-zsh.sh
-
-# Title
-ZSH_THEME_TERM_TAB_TITLE_IDLE="%n@%m:%15<..<%~%<<"
-
-# User configuration
+# ====================== setting start =======================
+# environment variables
+export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
+export EDITOR=nvim
 export LANG=en_US.UTF-8
 
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-[[ ! -f ~/.profile ]] || source ~/.profile
-[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
-# https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
-export GPG_TTY=$TTY
-export EDITOR=nvim
-fpath+=~/.zfunc
+# history
+HISTFILE=~/.zsh_history
+HISTSIZE=999999999
+SAVEHIST=$HISTSIZE
+setopt SHARE_HISTORY
 
-## zsh-autocomplete
-# Make 'Tab' and "ShiftTab" cycle completions on the command line
-bindkey '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
-# First insert the common substring
-zstyle ':autocomplete:*complete*:*' insert-unambiguous yes
-zstyle ':autocomplete:*history*:*' insert-unambiguous yes
-zstyle ':autocomplete:menu-search:*' insert-unambiguous yes
+# theme: pure
+zstyle :prompt:pure:git:stash show yes
+# ======================= setting end ========================
