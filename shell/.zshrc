@@ -67,7 +67,4 @@ HISTFILE=~/.zsh_history
 HISTSIZE=999999999
 SAVEHIST=$HISTSIZE
 setopt SHARE_HISTORY
-
-# theme: pure
-zstyle :prompt:pure:git:stash show yes
 # ======================= setting end ========================

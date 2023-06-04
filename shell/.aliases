@@ -9,19 +9,6 @@ change_alias () {
     fi
 }
 
-# parallel copy
-pcp () {
-    if command_exists 'parallel' ; then
-        last=${@:$#} # last parameters
-        other=${@:1:$# -1}  # all parameters except the last
-        echo "parallel --bar cp -r {} $last ::: $other"
-        parallel -j8 --bar cp -r {} $last ::: $other
-    else
-        echo "parallel not installed"
-    fi
-}
-
-
 # ref link: https://polothy.github.io/post/2019-08-19-fzf-git-checkout/
 fzf-git-branch() {
     git rev-parse HEAD > /dev/null 2>&1 || return
@@ -57,7 +44,6 @@ fzf-git-checkout() {
 # ============alias=============
 
 change_alias 'c' 'xclip' "xclip -selection clipboard"
-
 change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdfind' 'fdfind --type directory'
 change_alias 'ff' 'fdfind' 'fdfind --type file'
@@ -69,14 +55,7 @@ change_alias 'll' 'exa' 'exa -lghH'
 
 change_alias 'bat' 'batcat' 'batcat'
 
-change_alias 'op' 'fasd' 'fasd -a -e xdg-open'
-
-# slove emacs Chinese display problem
-# alias emacs='env LC_CTYPE=zh_TW.UTF-8 emacs'
-
 # Common shell functions
-alias less='less -r'
-alias tf='tail -f'
 alias cl='clear'
 alias rm='rm -r'
 alias cp='cp -r'
@@ -84,28 +63,9 @@ alias du='du -h'
 alias df='df -h'
 alias rsync='rsync -avh'
 
-# compress & extract
-# https://note.drx.tw/2008/04/command.html
-# tar
-alias otar='tar cvf'
-alias etar='tar xvf'
-# tar.gz
-alias targz='tar zcvf'
-alias etargz='tar zxvf'
-# tar.xz
-alias tarxz='tar Jcvf'
-alias etarxz='tar Jxvf'
-# tar.bz2
-alias tarbz2='tar jcvf'
-alias etarbz2='tar jxvf'
-# zip
-alias zip='zip -r'
-# zstd
-# https://github.com/facebook/zstd
-# https://linuxhint.com/zstd-files-compression-bash-script/
-alias tarzst='tar --zstd -cvf'
-alias etarzst='tar --zstd -xvf'
-alias ttarzst='tar --zstd -tvf'
+# git
+alias gb='fzf-git-branch'
+alias gco='fzf-git-checkout'
 
 alias ka9='killall -9'
 alias k9='kill -9'
@@ -113,7 +73,6 @@ alias pk9='pkill -9'
 alias ska9='sudo killall -9'
 alias sk9='sudo kill -9'
 alias spk9='sudo pkill -9'
-
 
 alias dk='docker'
 alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
@@ -137,12 +96,8 @@ alias viz='v ~/.zshrc'
 alias vip='v ~/.profile'
 alias via='v ~/.aliases'
 
-# git
-alias gb='fzf-git-branch'
-alias gco='fzf-git-checkout'
-
 # other
-alias wip='curl ipinfo.io/ip'
+alias wip='curl ipinfo.io/ip && echo'
 
 # WSL
 if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
