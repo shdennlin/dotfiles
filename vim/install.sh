@@ -20,4 +20,6 @@ if [ $vim_config = 'y' ]; then
     cp -r $BASEDIR/nvim $HOME/.config/nvim
 
     echo -e "${INFO} cp -r $BASEDIR/nvim $HOME/.config/nvim successful"
+
+    nvim +"PackerSync" +"sleep 7" +"q" +"q"
 fi
