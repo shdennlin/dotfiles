@@ -6,4 +6,7 @@
   signingkey =
 
 [commit]
-	gpgsign = true
+  gpgsign = true
+
+[gpg]
+  program = gpg
