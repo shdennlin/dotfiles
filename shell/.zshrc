@@ -83,6 +83,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
     aliases
+    asdf
     command-not-found
     common-aliases
     #copypath
@@ -95,7 +96,6 @@ plugins=(
     #fzf-tab
     git
     globalias
-    nvm
     poetry
     ripgrep
     sudo
@@ -108,7 +108,6 @@ plugins=(
     zsh-autopair
     zsh-autosuggestions
     zsh-autocomplete
-    zsh-completions
     zsh-syntax-highlighting
 )
 
@@ -121,17 +120,17 @@ ZSH_THEME_TERM_TAB_TITLE_IDLE="%n@%m:%15<..<%~%<<"
 export LANG=en_US.UTF-8
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
 [[ ! -f ~/.profile ]] || source ~/.profile
+[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
 # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
 export GPG_TTY=$TTY
 export EDITOR=nvim
 fpath+=~/.zfunc
 
-# zsh-autocomplete
-# Make 'Tab' go straight to the menu and cycle there
-bindkey '\t' menu-select "$terminfo[kcbt]" menu-select
-bindkey -M menuselect '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
-
-# thefuck
-eval $(thefuck --alias)
+## zsh-autocomplete
+# Make 'Tab' and "ShiftTab" cycle completions on the command line
+bindkey '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
+# First insert the common substring
+zstyle ':autocomplete:*complete*:*' insert-unambiguous yes
+zstyle ':autocomplete:*history*:*' insert-unambiguous yes
+zstyle ':autocomplete:menu-search:*' insert-unambiguous yes

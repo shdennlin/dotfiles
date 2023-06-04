@@ -11,6 +11,7 @@ if [ $useful_package = 'y' ]; then
       "rg"        "ripgrep"
       "aria2c"    "aria2"
       "fdfind"    "fd-find"
+      "fuck"      "thefuck"
     )
     
     for ((i=0; i<${#package[@]}; i+=2)); do
@@ -18,11 +19,4 @@ if [ $useful_package = 'y' ]; then
             sudo apt install -y ${package[$(($i+1))]}
         fi
     done
-
-    if ! command_exists 'fasd' ; then
-        if [[ "debian" == $(cat /etc/os-release | grep "ID_LIKE") ]] ; then
-            sudo add-apt-repository ppa:aacebedo/fasd
-        fi
-        sudo apt install -y fasd
-    fi
 fi

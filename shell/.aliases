@@ -59,7 +59,8 @@ fzf-git-checkout() {
 change_alias 'c' 'xclip' "xclip -selection clipboard"
 
 change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
-change_alias 'fdf' 'fdfind' 'fdfind'
+change_alias 'fd' 'fdfind' 'fdfind --type directory'
+change_alias 'ff' 'fdfind' 'fdfind --type file'
 
 change_alias 'l'  'exa' 'exa -laghH'
 change_alias 'ls' 'exa' 'exa'
@@ -77,8 +78,8 @@ change_alias 'op' 'fasd' 'fasd -a -e xdg-open'
 alias less='less -r'
 alias tf='tail -f'
 alias cl='clear'
-alias rm='rm'
-alias cp='cp'
+alias rm='rm -r'
+alias cp='cp -r'
 alias du='du -h'
 alias df='df -h'
 alias rsync='rsync -avh'
