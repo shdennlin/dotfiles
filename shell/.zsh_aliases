@@ -1,58 +1,8 @@
-command_exists () {
-    command -v "$1" >/dev/null 2>&1
-}
-
 change_alias () {
-    if command_exists "$2" ; then
+    if (( $+commands[$2] )); then
         alias "$1"="$3"
     fi
 }
-
-alias -g R='| rg'
-alias -g e='--help'
-alias -g el='--help | less'
-
-if command_exists 'zoxide' ; then
-	eval "$(zoxide init zsh)"
-fi
-
-if command_exists 'navi' ; then
-    # ref: https://github.com/denisidoro/navi/blob/master/shell/navi.plugin.zsh
-    _navi_call() {
-    local result="$(navi "$@" </dev/tty)"
-    printf "%s" "$result"
-    }
-
-    _navi_widget() {
-    local -r input="${LBUFFER}"
-    local -r last_command="$(echo "${input}" | navi fn widget::last_command)"
-    local replacement="$last_command"
-
-    if [ -z "$last_command" ]; then
-        replacement="$(_navi_call --print)"
-    elif [ "$LASTWIDGET" = "_navi_widget" ] && [ "$input" = "$previous_output" ]; then
-        replacement="$(_navi_call --print --query "$last_command")"
-    else
-        replacement="$(_navi_call --print --best-match --query "$last_command")"
-    fi
-
-    if [ -n "$replacement" ]; then
-        local -r find="${last_command}_NAVIEND"
-        previous_output="${input}_NAVIEND"
-        previous_output="${previous_output//$find/$replacement}"
-    else
-        previous_output="$input"
-    fi
-
-    zle kill-whole-line
-    LBUFFER="${previous_output}"
-    region_highlight=("P0 100 bold")
-    zle redisplay
-    }
-
-    zle -N _navi_widget
-    bindkey '^g' _navi_widget
-fi
 
 # ref link: https://polothy.github.io/post/2019-08-19-fzf-git-checkout/
 fzf-git-branch() {
@@ -88,7 +38,13 @@ fzf-git-checkout() {
 
 # ============alias=============
 
-change_alias 'c' 'xclip' "xclip -selection clipboard"
+alias -g R='| rg'
+alias -g e='--help'
+alias -g el='--help | less'
+
+
+change_alias 'bat' 'batcat' 'batcat'
+change_alias 'c'  'xclip' "xclip -selection clipboard"
 change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdfind' 'fdfind --type directory'
 change_alias 'ff' 'fdfind' 'fdfind --type file'
@@ -98,20 +54,24 @@ change_alias 'ls' 'exa' 'exa'
 change_alias 'la' 'exa' 'exa -a'
 change_alias 'll' 'exa' 'exa -lghH'
 
-change_alias 'bat' 'batcat' 'batcat'
+change_alias 'v' 'vim' 'vim'
+change_alias 'v' 'nvim' 'nvim'
 
 # Common shell functions
 alias cl='clear'
-alias rm='rm -r'
 alias cp='cp -r'
 alias du='du -h'
 alias df='df -h'
+alias rm='rm -r'
 alias rsync='rsync -avh'
+alias s='sudo'
+alias sv='sudoedit'
 
 # git
 alias gb='fzf-git-branch'
 alias gco='fzf-git-checkout'
 
+# kill
 alias ka9='killall -9'
 alias k9='kill -9'
 alias pk9='pkill -9'
@@ -119,29 +79,14 @@ alias ska9='sudo killall -9'
 alias sk9='sudo kill -9'
 alias spk9='sudo pkill -9'
 
+# docker
 alias dk='docker'
 alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
 alias dirn='docker image prune --filter="dangling=true"'
 
+# network
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
 alias netport='sudo netstat -tulpn | grep LISTEN'
-
-# quick edit config
-alias sv='sudoedit'
-if command_exists 'nvim' ; then
-    alias v='nvim'
-elif command_exists 'vim' ; then
-    alias v='vim'
-fi
-
-alias s='sudo'
-
-alias vig='v ~/.gitconfig'
-alias viz='v ~/.zshrc'
-alias vip='v ~/.zprofile'
-alias via='v ~/.aliases'
-
-# other
 alias wip='curl ipinfo.io/ip && echo'
 
 # WSL
