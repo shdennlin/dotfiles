@@ -5,10 +5,12 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
+export ZSH_CUSTOM="$HOME/.zsh-plugins"
+export ZSH_CONFIG="$ZSH_CUSTOM/.zsh-config"
 # Znap init
-[[ -r ~/.zsh-plugins/znap/znap.zsh ]] ||
-  git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git ~/.zsh-plugins/znap
-source ~/.zsh-plugins/znap/znap.zsh  # Start Znap
+[[ -r $ZSH_CUSTOM/znap/znap.zsh ]] ||
+  git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git $ZSH_CUSTOM/znap
+source $ZSH_CUSTOM/znap/znap.zsh  # Start Znap
 
 # `znap prompt` makes your prompt visible in just 15-40ms!
 # `znap source` starts plugins.
@@ -50,13 +52,16 @@ znap source ohmyzsh/ohmyzsh plugins/zoxide
 
 # ======================= source start =======================
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-[[ ! -f ~/.profile ]]     || source ~/.profile
-[[ ! -f ~/.zsh_aliases ]] || source ~/.zsh_aliases
+[[ ! -f $HOME/.p10k.zsh ]]          || source $HOME/.p10k.zsh
+[[ ! -f $HOME/.zprofile ]]          || source $HOME/.zprofile
+[[ ! -f $ZSH_CONFIG/.zsh_aliases ]] || source $ZSH_CONFIG/.zsh_aliases
 # ======================== source end ========================
 
 
 # ====================== setting start =======================
+[ ! -d "$ZSH_CUSTOM/.zfunc" ] && mkdir "$ZSH_CUSTOM/.zfunc"
+fapth=($ZSH_CUSTOM/.zfunc $fpath)
+
 # environment variables
 export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
 export EDITOR=nvim
