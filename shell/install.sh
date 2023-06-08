@@ -7,11 +7,6 @@ ZSH_CONFIG="$ZSH_CUSTOM/.zsh-config"
 mkdir -pv $ZSH_CUSTOM
 mkdir -pv $ZSH_CONFIG
 
-# if [ $alias_file = 'y' ]; then
-#     $cl -f $BASEDIR/.tmux.conf $HOME
-#     echo -e "${INFO}${cl} -f .tmux.conf successful"
-# fi
-
 if [ $zsh = 'y' ]; then
     $cl -f $BASEDIR/.zshrc $HOME
     echo -e "${INFO}${cl} -f .zshrc successful"
