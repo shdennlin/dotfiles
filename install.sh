@@ -1,10 +1,9 @@
 #!/bin/bash
-source ./functions.sh
 
-NC='\033[0m' # No Color
-GREEN='\033[0;32m'
-YELLO='\033[0;33m'
-RED='\033[0;31m'
+export NC='\033[0m' # No Color
+export GREEN='\033[0;32m'
+export YELLO='\033[0;33m'
+export RED='\033[0;31m'
 
 export INFO="${GREEN}INFO: ${NC}"
 export WARNING="${YELLO}WARNING: ${NC}"
@@ -31,6 +30,7 @@ fi
 export git=$(read_env "git")
 export zsh=$(read_env "zsh")
 export vim_config=$(read_env "vim_config")
+export tmux_config=$(read_env "tmux_config")
 export keymap=$(read_env "keymap")
 export useful_package=$(read_env "useful_package")
 
@@ -40,4 +40,5 @@ set -e
 ./package/install.sh
 ./shell/install.sh
 ./vim/install.sh
+./tmux/install.sh
 ./xkb/install.sh
