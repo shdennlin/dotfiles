@@ -36,6 +36,14 @@ fzf-git-checkout() {
     fi
 }
 
+poetry-shell() {
+    if (( $+commands[poetry] )); then
+        out=$(poetry env info --path)
+        echo "source $out/bin/activate"
+        source $out/bin/activate
+    fi
+}
+
 # ============alias=============
 
 alias -g R='| rg'
