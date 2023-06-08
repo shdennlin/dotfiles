@@ -1,3 +1,5 @@
+# date with 3 decimal point
+s=$(date +%s%N)
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -26,12 +28,12 @@ znap source zsh-users/zsh-completions
 znap source zsh-users/zsh-syntax-highlighting
 znap source hlissner/zsh-autopair
 znap source olets/zsh-window-title
+znap source asdf-vm/asdf
 
-# from oh-my-zsh
-znap install ohmyzsh/ohmyzsh
+# # from oh-my-zsh
+[[ ! -d $HOME/.zsh-plugins/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
 znap source ohmyzsh/ohmyzsh lib/directories
 znap source ohmyzsh/ohmyzsh plugins/aliases
-znap source ohmyzsh/ohmyzsh plugins/asdf
 znap source ohmyzsh/ohmyzsh plugins/command-not-found
 znap source ohmyzsh/ohmyzsh plugins/common-aliases
 znap source ohmyzsh/ohmyzsh plugins/cp
@@ -46,7 +48,6 @@ znap source ohmyzsh/ohmyzsh plugins/systemadmin
 znap source ohmyzsh/ohmyzsh plugins/systemd
 znap source ohmyzsh/ohmyzsh plugins/tmux
 znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
-znap source ohmyzsh/ohmyzsh plugins/zoxide
 # ======================= plugins end ========================
 
 
@@ -55,13 +56,11 @@ znap source ohmyzsh/ohmyzsh plugins/zoxide
 [[ ! -f $HOME/.p10k.zsh ]]          || source $HOME/.p10k.zsh
 [[ ! -f $HOME/.zprofile ]]          || source $HOME/.zprofile
 [[ ! -f $ZSH_CONFIG/.zsh_aliases ]] || source $ZSH_CONFIG/.zsh_aliases
+[[ ! -f $ZSH_CONFIG/package.zsh ]]   || source $ZSH_CONFIG/package.zsh
 # ======================== source end ========================
 
 
 # ====================== setting start =======================
-[ ! -d "$ZSH_CUSTOM/.zfunc" ] && mkdir "$ZSH_CUSTOM/.zfunc"
-fapth=($ZSH_CUSTOM/.zfunc $fpath)
-
 # environment variables
 export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
 export EDITOR=nvim
@@ -73,6 +72,11 @@ HISTSIZE=999999999
 SAVEHIST=$HISTSIZE
 setopt SHARE_HISTORY
 
-# thefuck
-eval $(thefuck --alias)
+znap fpath _ ':'
 # ======================= setting end ========================
+
+e=$(date +%s%N)
+now=$(date)
+time_file="$ZSH_CUSTOM/.time_record.log"
+echo -n $(echo "scale=3;($e-$s)/1000000000" | bc | awk '{printf "%.3f s\n", $0}') >> $time_file
+echo " <-" $now >> $time_file

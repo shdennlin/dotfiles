@@ -17,6 +17,8 @@ if [ $zsh = 'y' ]; then
     echo -e "${INFO}${cl} -f .zshrc successful"
     $cl -f $BASEDIR/.zsh_aliases $ZSH_CONFIG
     echo -e "${INFO}${cl} -f .zsh_aliases successful"
+    $cl -f $BASEDIR/package.zsh $ZSH_CONFIG
+    echo -e "${INFO}${cl} -f package.zsh successful"
     $cl -f $BASEDIR/.p10k.zsh $HOME
     echo -e "${INFO}${cl} -f .p10k.zsh successful"
 
