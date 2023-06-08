@@ -26,5 +26,4 @@ if [ $zsh = 'y' ]; then
 
     # remove site-functions
     rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions/"*
-    rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions/".*
 fi

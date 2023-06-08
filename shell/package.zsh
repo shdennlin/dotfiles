@@ -54,5 +54,5 @@ if (( $+commands[poetry] )) && [ ! -f $FUNCTION_DIR/_poetry ]; then
 fi
 
 if (( $+commands[asdf] )) && [ ! -f $FUNCTION_DIR/_asdf ]; then
-    znap fpath _asdf '. "$ASDF_DIR/completions/asdf.bash"'
+    znap fpath _asdf 'source "$ASDF_DIR/completions/asdf.bash"'
 fi
