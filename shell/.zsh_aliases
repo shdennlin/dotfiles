@@ -91,6 +91,6 @@ alias wip='curl ipinfo.io/ip && echo'
 
 # WSL
 if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
-  alias c="/mnt/c/Windows/SysWOW64/clip.exe"
-  alias copypath="echo ${PWD} | /mnt/c/Windows/SysWOW64/clip.exe"
+    alias c="/mnt/c/Windows/SysWOW64/clip.exe"
+    alias copypath="echo ${PWD} | /mnt/c/Windows/SysWOW64/clip.exe"
 fi

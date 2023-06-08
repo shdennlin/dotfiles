@@ -1,19 +1,23 @@
 # Shawn's dotfiles
 
 - [Shawn's dotfiles](#shawns-dotfiles)
+  - [Pre-requisite](#pre-requisite)
   - [include file \& function](#include-file--function)
   - [How to use](#how-to-use)
   - [env file config](#env-file-config)
   - [QA](#qa)
+
+## Pre-requisite
+
+1. neovim >= 0.8
 
 ## include file & function
 
 1. utils [package](package/install.sh), ex: fzf, exa, zoxide
 2. git config
 3. nvim config
-4. zsh config
-5. zsh or bash alias
-6. Remap key: exchange ctrl_L and alt_L
+4. zsh config and alias
+5. Remap key: exchange ctrl_L and alt_L
 
 ## How to use
 
