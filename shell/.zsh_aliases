@@ -2,6 +2,12 @@ command_exists () {
     command -v "$1" >/dev/null 2>&1
 }
 
+change_alias () {
+    if command_exists "$2" ; then
+        alias "$1"="$3"
+    fi
+}
+
 alias -g R='| rg'
 alias -g e='--help'
 alias -g el='--help | less'
@@ -9,7 +15,6 @@ alias -g el='--help | less'
 if command_exists 'zoxide' ; then
 	eval "$(zoxide init zsh)"
 fi
-
 
 if command_exists 'navi' ; then
     # ref: https://github.com/denisidoro/navi/blob/master/shell/navi.plugin.zsh
@@ -49,5 +54,98 @@ if command_exists 'navi' ; then
     bindkey '^g' _navi_widget
 fi
 
+# ref link: https://polothy.github.io/post/2019-08-19-fzf-git-checkout/
+fzf-git-branch() {
+    git rev-parse HEAD > /dev/null 2>&1 || return
 
-[[ ! -f ~/.aliases ]] || source ~/.aliases
+    git branch --color=always --all --sort=-committerdate |
+        grep -v HEAD |
+        fzf --height 50% --ansi --no-multi --preview-window right:65% \
+            --preview 'git log -n 50 --color=always --date=short --pretty="format:%C(auto)%cd %h%d %s" $(sed "s/.* //" <<< {})' |
+        sed "s/.* //"
+}
+
+fzf-git-checkout() {
+    git rev-parse HEAD > /dev/null 2>&1 || return
+
+    local branch
+
+    branch=$(fzf-git-branch)
+    if [[ "$branch" = "" ]]; then
+        echo "No branch selected."
+        return
+    fi
+
+    # If branch name starts with 'remotes/' then it is a remote branch. By
+    # using --track and a remote branch name, it is the same as:
+    # git checkout -b branchName --track origin/branchName
+    if [[ "$branch" = 'remotes/'* ]]; then
+        git checkout --track $branch
+    else
+        git checkout $branch;
+    fi
+}
+
+# ============alias=============
+
+change_alias 'c' 'xclip' "xclip -selection clipboard"
+change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
+change_alias 'fd' 'fdfind' 'fdfind --type directory'
+change_alias 'ff' 'fdfind' 'fdfind --type file'
+
+change_alias 'l'  'exa' 'exa -laghH'
+change_alias 'ls' 'exa' 'exa'
+change_alias 'la' 'exa' 'exa -a'
+change_alias 'll' 'exa' 'exa -lghH'
+
+change_alias 'bat' 'batcat' 'batcat'
+
+# Common shell functions
+alias cl='clear'
+alias rm='rm -r'
+alias cp='cp -r'
+alias du='du -h'
+alias df='df -h'
+alias rsync='rsync -avh'
+
+# git
+alias gb='fzf-git-branch'
+alias gco='fzf-git-checkout'
+
+alias ka9='killall -9'
+alias k9='kill -9'
+alias pk9='pkill -9'
+alias ska9='sudo killall -9'
+alias sk9='sudo kill -9'
+alias spk9='sudo pkill -9'
+
+alias dk='docker'
+alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
+alias dirn='docker image prune --filter="dangling=true"'
+
+alias lsofp='sudo lsof -i -P -n | grep LISTEN'
+alias netport='sudo netstat -tulpn | grep LISTEN'
+
+# quick edit config
+alias sv='sudoedit'
+if command_exists 'nvim' ; then
+    alias v='nvim'
+elif command_exists 'vim' ; then
+    alias v='vim'
+fi
+
+alias s='sudo'
+
+alias vig='v ~/.gitconfig'
+alias viz='v ~/.zshrc'
+alias vip='v ~/.zprofile'
+alias via='v ~/.aliases'
+
+# other
+alias wip='curl ipinfo.io/ip && echo'
+
+# WSL
+if [ -f /proc/sys/fs/binfmt_misc/WSLInterop ]; then
+  alias c="/mnt/c/Windows/SysWOW64/clip.exe"
+  alias copypath="echo ${PWD} | /mnt/c/Windows/SysWOW64/clip.exe"
+fi

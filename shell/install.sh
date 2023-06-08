@@ -2,20 +2,20 @@
 source ./functions.sh
 
 BASEDIR=$(dirname "$0")
+ZSH_CUSTOM="$HOME/.zsh-plugins"
+ZSH_CONFIG="$ZSH_CUSTOM/.zsh-config"
+mkdir -pv $ZSH_CUSTOM
+mkdir -pv $ZSH_CONFIG
 
-if [ $alias_file = 'y' ]; then
-    $cl -f $BASEDIR/.aliases $HOME
-    $cl -f $BASEDIR/.bash_aliases $HOME
-    $cl -f $BASEDIR/.tmux.conf $HOME
-    echo -e "${INFO}${cl} -f .aliases successful"
-    echo -e "${INFO}${cl} -f .bash_aliases successful"
-    echo -e "${INFO}${cl} -f .tmux.conf successful"
-fi
+# if [ $alias_file = 'y' ]; then
+#     $cl -f $BASEDIR/.tmux.conf $HOME
+#     echo -e "${INFO}${cl} -f .tmux.conf successful"
+# fi
 
 if [ $zsh = 'y' ]; then
     $cl -f $BASEDIR/.zshrc $HOME
     echo -e "${INFO}${cl} -f .zshrc successful"
-    $cl -f $BASEDIR/.zsh_aliases $HOME
+    $cl -f $BASEDIR/.zsh_aliases $ZSH_CONFIG
     echo -e "${INFO}${cl} -f .zsh_aliases successful"
     $cl -f $BASEDIR/.p10k.zsh $HOME
     echo -e "${INFO}${cl} -f .p10k.zsh successful"
