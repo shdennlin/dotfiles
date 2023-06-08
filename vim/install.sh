@@ -5,7 +5,9 @@ BASEDIR=$(dirname "$0")
 
 if [ $vim_config = 'y' ]; then
     if ! command_exists 'nvim' ; then # if command exist
-        sudo apt install -y neovim
+        echo "${WARRING}you need to install neovim first${NC}"
+        echo "${WARRING}on Ubuntu, you can install from snap, use ${GREEN}sudo snap install nvim --classic${NC}"
+        return 0
     fi
 
     dir="$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim"
