@@ -23,4 +23,8 @@ if [ $zsh = 'y' ]; then
         # set zsh as default in user
         sudo chsh -s /bin/zsh $USER
     fi
+
+    # remove site-functions
+    rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions/"*
+    rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions/".*
 fi
