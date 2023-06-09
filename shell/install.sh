@@ -21,7 +21,7 @@ if [ $zsh = 'y' ]; then
     if ! command_exists 'zsh' ; then # if command exist
         sudo apt install -y zsh
         # set zsh as default in user
-        sudo chsh -s /bin/zsh $USER
+        sudo chsh -s $(which zsh) $USER
     fi
 
     # remove site-functions
