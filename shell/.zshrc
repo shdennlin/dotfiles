@@ -26,6 +26,7 @@ znap prompt romkatv/powerlevel10k
 znap source zsh-users/zsh-autosuggestions
 znap source zsh-users/zsh-completions
 znap source zsh-users/zsh-syntax-highlighting
+znap source marlonrichert/zsh-hist # only need "expand-aliases"
 znap source hlissner/zsh-autopair
 znap source olets/zsh-window-title
 znap source asdf-vm/asdf
@@ -67,10 +68,21 @@ export EDITOR=nvim
 export LANG=en_US.UTF-8
 
 # history
+# the detailed meaning of the below three variable can be found in `man zshparam`.
 HISTFILE=~/.zsh_history
-HISTSIZE=999999999
-SAVEHIST=$HISTSIZE
-setopt SHARE_HISTORY
+HISTSIZE=1200000000  # the number of items for the internal history list
+SAVEHIST=1000000000  # maximum number of items for the history file
+# The meaning of these options can be found in man page of `zshoptions`.
+## History command configuration
+setopt extended_history       # record timestamp of command in HISTFILE
+setopt hist_expire_dups_first # delete duplicates first when HISTFILE size exceeds HISTSIZE
+setopt hist_ignore_dups       # ignore duplicated commands history list
+setopt hist_ignore_space      # ignore commands that start with space
+setopt hist_verify            # show command with history expansion to user before running it
+setopt share_history          # share command history data
+
+# zsh-hist
+zstyle ':hist:*' expand-aliases yes
 
 znap fpath _ ':'
 # ======================= setting end ========================
