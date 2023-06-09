@@ -51,8 +51,13 @@ fi
 
 if (( $+commands[poetry] )) && [ ! -f $FUNCTION_DIR/_poetry ]; then
     znap fpath _poetry "poetry completions zsh"
+    znap compile $FUNCTION_DIR
 fi
 
-if (( $+commands[asdf] )) && [ ! -f $FUNCTION_DIR/_asdf ]; then
-    znap fpath _asdf 'source "$ASDF_DIR/completions/asdf.bash"'
+if (( $+commands[asdf] )) && [ ! -f $ASDF_DIR/_asdf.zwc ]; then
+    znap compile $ASDF_DIR/completions/_asdf
+    znap compile $ASDF_DIR/completions/asdf.bash
+fi
+if (( $+commands[asdf] )); then
+    fpath=( $fpath $ASDF_DIR/completions )
 fi
