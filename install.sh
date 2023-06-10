@@ -1,10 +1,12 @@
 #!/bin/bash
 
 export NC='\033[0m' # No Color
+export BLACK='\033[0;30m'
 export GREEN='\033[0;32m'
 export YELLO='\033[0;33m'
 export RED='\033[0;31m'
 
+export DEBUG="${BLACK}DEBUG: ${NC}"
 export INFO="${GREEN}INFO: ${NC}"
 export WARNING="${YELLO}WARNING: ${NC}"
 export ERROR="${RED}ERROR: ${NC}"
@@ -27,12 +29,12 @@ else
     export cl='cp'
 fi
 
-export git=$(read_env "git")
-export zsh=$(read_env "zsh")
-export vim_config=$(read_env "vim_config")
-export tmux_config=$(read_env "tmux_config")
-export keymap=$(read_env "keymap")
+export git_config=$(read_env "git_config")
 export useful_package=$(read_env "useful_package")
+export neovim_config=$(read_env "neovim_config")
+export tmux_config=$(read_env "tmux_config")
+export zsh_config=$(read_env "zsh")
+export keymap=$(read_env "keymap")
 
 set -e
 #===== install =====

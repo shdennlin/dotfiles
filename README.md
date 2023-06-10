@@ -3,8 +3,8 @@
 - [Shawn's dotfiles](#shawns-dotfiles)
   - [Pre-requisite](#pre-requisite)
   - [include file \& function](#include-file--function)
-  - [How to use](#how-to-use)
   - [env file config](#env-file-config)
+  - [How to use](#how-to-use)
   - [QA](#qa)
 
 ## Pre-requisite
@@ -13,11 +13,26 @@
 
 ## include file & function
 
-1. utils [package](package/install.sh), ex: fzf, exa, zoxide
+1. utils [package](package/install.sh)
+   package list: `aria2, bat, exa, fd-find, fzf, ripgrep, thefuck, tmux, zoxide`
+   > **NOTE:** You may need **Administrator** to install packages.
 2. git config
-3. nvim config
-4. zsh config and alias
-5. Remap key: exchange ctrl_L and alt_L
+3. neovim config
+4. tmux config
+5. zsh config and alias
+6. Remap key: exchange `ctrl_L` and `alt_L`
+
+## env file config
+
+```bash
+computer_type=m # m or s (master or slave)
+useful_package=y # y or n
+git_config=y # y or n
+neovim_config=y # y or n
+tmux_config=y # y or n
+zsh_config=y # y or n
+keymap=y # y or n
+```
 
 ## How to use
 
@@ -41,21 +56,10 @@ cp .env.example .env
 
 4. (option) speed up zsh
 
+type following on terminal
+
 ```bash
 znap compile
-```
-
-## env file config
-
-```bash
-computer_type=m # m or s (master or slave)
-git=y # y or n
-useful_package=y # y or n
-alias_file=y # y or n
-zsh=y # y or n
-vim_config=y # y or n
-keymap=y # y or n
-
 ```
 
 ## QA
