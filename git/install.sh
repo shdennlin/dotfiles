@@ -1,7 +1,7 @@
 #!/bin/bash
 
 BASEDIR=$(dirname "$0")
-if [ $git == "y" ]; then
+if [ $git_config == "y" ]; then
     $cl -f $BASEDIR/.gitconfig $HOME
     echo -e "${INFO}${cl} -f .gitconfig successful"
     if [ -f .gitconfig.local ]; then

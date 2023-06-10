@@ -3,8 +3,9 @@ source ./functions.sh
 
 BASEDIR=$(dirname "$0")
 
-if [ $vim_config = 'y' ]; then
-    if ! command_exists 'nvim' ; then # if command exist
+if [ $neovim_config = 'y' ]; then
+    # check neovim is installed
+    if ! command_exists 'nvim' ; then
         echo -e "${ERROR}you need to install neovim first"
         echo -e "       on Ubuntu, you can install from snap, use ${GREEN}sudo snap install nvim --classic${NC}"
         exit 0
