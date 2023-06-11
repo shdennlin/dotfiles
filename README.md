@@ -38,31 +38,30 @@ keymap=y # y or n
 
 1. Download and modify env file
 
-```bash
-cd ~ && git clone https://github.com/shdennlin/dotfiles.git ~/.dotfiles/
-cd ~/.dotfiles
-cp .env.example .env
-```
+   ```bash
+   cd ~ && git clone https://github.com/shdennlin/dotfiles.git ~/.dotfiles/
+   cd ~/.dotfiles
+   cp .env.example .env
+   ```
 
 2. Edit the `.env` file
 
-3. Install
+3. Install from terminal
 
-```bash
-./install.sh
-```
+   ```bash
+   ./install.sh
+   ```
 
-3. After install, you need to restart your terminal. At the first restart, you need to wait for a while(10-30s) to install plugins
+4. After install, you need to restart your terminal. At the first restart, you need to wait for a while(10-30s) to install plugins
 
-4. (option) speed up zsh
+5. (option) speed up zsh
+   type following on terminal
 
-type following on terminal
-
-```bash
-znap compile
-```
+   ```bash
+   znap compile
+   ```
 
 ## QA
 
-1. The difference of `master` and `slave`?
+1. The difference of `master` and `slave` type?
    master use `ln` command to link file, slave use `cp` command to copy file.
