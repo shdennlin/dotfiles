@@ -57,7 +57,7 @@ znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
 [[ ! -f $HOME/.p10k.zsh ]]          || source $HOME/.p10k.zsh
 [[ ! -f $HOME/.zprofile ]]          || source $HOME/.zprofile
 [[ ! -f $ZSH_CONFIG/.zsh_aliases ]] || source $ZSH_CONFIG/.zsh_aliases
-[[ ! -f $ZSH_CONFIG/package.zsh ]]   || source $ZSH_CONFIG/package.zsh
+[[ ! -f $ZSH_CONFIG/package.zsh ]]  || source $ZSH_CONFIG/package.zsh
 # ======================== source end ========================
 
 
