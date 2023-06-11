@@ -5,7 +5,6 @@
   - [include file \& function](#include-file--function)
   - [env file config](#env-file-config)
   - [How to use](#how-to-use)
-  - [QA](#qa)
 
 ## Pre-requisite
 
@@ -13,7 +12,7 @@
 
 ## include file & function
 
-1. utils [package](package/install.sh)
+1. useful [packages](package/install.sh)
    package list: `aria2, bat, exa, fd-find, fzf, ripgrep, thefuck, tmux, zoxide`
    > **NOTE:** You may need **Administrator** to install packages.
 2. git config
@@ -25,7 +24,6 @@
 ## env file config
 
 ```bash
-computer_type=m # m or s (master or slave)
 useful_package=y # y or n
 git_config=y # y or n
 neovim_config=y # y or n
@@ -60,8 +58,3 @@ keymap=y # y or n
    ```bash
    znap compile
    ```
-
-## QA
-
-1. The difference of `master` and `slave` type?
-   master use `ln` command to link file, slave use `cp` command to copy file.

@@ -1,11 +1,12 @@
 #!/bin/bash
 
-BASEDIR=$(dirname "$0")
+source ./functions.sh
+BASEDIR=$(dirname $(realpath "$0"))
+
 if [ $git_config == "y" ]; then
-    $cl -f $BASEDIR/.gitconfig $HOME
-    echo -e "${INFO}${cl} -f .gitconfig successful"
-    if [ -f .gitconfig.local ]; then
-        $cl -f $BASEDIR/.gitconfig.local $HOME
-        echo -e "${INFO}${cl} -f .gitconfig.local successful"
-    fi
+    package_name="git config"
+    echo -e "${INFO}Install ${package_name}..."
+    cmd="ln -sf ${BASEDIR}/.gitconfig ${HOME}"
+    run_cmd "$package_name" "$cmd"
+    exit 0
 fi
