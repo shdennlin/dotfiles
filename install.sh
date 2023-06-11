@@ -34,9 +34,9 @@ export keymap=$(read_env "keymap")
 # set -e
 #===== install =====
 ./package/install.sh && echo "" || echo -e "${ERROR}Install useful package failed\n"
-./git/install.sh && echo "" || echo -e "${ERROR}Install git config failed\n"
-./shell/install.sh && echo "" || echo -e "${ERROR}Install shell config failed\n"
-./tmux/install.sh && echo "" || echo -e "${ERROR}Install tmux config failed\n"
-./xkb/install.sh && echo "" || echo -e "${ERROR}Install xkb config failed\n"
-./vim/install.sh && echo "" || echo -e "${ERROR}Install vim config failed\n"
+./git/install.sh     && echo "" || echo -e "${ERROR}Install git config failed\n"
+./zsh/install.sh     && echo "" || echo -e "${ERROR}Install zsh config failed\n"
+./tmux/install.sh    && echo "" || echo -e "${ERROR}Install tmux config failed\n"
+./neovim/install.sh  && echo "" || echo -e "${ERROR}Install neovim config failed\n"
+./xkb/install.sh     && echo "" || echo -e "${ERROR}Install xkb config failed\n"
 exit 0
