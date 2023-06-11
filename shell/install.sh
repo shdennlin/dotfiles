@@ -1,29 +1,35 @@
 #!/bin/bash
 source ./functions.sh
+BASEDIR=$(dirname $(realpath "$0"))
 
-BASEDIR=$(dirname "$0")
 ZSH_CUSTOM="$HOME/.zsh-plugins"
 ZSH_CONFIG="$ZSH_CUSTOM/.zsh-config"
 mkdir -pv $ZSH_CUSTOM
 mkdir -pv $ZSH_CONFIG
 
 if [ $zsh_config = 'y' ]; then
+    package_name="zsh config"
+    echo -e "${INFO}Install ${package_name}..."
     # check zsh is installed
     if ! command_exists 'zsh' ; then # if command exist
         echo -e "${ERROR}you need to install neovim first"
-        echo -e "       on Ubuntu, use ${GREEN}sudo apt install -y zsh${NC}, and use ${GREEN}chus -s \$(whoch zsh) \$USER${NC} to set zsh as default shell"
-        exit 0
+        echo -e "       on Ubuntu, use ${MAGENTA}sudo apt install -y zsh${NC}, and use ${MAGENTA}chus -s \$(whoch zsh) \$USER${NC} to set zsh as default shell"
+        exit 1
     fi
     
-    $cl -f $BASEDIR/.zshrc $HOME
-    echo -e "${INFO}${cl} -f .zshrc successful"
-    $cl -f $BASEDIR/.zsh_aliases $ZSH_CONFIG
-    echo -e "${INFO}${cl} -f .zsh_aliases successful"
-    $cl -f $BASEDIR/package.zsh $ZSH_CONFIG
-    echo -e "${INFO}${cl} -f package.zsh successful"
-    $cl -f $BASEDIR/.p10k.zsh $HOME
-    echo -e "${INFO}${cl} -f .p10k.zsh successful"
+    cmd="ln -sf $BASEDIR/.zshrc $HOME"
+    run_cmd ".zshrc" "$cmd"
+
+    cmd="ln -sf $BASEDIR/.zsh_aliases $ZSH_CONFIG"
+    run_cmd ".zsh_aliases" "$cmd"
+
+    cmd="ln -sf $BASEDIR/package.zsh $ZSH_CONFIG"
+    run_cmd "package.zsh" "$cmd"
+
+    cmd="ln -sf $BASEDIR/.p10k.zsh $HOME"
+    run_cmd ".p10k.zsh" "$cmd"
 
     # remove site-functions
+    echo -e "${BLUE}Remove site-functions...${NC}"
     rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions/"*
 fi

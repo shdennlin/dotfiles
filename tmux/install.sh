@@ -1,7 +1,11 @@
 #!/bin/bash
 
-BASEDIR=$(dirname "$0")
+source ./functions.sh
+BASEDIR=$(dirname $(realpath "$0"))
+
 if [ $tmux_config = 'y' ]; then
-    $cl -f $BASEDIR/.tmux.conf $HOME
-    echo -e "${INFO}${cl} -f .tmux.conf successful"
+    package_name="tmux config"
+    echo -e "${INFO}Install ${package_name}..."
+    cmd="ln -sf ${BASEDIR}/.tmux.conf ${HOME}"
+    run_cmd "$package_name" "$cmd"
 fi

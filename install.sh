@@ -1,15 +1,17 @@
 #!/bin/bash
 
 export NC='\033[0m' # No Color
-export BLACK='\033[0;30m'
 export GREEN='\033[0;32m'
 export YELLO='\033[0;33m'
+export BLUE='\033[0;34m'
+export MAGENTA='\033[0;35m'
 export RED='\033[0;31m'
 
-export DEBUG="${BLACK}DEBUG: ${NC}"
 export INFO="${GREEN}INFO: ${NC}"
 export WARNING="${YELLO}WARNING: ${NC}"
 export ERROR="${RED}ERROR: ${NC}"
+
+export BASEDIR=$(pwd)
 
 read_env () {
     echo $(grep -v '^#' .env | grep -e "$1" | sed -e 's/.*=//')
@@ -21,14 +23,7 @@ if [ ! -f .env ]; then
     exit
 fi
 
-#===== check install file =====
-computer_type=$(read_env "computer_type")
-if [ $computer_type = 'm' ]; then #master or slave
-    export cl='ln'
-else
-    export cl='cp'
-fi
-
+# read config
 export git_config=$(read_env "git_config")
 export useful_package=$(read_env "useful_package")
 export neovim_config=$(read_env "neovim_config")
@@ -36,11 +31,12 @@ export tmux_config=$(read_env "tmux_config")
 export zsh_config=$(read_env "zsh")
 export keymap=$(read_env "keymap")
 
-set -e
+# set -e
 #===== install =====
-./git/install.sh
-./package/install.sh
-./shell/install.sh
-./vim/install.sh
-./tmux/install.sh
-./xkb/install.sh
+./package/install.sh && echo "" || echo -e "${ERROR}Install useful package failed\n"
+./git/install.sh && echo "" || echo -e "${ERROR}Install git config failed\n"
+./shell/install.sh && echo "" || echo -e "${ERROR}Install shell config failed\n"
+./tmux/install.sh && echo "" || echo -e "${ERROR}Install tmux config failed\n"
+./xkb/install.sh && echo "" || echo -e "${ERROR}Install xkb config failed\n"
+./vim/install.sh && echo "" || echo -e "${ERROR}Install vim config failed\n"
+exit 0
