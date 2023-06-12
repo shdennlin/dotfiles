@@ -1,16 +1,28 @@
 # Shawn's dotfiles
 
 - [Shawn's dotfiles](#shawns-dotfiles)
-  - [Pre-requisite](#pre-requisite)
-  - [include file \& function](#include-file--function)
-  - [env file config](#env-file-config)
+  - [Support OS](#support-os)
+  - [Requirements](#requirements)
+  - [Include Function](#include-function)
   - [How to use](#how-to-use)
+  - [".env" file setting example](#env-file-setting-example)
 
-## Pre-requisite
+## Support OS
 
-1. neovim >= 0.8
+- Debian-based Linux
+  - [x] Ubuntu >= 22.04
+  - [ ] Debian (not test)
+- Arch-based Linux
+  - [ ] (**TODO**) Arch Linux
+  - [ ] Manjaro
+- [ ] (**TODO**) MacOS
 
-## include file & function
+## Requirements
+
+1. zsh >= 5.8.1
+2. neovim >= 0.8
+
+## Include Function
 
 1. useful [packages](package/install.sh)
    package list: `aria2, bat, exa, fd-find, fzf, ripgrep, thefuck, tmux, zoxide`
@@ -20,17 +32,6 @@
 4. tmux config
 5. zsh config and alias
 6. Remap key: exchange `ctrl_L` and `alt_L`
-
-## env file config
-
-```bash
-useful_package=y # y or n
-git_config=y # y or n
-neovim_config=y # y or n
-tmux_config=y # y or n
-zsh_config=y # y or n
-keymap=y # y or n
-```
 
 ## How to use
 
@@ -42,7 +43,7 @@ keymap=y # y or n
    cp .env.example .env
    ```
 
-2. Edit the `.env` file
+2. Edit the `.env` file -> [.env file setting example](#env-file-setting-example)
 
 3. Install from terminal
 
@@ -58,3 +59,14 @@ keymap=y # y or n
    ```bash
    znap compile
    ```
+
+## ".env" file setting example
+
+```bash
+useful_package=y # y or n
+git_config=y # y or n
+neovim_config=y # y or n
+tmux_config=y # y or n
+zsh_config=y # y or n
+keymap=n # y or n
+```
