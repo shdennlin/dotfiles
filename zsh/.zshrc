@@ -1,5 +1,3 @@
-# date with 3 decimal point
-s=$(date +%s%N)
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -86,9 +84,3 @@ zstyle ':hist:*' expand-aliases yes
 
 znap fpath _ ':'
 # ======================= setting end ========================
-
-e=$(date +%s%N)
-now=$(date)
-time_file="$ZSH_CUSTOM/.time_record.log"
-echo -n $(echo "scale=3;($e-$s)/1000000000" | bc | awk '{printf "%.3f s\n", $0}') >> $time_file
-echo " <-" $now >> $time_file
