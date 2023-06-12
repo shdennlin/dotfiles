@@ -11,11 +11,9 @@
 
 - Debian-based Linux
   - [x] Ubuntu >= 22.04
-  - [ ] Debian (not test)
 - Arch-based Linux
-  - [ ] (**TODO**) Arch Linux
-  - [ ] Manjaro
-- [ ] (**TODO**) MacOS
+  - [ ] Arch Linux
+- [x] MacOS
 
 ## Requirements
 
@@ -25,7 +23,7 @@
 ## Include Function
 
 1. useful [packages](package/install.sh)
-   package list: `aria2, bat, exa, fd-find, fzf, ripgrep, thefuck, tmux, zoxide`
+   package list: [aria2](https://github.com/aria2/aria2), [bat](https://github.com/sharkdp/bat), [exa](https://github.com/ogham/exa), [fd](https://github.com/sharkdp/fd), [fzf](https://github.com/junegunn/fzf), [ripgrep](https://github.com/BurntSushi/ripgrep), [thefuck](https://github.com/nvbn/thefuck), [tmux](https://github.com/tmux/tmux/wiki), [zoxide](https://github.com/ajeetdsouza/zoxide)
    > **NOTE:** You may need **Administrator** to install packages.
 2. git config
 3. neovim config
