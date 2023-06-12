@@ -12,8 +12,8 @@ if [ $zsh_config = 'y' ]; then
     echo -e "${INFO}Install ${package_name}..."
     # check zsh is installed
     if ! command_exists 'zsh' ; then # if command exist
-        echo -e "${ERROR}you need to install neovim first"
-        echo -e "       on Ubuntu, use ${MAGENTA}sudo apt install -y zsh${NC}, and use ${MAGENTA}chus -s \$(whoch zsh) \$USER${NC} to set zsh as default shell"
+        echo -e "${ERROR}you need to install zsh first"
+        echo -e "       on Ubuntu, use ${MAGENTA}sudo apt install -y zsh${NC}, and use ${MAGENTA}chsh -s \$(which zsh) \$USER${NC} to set zsh as default shell"
         exit 1
     fi
     
