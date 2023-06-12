@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ./functions.sh
+
 export NC='\033[0m' # No Color
 export GREEN='\033[0;32m'
 export YELLO='\033[0;33m'
@@ -12,6 +14,9 @@ export WARNING="${YELLO}WARNING: ${NC}"
 export ERROR="${RED}ERROR: ${NC}"
 
 export BASEDIR=$(pwd)
+
+export platform=$(detect_os)
+echo -e "${INFO}Detect OS: ${GREEN}${platform}${NC}\n"
 
 read_env () {
     echo $(grep -v '^#' .env | grep -e "$1" | sed -e 's/.*=//')

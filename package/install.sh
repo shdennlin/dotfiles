@@ -23,7 +23,19 @@ if [ $useful_package = 'y' ]; then
     done
     echo -e "${BLUE}package list:${GREEN}${all_package}${NC}"
 
-    cmd="sudo apt install -qq -y${all_package}"
+    shopt -s nocasematch
+    package_tool=""
+    pkg_install_cmd=""
+    if [[ $platform =~ ("ubuntu"|"debian") ]]; then
+        echo "match"
+        package_tool="apt"
+        pkg_install_cmd="sudo ${package_tool} install -qq -y"
+    else
+        echo -e "${ERROR}your OS type not support yet install package script"
+        exit 1
+    fi
+
+    cmd="${pkg_install_cmd}${all_package}"
     echo -e "${MAGENTA}${cmd}${NC}"
     eval $cmd
     if [ $? -ne 0 ]; then
