@@ -18,7 +18,7 @@ if [ $useful_package = 'y' ]; then
     pkg_install_cmd=""
     # Change the package name to correspond to the relative OS
     for (( i=0; i<${#packages[@]}; i++ )); do
-        if [[ $platform =~ ("ubuntu"|"debian") ]]; then
+        if [[ $platform =~ ("debian"|"ubuntu"|"kali") ]]; then
             package_tool="apt"
             pkg_install_cmd="sudo ${package_tool} install -qq -y"
 
