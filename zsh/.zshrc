@@ -33,7 +33,6 @@ znap source asdf-vm/asdf
 # from oh-my-zsh
 [[ ! -d $HOME/.zsh-plugins/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
 znap source ohmyzsh/ohmyzsh lib/directories
-znap source ohmyzsh/ohmyzsh lib/key-bindings
 znap source ohmyzsh/ohmyzsh plugins/aliases
 znap source ohmyzsh/ohmyzsh plugins/command-not-found
 znap source ohmyzsh/ohmyzsh plugins/common-aliases
