@@ -25,11 +25,12 @@ znap source zsh-users/zsh-autosuggestions
 znap source zsh-users/zsh-completions
 znap source zsh-users/zsh-syntax-highlighting
 znap source marlonrichert/zsh-hist # only need "expand-aliases"
+znap source marlonrichert/zsh-autocomplete
 znap source hlissner/zsh-autopair
 znap source olets/zsh-window-title
 znap source asdf-vm/asdf
 
-# # from oh-my-zsh
+# from oh-my-zsh
 [[ ! -d $HOME/.zsh-plugins/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
 znap source ohmyzsh/ohmyzsh lib/directories
 znap source ohmyzsh/ohmyzsh lib/key-bindings
@@ -39,8 +40,8 @@ znap source ohmyzsh/ohmyzsh plugins/common-aliases
 znap source ohmyzsh/ohmyzsh plugins/cp
 znap source ohmyzsh/ohmyzsh plugins/docker-compose
 znap source ohmyzsh/ohmyzsh plugins/extract # command: extract
-znap source ohmyzsh/ohmyzsh plugins/fzf
-znap source Aloxaf/fzf-tab
+#znap source ohmyzsh/ohmyzsh plugins/fzf
+#znap source Aloxaf/fzf-tab
 znap source ohmyzsh/ohmyzsh plugins/git
 znap source ohmyzsh/ohmyzsh plugins/globalias
 znap source ohmyzsh/ohmyzsh plugins/sudo
@@ -61,6 +62,15 @@ znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
 
 
 # ====================== setting start =======================
+# [Ctrl-RightArrow] - move forward one word
+bindkey -M emacs '^[[1;5C' forward-word
+bindkey -M viins '^[[1;5C' forward-word
+bindkey -M vicmd '^[[1;5C' forward-word
+# [Ctrl-LeftArrow] - move backward one word
+bindkey -M emacs '^[[1;5D' backward-word
+bindkey -M viins '^[[1;5D' backward-word
+bindkey -M vicmd '^[[1;5D' backward-word
+
 # environment variables
 export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
 export EDITOR=nvim
@@ -82,6 +92,10 @@ setopt share_history          # share command history data
 
 # zsh-hist
 zstyle ':hist:*' expand-aliases yes
+
+# zsh-autosuggestions
+bindkey '\t' menu-select "$terminfo[kcbt]" menu-select
+bindkey -M menuselect '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
 
 znap fpath _ ':'
 # ======================= setting end ========================
