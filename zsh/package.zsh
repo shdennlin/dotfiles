@@ -61,3 +61,10 @@ fi
 if (( $+commands[asdf] )); then
     fpath=( $fpath $ASDF_DIR/completions )
 fi
+
+if (( $+commands[croc] )); then
+    PROG=croc
+    CLI_ZSH_AUTOCOMPLETE_HACK=1
+    source /etc/zsh/zsh_autocomplete_croc
+fi
+
