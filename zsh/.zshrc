@@ -25,7 +25,6 @@ znap source zsh-users/zsh-autosuggestions
 znap source zsh-users/zsh-completions
 znap source zsh-users/zsh-syntax-highlighting
 znap source marlonrichert/zsh-hist # only need "expand-aliases"
-znap source marlonrichert/zsh-autocomplete
 znap source hlissner/zsh-autopair
 znap source olets/zsh-window-title
 znap source asdf-vm/asdf
@@ -39,8 +38,8 @@ znap source ohmyzsh/ohmyzsh plugins/common-aliases
 znap source ohmyzsh/ohmyzsh plugins/cp
 znap source ohmyzsh/ohmyzsh plugins/docker-compose
 znap source ohmyzsh/ohmyzsh plugins/extract # command: extract
-#znap source ohmyzsh/ohmyzsh plugins/fzf
-#znap source Aloxaf/fzf-tab
+znap source ohmyzsh/ohmyzsh plugins/fzf
+znap source Aloxaf/fzf-tab
 znap source ohmyzsh/ohmyzsh plugins/git
 znap source ohmyzsh/ohmyzsh plugins/globalias
 znap source ohmyzsh/ohmyzsh plugins/sudo
@@ -91,10 +90,6 @@ setopt share_history          # share command history data
 
 # zsh-hist
 zstyle ':hist:*' expand-aliases yes
-
-# zsh-autosuggestions
-bindkey '\t' menu-select "$terminfo[kcbt]" menu-select
-bindkey -M menuselect '\t' menu-complete "$terminfo[kcbt]" reverse-menu-complete
 
 znap fpath _ ':'
 # ======================= setting end ========================
