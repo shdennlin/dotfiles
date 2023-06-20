@@ -60,6 +60,7 @@ znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
 
 
 # ====================== setting start =======================
+WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
 # [Ctrl-RightArrow] - move forward one word
 bindkey -M emacs '^[[1;5C' forward-word
 bindkey -M viins '^[[1;5C' forward-word
