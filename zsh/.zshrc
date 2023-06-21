@@ -12,6 +12,12 @@ export ZSH_CONFIG="$ZSH_CUSTOM/.zsh-config"
   git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git $ZSH_CUSTOM/znap
 source $ZSH_CUSTOM/znap/znap.zsh  # Start Znap
 
+# ====================== bindkey start =======================
+bindkey -e
+bindkey -M emacs '^[[1;5C' forward-word  # [Ctrl-RightArrow] - move forward one word
+bindkey -M emacs '^[[1;5D' backward-word # [Ctrl-LeftArrow] - move backward one word
+# ======================= bindkey end ========================
+ 
 # `znap prompt` makes your prompt visible in just 15-40ms!
 # `znap source` starts plugins.
 # `znap eval` makes evaluating generated command output up to 10 times faster.
@@ -24,7 +30,6 @@ znap prompt romkatv/powerlevel10k
 znap source zsh-users/zsh-autosuggestions
 znap source zsh-users/zsh-completions
 znap source zsh-users/zsh-syntax-highlighting
-znap source marlonrichert/zsh-hist # only need "expand-aliases"
 znap source hlissner/zsh-autopair
 znap source olets/zsh-window-title
 znap source asdf-vm/asdf
@@ -61,14 +66,6 @@ znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
 
 # ====================== setting start =======================
 WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
-# [Ctrl-RightArrow] - move forward one word
-bindkey -M emacs '^[[1;5C' forward-word
-bindkey -M viins '^[[1;5C' forward-word
-bindkey -M vicmd '^[[1;5C' forward-word
-# [Ctrl-LeftArrow] - move backward one word
-bindkey -M emacs '^[[1;5D' backward-word
-bindkey -M viins '^[[1;5D' backward-word
-bindkey -M vicmd '^[[1;5D' backward-word
 
 # environment variables
 export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
@@ -88,9 +85,6 @@ setopt hist_ignore_dups       # ignore duplicated commands history list
 setopt hist_ignore_space      # ignore commands that start with space
 setopt hist_verify            # show command with history expansion to user before running it
 setopt share_history          # share command history data
-
-# zsh-hist
-zstyle ':hist:*' expand-aliases yes
 
 znap fpath _ ':'
 # ======================= setting end ========================
