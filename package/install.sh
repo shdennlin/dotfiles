@@ -25,6 +25,10 @@ if [ $useful_package = 'y' ]; then
             if [[ ${packages[i]} == "fd" ]]; then
                 packages[i]="fd-find"
             fi
+	
+        elif [[ $platform =~ "arch" ]]; then
+            package_tool="pacman"
+            pkg_install_cmd="sudo ${package_tool} -S"
 
         elif [[ $platform =~ "darwin" ]]; then
             package_tool="brew"
