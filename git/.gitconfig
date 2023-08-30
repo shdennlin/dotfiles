@@ -22,6 +22,7 @@
 	safecrlf = true
 	ignorecase= false
 	pager =
+	quotepath = false
 
 [credential]
 	helper = store
