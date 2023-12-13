@@ -47,7 +47,7 @@ poetry-shell() {
 # ============alias=============
 
 alias -g R='| rg'
-alias -g e='--help'
+alias -g ee='--help'
 alias -g el='--help | less'
 
 
