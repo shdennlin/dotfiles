@@ -85,6 +85,9 @@ setopt hist_ignore_dups       # ignore duplicated commands history list
 setopt hist_ignore_space      # ignore commands that start with space
 setopt hist_verify            # show command with history expansion to user before running it
 setopt share_history          # share command history data
+setopt multios                # enable redirect to multiple streams: echo >file1 >file2
+setopt long_list_jobs         # show long list format job notifications
+setopt interactivecomments    # recognize comments
 
 znap fpath _ ':'
 # ======================= setting end ========================
