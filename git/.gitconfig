@@ -13,16 +13,18 @@
 	username = shdennlin
 
 [include]
-  path = ~/.gitconfig.local
+	path = ~/.gitconfig.local
 
 [core]
 	longpaths = true
 	editor = nvim
-	autocrlf = input
-	safecrlf = true
 	ignorecase= false
 	pager =
 	quotepath = false
+	# Normalizing Line Endings
+	eol = lf
+	autocrlf = input
+	safecrlf = true
 
 [credential]
 	helper = store
