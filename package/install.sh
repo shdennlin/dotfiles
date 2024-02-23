@@ -12,6 +12,7 @@ if [ $useful_package = 'y' ]; then
     package_name="useful-packages"
     echo -e "${INFO}Install/Upgrade ${package_name} config..."
     packages=("aria2" "bat" "exa" "fd" "fzf" "ripgrep" "thefuck" "tmux" "zoxide")
+    packages=("aria2" "bat" "exa" "fd" "fzf" "plocate" "ripgrep" "thefuck" "tmux" "zoxide")
 
     shopt -s nocasematch
     package_tool=""
@@ -46,6 +47,11 @@ if [ $useful_package = 'y' ]; then
     cmd="${pkg_install_cmd} ${all_package}"
     echo -e "${MAGENTA}${cmd}${NC}"
     eval $cmd
+
+    cmd="sudo updatedb"
+    echo -e "${MAGENTA}${cmd}${NC}"
+    eval $cmd
+
     if [ $? -ne 0 ]; then
         echo -e "${ERROR}command ${MAGENTA}${cmd}${NC} failed"
         exit 1

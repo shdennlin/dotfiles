@@ -17,7 +17,7 @@ bindkey -e
 bindkey -M emacs '^[[1;5C' forward-word  # [Ctrl-RightArrow] - move forward one word
 bindkey -M emacs '^[[1;5D' backward-word # [Ctrl-LeftArrow] - move backward one word
 # ======================= bindkey end ========================
- 
+
 # `znap prompt` makes your prompt visible in just 15-40ms!
 # `znap source` starts plugins.
 # `znap eval` makes evaluating generated command output up to 10 times faster.
@@ -41,6 +41,7 @@ znap source ohmyzsh/ohmyzsh plugins/aliases
 znap source ohmyzsh/ohmyzsh plugins/command-not-found
 znap source ohmyzsh/ohmyzsh plugins/common-aliases
 znap source ohmyzsh/ohmyzsh plugins/cp
+znap source ohmyzsh/ohmyzsh plugins/direnv
 znap source ohmyzsh/ohmyzsh plugins/docker-compose
 znap source ohmyzsh/ohmyzsh plugins/extract # command: extract
 znap source ohmyzsh/ohmyzsh plugins/fzf
