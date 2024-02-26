@@ -11,7 +11,6 @@ check_package_tool() {
 if [ $useful_package = 'y' ]; then
     package_name="useful-packages"
     echo -e "${INFO}Install/Upgrade ${package_name} config..."
-    packages=("aria2" "bat" "exa" "fd" "fzf" "ripgrep" "thefuck" "tmux" "zoxide")
     packages=("aria2" "bat" "exa" "fd" "fzf" "plocate" "ripgrep" "thefuck" "tmux" "zoxide")
 
     shopt -s nocasematch
