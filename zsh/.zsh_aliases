@@ -57,6 +57,8 @@ change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdfind' 'fdfind --type directory'
 change_alias 'ff' 'fdfind' 'fdfind --type file'
 
+change_alias 'fk' 'fuck' 'fuck'
+
 change_alias 'l'  'exa' 'exa -laghH'
 change_alias 'lb' 'exa' 'exa -lghHB'
 change_alias 'ls' 'exa' 'exa'
