@@ -54,6 +54,7 @@ if (( $+commands[poetry] )) && [ ! -f $FUNCTION_DIR/_poetry ]; then
     znap compile $FUNCTION_DIR
 fi
 
+
 if (( $+commands[asdf] )) && [ ! -f $ASDF_DIR/_asdf.zwc ]; then
     znap compile $ASDF_DIR/completions/_asdf
     znap compile $ASDF_DIR/completions/asdf.bash
@@ -62,9 +63,12 @@ if (( $+commands[asdf] )); then
     fpath=( $fpath $ASDF_DIR/completions )
 fi
 
+if (( $+commands[croc] )) && [ ! -f $FUNCTION_DIR/_croc ]; then
+    znap fpath _croc "curl https://raw.githubusercontent.com/schollz/croc/main/src/install/zsh_autocomplete"
+fi
 if (( $+commands[croc] )); then
     PROG=croc
     CLI_ZSH_AUTOCOMPLETE_HACK=1
-    source /etc/zsh/zsh_autocomplete_croc
+    source $FUNCTION_DIR/_croc
 fi
 
