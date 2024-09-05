@@ -49,6 +49,7 @@ poetry-shell() {
 alias -g R='| rg'
 alias -g ee='--help'
 alias -g el='--help | less'
+alias -g yy='--yes'
 
 
 change_alias 'bat' 'batcat' 'batcat'
