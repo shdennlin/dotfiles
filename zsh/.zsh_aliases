@@ -54,6 +54,7 @@ alias -g yy='--yes'
 
 change_alias 'bat' 'batcat' 'batcat'
 change_alias 'c'  'xclip' "xclip -selection clipboard"
+alias -g C="| c"
 change_alias 'dl' 'aria2c' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdfind' 'fdfind --type directory'
 change_alias 'ff' 'fdfind' 'fdfind --type file'
