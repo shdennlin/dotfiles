@@ -10,7 +10,7 @@
 ## Support OS
 
 - Debian-based Linux
-  - Ubuntu >= 22.04
+  - Ubuntu >= 24.04
 - Arch-based Linux
   - Arch Linux
 - MacOS

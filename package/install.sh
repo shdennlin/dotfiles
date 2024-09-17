@@ -47,9 +47,9 @@ if [ $useful_package = 'y' ]; then
     echo -e "${MAGENTA}${cmd}${NC}"
     eval $cmd
 
-    cmd="sudo updatedb"
-    echo -e "${MAGENTA}${cmd}${NC}"
-    eval $cmd
+    # cmd="sudo updatedb"
+    # echo -e "${MAGENTA}${cmd}${NC}"
+    # eval $cmd
 
     if [ $? -ne 0 ]; then
         echo -e "${ERROR}command ${MAGENTA}${cmd}${NC} failed"
