@@ -34,6 +34,10 @@ if [ $useful_package = 'y' ]; then
             package_tool="brew"
             check_package_tool $package_tool
             pkg_install_cmd="${package_tool} install --quiet"
+
+            if [[ ${packages[i]} == "plocate" ]]; then
+                packages[i]="findutils"
+            fi
         else
             echo -e "${ERROR}your OS type not support yet install package script"
             exit 1
