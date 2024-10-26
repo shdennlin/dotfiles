@@ -61,11 +61,14 @@ change_alias 'ff' 'fdfind' 'fdfind --type file'
 
 change_alias 'fk' 'fuck' 'fuck'
 
-change_alias 'l'  'exa' 'exa -laghH'
-change_alias 'lb' 'exa' 'exa -lghHB'
-change_alias 'ls' 'exa' 'exa'
-change_alias 'la' 'exa' 'exa -a'
-change_alias 'll' 'exa' 'exa -lghH'
+change_alias 'gce' 'gh' 'gh copilot explain'
+change_alias 'gcs' 'gh' 'gh copilot suggest'
+
+change_alias 'l'  'eza' 'eza -laghH'
+change_alias 'lb' 'eza' 'eza -lghHB'
+change_alias 'ls' 'eza' 'eza'
+change_alias 'la' 'eza' 'eza -a'
+change_alias 'll' 'eza' 'eza -lghH'
 
 change_alias 'v' 'vim' 'vim'
 change_alias 'v' 'nvim' 'nvim'

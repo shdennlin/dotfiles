@@ -72,3 +72,7 @@ if (( $+commands[croc] )); then
     source $FUNCTION_DIR/_croc
 fi
 
+if (( $+commands[gh] )) && [ ! -f $FUNCTION_DIR/_gh ]; then
+    znap fpath _gh "gh completion -s zsh"
+    znap compile $FUNCTION_DIR
+fi
