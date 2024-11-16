@@ -1,0 +1,18 @@
+{{ if not .applyGit }}
+.gitconfig
+{{ end }}
+
+{{ if not .applyNeovim }}
+.config/nvim
+{{ end }}
+
+
+{{ if not .applyTmux }}
+.tmux.conf
+{{ end }}
+
+{{ if not .applyZsh }}
+.zsh
+.zshrc
+.p10k.zsh
+{{ end }}
