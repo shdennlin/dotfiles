@@ -17,16 +17,16 @@ if [ $zsh_config = 'y' ]; then
         exit 1
     fi
     
-    cmd="ln -sf $BASEDIR/.zshrc $HOME"
+    cmd="ln -f $BASEDIR/.zshrc $HOME"
     run_cmd ".zshrc" "$cmd"
 
-    cmd="ln -sf $BASEDIR/.zsh_aliases $ZSH_CONFIG"
+    cmd="ln -f $BASEDIR/.zsh_aliases $ZSH_CONFIG"
     run_cmd ".zsh_aliases" "$cmd"
 
-    cmd="ln -sf $BASEDIR/package.zsh $ZSH_CONFIG"
+    cmd="ln -f $BASEDIR/package.zsh $ZSH_CONFIG"
     run_cmd "package.zsh" "$cmd"
 
-    cmd="ln -sf $BASEDIR/.p10k.zsh $HOME"
+    cmd="ln -f $BASEDIR/.p10k.zsh $HOME"
     run_cmd ".p10k.zsh" "$cmd"
 
     # remove site-functions

@@ -14,8 +14,10 @@ source $ZSH_CUSTOM/znap/znap.zsh  # Start Znap
 
 # ====================== bindkey start =======================
 bindkey -e
-bindkey -M emacs '^[[1;5C' forward-word  # [Ctrl-RightArrow] - move forward one word
-bindkey -M emacs '^[[1;5D' backward-word # [Ctrl-LeftArrow] - move backward one word
+bindkey -M emacs '^[[1;5C' forward-word  # [Option-b] - move forward one word
+bindkey -M emacs '^[[1;3C' forward-word  # [Option-RightArrow] - move forward one word
+bindkey -M emacs '^[[1;5D' backward-word # [Option-f] - move backward one word
+bindkey -M emacs '^[[1;3D'  backward-word # [Option-LeftArrow] - move backward one word
 # ======================= bindkey end ========================
 
 # `znap prompt` makes your prompt visible in just 15-40ms!
