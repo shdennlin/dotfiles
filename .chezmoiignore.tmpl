@@ -16,3 +16,8 @@
 .zshrc
 .p10k.zsh
 {{ end }}
+
+{{ if not .installUsefulPackages }}
+00-install-pre-requisites-darwin.sh
+install-packages-darwin.sh
+{{ end }}

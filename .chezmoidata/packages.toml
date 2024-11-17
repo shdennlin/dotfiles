@@ -1,0 +1,28 @@
+[packages.darwin]
+brews = [
+  "aria2",
+  "asdf",
+  "bat",
+  "croc",
+  "curl",
+  "dust",
+  "dua-cli",
+  "eza",
+  "fd",
+  "fzf",
+  "findutils",
+  "gh",
+  "git",
+  "git-lfs",
+  "neovim",
+  "ripgrep",
+  "thefuck",
+  "tmux",
+  "zoxide"
+]
+
+casks = [
+  "font-hack-nerd-font",
+  "iterm2",
+  "orbstack"
+]
