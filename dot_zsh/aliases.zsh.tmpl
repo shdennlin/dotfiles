@@ -78,11 +78,16 @@ change_alias 'fuck' 'fk' 'fuck'
 change_alias 'gh' 'gce' 'gh copilot explain'
 change_alias 'gh' 'gcs' 'gh copilot suggest'
 
-change_alias 'eza' 'l'  'eza -laghH'
-change_alias 'eza' 'lb' 'eza -lghHB'
-change_alias 'eza' 'ls' 'eza'
-change_alias 'eza' 'la' 'eza -a'
-change_alias 'eza' 'll' 'eza -lghH'
+
+eza="eza"
+if ! command -v eza >/dev/null; then
+    eza="exa"
+fi
+change_alias "${eza}" 'l'  "${eza} -laghH"
+change_alias "${eza}" 'lb' "${eza} -lghHB"
+change_alias "${eza}" 'ls' "${eza}"
+change_alias "${eza}" 'la' "${eza} -a"
+change_alias "${eza}" 'll' "${eza} -lghH"
 
 change_alias 'vim' 'v' 'vim'
 change_alias 'nvim' 'v' 'nvim'
