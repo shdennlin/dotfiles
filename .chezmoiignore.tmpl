@@ -3,8 +3,9 @@
 {{ end }}
 
 {{ if not .applyNeovim }}
-.config/nvim
+nvim-plugin-checking.sh
 nvim-plugin-install.sh
+.config/nvim
 {{ end }}
 
 
@@ -13,6 +14,7 @@ nvim-plugin-install.sh
 {{ end }}
 
 {{ if not .applyZsh }}
+zsh-checking.sh
 .zsh
 .zshrc
 .p10k.zsh

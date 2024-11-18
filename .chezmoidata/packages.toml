@@ -45,7 +45,7 @@ apt = [
 ]
 
 cmd = [
-  ["asdf", "asdf", "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1"],
+  ["asdf", "asdf", "git clone https://github.com/asdf-vm/asdf.git ~/.asdf 2>/dev/null || echo \"Repo already exists. Skipping clone.\""],
   ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
   ["dua-cli", "dua", "curl -LSfs https://raw.githubusercontent.com/Byron/dua-cli/master/ci/install.sh | sh -s -- --git Byron/dua-cli --target x86_64-unknown-linux-musl --crate dua --tag v2.29.0"],
 ]
