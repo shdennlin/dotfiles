@@ -1,3 +1,4 @@
+# The Useful Packages for macOS Systems
 [packages.darwin]
 brews = [
   "aria2",
@@ -26,6 +27,7 @@ casks = [
   "orbstack"
 ]
 
+# The Useful Packages for Linux Systems
 [packages.linux]
 packages = [
   "aria2",

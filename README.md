@@ -8,6 +8,8 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
   - [Prerequisites](#prerequisites)
   - [How To Use](#how-to-use)
   - [Q/A](#qa)
+    - [Update to my latest configurations](#update-to-my-latest-configurations)
+    - [Configuration file](#configuration-file)
     - [The font of the terminal is not correct](#the-font-of-the-terminal-is-not-correct)
 
 ## Support OS
@@ -34,9 +36,10 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
 
 ## Prerequisites
 
-Install [chezmoi](https://www.chezmoi.io/) first. You can install it by running the following command:
+1. [Git](https://git-scm.com/)
+2. [chezmoi](https://www.chezmoi.io/). You can install it by running the following command:
 
-``` bash
+```bash
     # MacOS
     brew install chezmoi
     # Base on Arch Linux
@@ -51,14 +54,62 @@ Get More information about how to install chezmoi from [here](https://www.chezmo
 
 ## How To Use
 
-``` bash
-    chezmoi init --verbose https://github.com/shdennlin/chezmoi.git
+Quick Installations:
+
+```bash
+    chezmoi init --apply shdennlin
+```
+
+Or you can install it manually and apply the configurations by following the steps below:
+
+```bash
+    chezmoi init shdennlin
     chezmoi edit-config # Edit the config file, set the value you want
     chezmoi apply --dry-run # Check the changes, you can skip this step if you want
     chezmoi apply
 ```
 
+Apply the configurations if you have already installed the configurations or got failed during the installation:
+
+```bash
+    chezmoi apply
+```
+
 ## Q/A
+
+### Update to my latest configurations
+
+```bash
+    chezmoi update
+```
+
+### Configuration file
+
+The config file is located at `~/.config/chezmoi/chezmoi.toml` by default, you can edit it by using `chezmoi edit-config` command quickly.
+
+My Configurations can be found in the [.chezmoi.toml.tmpl](./.chezmoi.toml.tmpl), the following is the default value and explanation:
+
+```toml
+[data]
+  # Set "true" if you want to apply the configuration
+  applyGit    = true
+  applyNeovim = true
+  applyTmux   = true
+  applyZsh    = true
+  # If you want to install useful packages, set "true"
+  # package list is in {{ .chezmoi.sourceDir }}, you can use `chezmoi cd` to go to the source directory of chezmoi quickly
+  # and find the list in `.chezmoidata/packages.toml`
+  installUsefulPackages = true
+
+# If you select to apply Git configuration, fill in the following fields
+[data.git]
+  name = ""
+  username = ""
+  email = ""
+  # If you want to use gpg sign, set gpgsign to "true" and set signingkey
+  gpgsign = "false"
+  signingkey = ""
+```
 
 ### The font of the terminal is not correct
 
