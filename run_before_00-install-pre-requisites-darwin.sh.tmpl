@@ -27,6 +27,11 @@ if ! command -v nvim >/dev/null; then
   echo -e "${HIGHLIGHT}brew install neovim${NC}"
   exit 1
 fi
+if ! command -v git >/dev/null; then
+  echo -e "${WARNING}You need to install Git first. Please run the following command to install Git:${NC}"
+  echo -e "${HIGHLIGHT}brew install git${NC}"
+  exit 1
+fi
 {{ end -}}
 
 {{ end -}}
