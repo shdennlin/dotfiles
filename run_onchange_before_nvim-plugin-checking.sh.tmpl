@@ -16,7 +16,7 @@ function snapCheck(){
   if ! command -v snap >/dev/null; then
     echo -e "${WARNING}Snap is not installed. You need to install Snap first.${NC}"
     echo -e "Please install Snap by running the following command:"
-    echo -e "${HIGHLIGHT}sudo apt update && sudo apt install snapd && sudo snap install core${NC}"
+    echo -e "${HIGHLIGHT}sudo apt update && sudo apt install snapd -y && sudo snap install core${NC}"
     exit 1
   fi
 }
@@ -55,4 +55,10 @@ if ! command -v nvim >/dev/null; then
   echo -e "${CMD}$install_cmd"
   eval "$install_cmd"
   echo -e "${SUCCESS}Neovim has been installed successfully.${NC}"
+fi
+
+# Re-Check if Neovim is installed
+if ! command -v nvim >/dev/null; then
+  echo -e "${ERROR}Neovim is not installed. Please Check your Environment Path or Install Neovim manually.${NC}"
+  exit 1
 fi
