@@ -12,7 +12,6 @@ HIGHLIGHT="\033[1;36m" # Cyan
 CMD="\033[1;90m"       # Gray
 SUCCESS="\033[1;92m"   # Bright Green
 
-# TODO: Check installed order of Packages -> Neovim
 if ! command -v nvim >/dev/null; then
   # TODO: Add instructions for installing Neovim on different Linux distributions, e.g. Ubuntu24.04, Ubuntu20.04, Kali, etc.
   echo -e "${WARNING}Neovim is not installed. Automatically installing Neovim...${NC}"
@@ -23,9 +22,4 @@ if ! command -v nvim >/dev/null; then
   {{ end -}}
   echo -e "${CMD}$cmd${NC}"
   eval $cmd
-fi
-if ! command -v git >/dev/null; then
-  echo -e "${WARNING}You need to install Git first. Please run the following command to install Git:${NC}"
-  echo -e "${HIGHLIGHT}sudo apt install git -y${NC}"
-  exit 1
 fi
