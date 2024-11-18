@@ -73,6 +73,9 @@ change_alias 'aria2c' 'dl' 'aria2c -x 16 -s 16 --retry-wait=1'
 change_alias 'fd' 'fdd' 'fd --type directory'
 change_alias 'fd' 'fdf' 'fd --type file'
 
+if (( $+commands["thefuck"] )); then
+    eval $(thefuck --alias)
+fi
 change_alias 'fuck' 'fk' 'fuck'
 
 change_alias 'gh' 'gce' 'gh copilot explain'

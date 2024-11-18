@@ -16,6 +16,7 @@ set -eu
 
 {{ if eq .applyNeovim true}}
 if ! command -v nvim >/dev/null; then
+  # TODO: Add instructions for installing Neovim on different Linux distributions, e.g. Ubuntu24.04, Ubuntu20.04, Kali, etc.
   echo -e "${WARNING}You need to install Neovim first. Please run the following command to install Neovim:${NC}"
   echo -e "${HIGHLIGHT}sudo snap install nvim --classic${NC}"
   exit 1
