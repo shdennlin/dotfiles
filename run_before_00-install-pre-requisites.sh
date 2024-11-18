@@ -16,8 +16,8 @@ then
     echo -e "${FATAL}Git Command Not Found!${NC}"
     echo -e "Please install git using the following command:"
     echo -e "${INFO}MacOS:${HIGHLIGHT} brew install git${NC}"
-    echo -e "${INFO}Based on Debian:${HIGHLIGHT} sudo apt-get install git${NC}"
-    echo -e "${INFO}Based on Fedora:${HIGHLIGHT} sudo dnf install git${NC}"
-    echo -e "${INFO}Based on Arch:${HIGHLIGHT} sudo pacman -S git${NC}"
+    echo -e "${INFO}Based on Debian:${HIGHLIGHT} sudo apt-get install git -y${NC}"
+    echo -e "${INFO}Based on Fedora:${HIGHLIGHT} sudo dnf install git -y${NC}"
+    echo -e "${INFO}Based on Arch:${HIGHLIGHT} sudo pacman -S git --noconfirm${NC}"
     exit 1
 fi

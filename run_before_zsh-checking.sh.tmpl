@@ -13,7 +13,9 @@ SUCCESS="\033[1;92m"   # Bright Green
 
 if ! command -v zsh > /dev/null; then
   echo -e "${WARNING}Zsh is not installed. Automatically installing Zsh...${NC}"
-  {{ if ( or 
+  {{ if eq .chezmoi.os "darwin"}}
+  cmd="brew install zsh"
+  {{ else if ( or 
     ( eq .chezmoi.osRelease.id "ubuntu" )
     ( eq .chezmoi.osRelease.id "debian" )
     ( eq .chezmoi.osRelease.id "raspbian" )
@@ -25,9 +27,6 @@ if ! command -v zsh > /dev/null; then
     ( eq .chezmoi.osRelease.id "rhel" )) }}
   cmd="sudo dnf install zsh -y"
   {{ else if ( or 
-    ( eq .chezmoi.osRelease.id "alpine" )) }}
-  cmd="sudo apk add zsh"
-  {{ else if ( or 
     ( eq .chezmoi.osRelease.id "arch" ) 
     ( eq .chezmoi.osRelease.id "archarm" ) 
     ( eq .chezmoi.osRelease.id "manjaro" )) }}
@@ -36,7 +35,7 @@ if ! command -v zsh > /dev/null; then
   echo -e "${ERROR}Your OS is not supported. Please install Zsh manually.${NC}" 
   exit 1
   {{ end }}
-  echo -e "${CMD}${cmd}${NC}"
+  echo -e "${CMD}${cmd}"
   eval "$cmd"
   echo -e "${SUCCESS}Zsh has been installed successfully.${NC}"
 fi

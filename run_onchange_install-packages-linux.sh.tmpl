@@ -20,29 +20,29 @@ echo "Installing packages..."
   ( eq .chezmoi.osRelease.id "debian" )
   ( eq .chezmoi.osRelease.id "raspbian" )
   ( eq .chezmoi.osRelease.id "kali" )) }}
+echo -e "${CMD}"
 sudo apt update
+echo -e "${NC}"
 install_cmd="sudo apt-get install -qq -y"
 {{ else if ( or 
   ( eq .chezmoi.osRelease.id "fedora" )
   ( eq .chezmoi.osRelease.id "centos" )
   ( eq .chezmoi.osRelease.id "rhel" )) }}
+echo -e "${CMD}"
 sudo dnf check-update
+echo -e "${NC}"
 install_cmd="sudo dnf install -y"
-{{ else if ( or 
-  ( eq .chezmoi.osRelease.id "alpine" )) }}
-sudo apk update
-install_cmd="sudo apk add"
 {{ else if ( or 
   ( eq .chezmoi.osRelease.id "arch" ) 
   ( eq .chezmoi.osRelease.id "archarm" ) 
   ( eq .chezmoi.osRelease.id "manjaro" )) }}
-sudo pacman -Syu --noconfirm
 install_cmd="sudo pacman -S --noconfirm"
 {{ else }}
-echo -e "${ERROR}Your OS is not supported. Please install Zsh manually.${NC}" 
+echo -e "${ERROR}Your OS is not supported.${NC}" 
+echo -e "Please set installUsefulPackages to ${HIGHILIGHT}false${NC} using ${HIGHLIGHT}chezmoi edit-config${NC} and re-run the script(${HIGHLIGHT}chezmoi apply${NC})."
+echo -e "If you want to install the packages manually, you can find the list in ${HIGHLIGHT}{{ .chezmoi.sourceDir }}.chezmoidata/packages.toml${NC}"
 exit 1
 {{ end }}
-echo "Install_cmd: $install_cmd"
 
 {{ range .packages.linux.packages -}}
 package={{ . | quote }}
