@@ -29,6 +29,7 @@ if ! command -v zsh > /dev/null; then
   cmd="sudo apk add zsh"
   {{ else if ( or 
     ( eq .chezmoi.osRelease.id "arch" ) 
+    ( eq .chezmoi.osRelease.id "archarm" ) 
     ( eq .chezmoi.osRelease.id "manjaro" )) }}
   cmd="sudo pacman -S zsh --noconfirm"
   {{ else }}
@@ -40,13 +41,19 @@ if ! command -v zsh > /dev/null; then
   echo -e "${SUCCESS}Zsh has been installed successfully.${NC}"
 fi
 
-if [ "$SHELL" != "$(which zsh)" ]; then
+if [ "$SHELL" != "/bin/zsh" ]; then
   echo -e "${INFO}Changing default shell to Zsh...${NC}"
-  echo -e "${CMD}chsh -s $(which zsh)${NC}"
-  chsh -s $(which zsh)
+  cmd="chsh -s /bin/zsh"
+  echo -e "${CMD}${cmd}${NC}"
+  eval "$cmd"
   if [ $? -ne 0 ]; then
     echo -e "${ERROR}Failed to change default shell to Zsh.${NC}"
     exit 1
   fi
   echo -e "${SUCCESS}Default shell has been changed to Zsh.${NC}"
+  echo ""
+
+  echo -e "${HIGHLIGHT}Now, you need to logout and login again to see the changes.${NC}"
+  echo -e "${HIGHLIGHT}After logging in, it wall take a few seconds to set up Zsh for the first time.${NC}"
+  echo -e "${HIGHLIGHT}Please be patient.${NC}"
 fi

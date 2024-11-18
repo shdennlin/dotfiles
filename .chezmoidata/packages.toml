@@ -27,7 +27,7 @@ casks = [
 ]
 
 [packages.linux]
-apt = [
+packages = [
   "aria2",
   "bat",
   "curl",
