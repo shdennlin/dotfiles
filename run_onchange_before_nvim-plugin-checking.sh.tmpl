@@ -22,7 +22,6 @@ if ! command -v nvim >/dev/null; then
   {{ end -}}
   echo -e "${CMD}$cmd${NC}"
   eval $cmd
-  exit 1
 fi
 if ! command -v git >/dev/null; then
   echo -e "${WARNING}You need to install Git first. Please run the following command to install Git:${NC}"
