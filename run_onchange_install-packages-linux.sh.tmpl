@@ -15,15 +15,39 @@ SUCCESS="\033[1;92m"   # Bright Green
 set -eu
 echo "Installing packages..."
 
-{{ if .packages.linux.apt -}}
-## TODO: Add Arch Linux support
-echo "Updating apt..."
+{{ if ( or 
+  ( eq .chezmoi.osRelease.id "ubuntu" )
+  ( eq .chezmoi.osRelease.id "debian" )
+  ( eq .chezmoi.osRelease.id "raspbian" )
+  ( eq .chezmoi.osRelease.id "kali" )) }}
 sudo apt update
-{{ end -}}
-{{ range .packages.linux.apt -}}
+install_cmd="sudo apt-get install -qq -y"
+{{ else if ( or 
+  ( eq .chezmoi.osRelease.id "fedora" )
+  ( eq .chezmoi.osRelease.id "centos" )
+  ( eq .chezmoi.osRelease.id "rhel" )) }}
+sudo dnf check-update
+install_cmd="sudo dnf install -y"
+{{ else if ( or 
+  ( eq .chezmoi.osRelease.id "alpine" )) }}
+sudo apk update
+install_cmd="sudo apk add"
+{{ else if ( or 
+  ( eq .chezmoi.osRelease.id "arch" ) 
+  ( eq .chezmoi.osRelease.id "archarm" ) 
+  ( eq .chezmoi.osRelease.id "manjaro" )) }}
+sudo pacman -Syu --noconfirm
+install_cmd="sudo pacman -S --noconfirm"
+{{ else }}
+echo -e "${ERROR}Your OS is not supported. Please install Zsh manually.${NC}" 
+exit 1
+{{ end }}
+echo "Install_cmd: $install_cmd"
+
+{{ range .packages.linux.packages -}}
 package={{ . | quote }}
-cmd="sudo apt-get install $package -qq -y"
-eval "sudo apt-get install $package -qq -y > /dev/null 2>&1 | tee; exit_code=\${PIPESTATUS[0]};"
+cmd="$install_cmd $package"
+eval "$cmd > /dev/null 2>&1 | tee; exit_code=\${PIPESTATUS[0]};"
 if [ $exit_code -eq 0 ]; then
   echo -e "${INFO}Package $package\tinstalled successfully.\t${CMD} $cmd${NC}"
 else
