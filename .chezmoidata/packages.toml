@@ -5,7 +5,7 @@ brews = [
   "bat",
   "croc",
   "curl",
-    "dua-cli",
+  "dua-cli",
   "eza",
   "fd",
   "fzf",
@@ -24,4 +24,28 @@ casks = [
   "font-hack-nerd-font",
   "iterm2",
   "orbstack"
+]
+
+[packages.linux]
+apt = [
+  "aria2",
+  "bat",
+  "curl",
+  "exa",
+  "eza",
+  "fd-find",
+  "fzf",
+  "gh",
+  "git",
+  "git-lfs",
+  "ripgrep",
+  "thefuck",
+  "tmux",
+  "zoxide"
+]
+
+cmd = [
+  ["asdf", "asdf", "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1"],
+  ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
+  ["dua-cli", "dua", "curl -LSfs https://raw.githubusercontent.com/Byron/dua-cli/master/ci/install.sh | sh -s -- --git Byron/dua-cli --target x86_64-unknown-linux-musl --crate dua --tag v2.29.0"],
 ]
