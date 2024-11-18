@@ -20,6 +20,11 @@ if ! command -v nvim >/dev/null; then
   echo -e "${HIGHLIGHT}sudo snap install nvim --classic${NC}"
   exit 1
 fi
+if ! command -v git >/dev/null; then
+  echo -e "${WARNING}You need to install Git first. Please run the following command to install Git:${NC}"
+  echo -e "${HIGHLIGHT}sudo apt install git -y${NC}"
+  exit 1
+fi
 {{ end -}}
 
 {{ end -}}
