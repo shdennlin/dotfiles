@@ -8,3 +8,8 @@
     chezmoi apply --dry-run
     chezmoi apply
 ```
+
+## QA
+
+- How to update packages manually?
+   MacOS: `chezmoi apply ~/install-packages-darwin.sh`
