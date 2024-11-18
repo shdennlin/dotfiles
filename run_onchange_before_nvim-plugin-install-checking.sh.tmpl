@@ -1,5 +1,5 @@
-{{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
+# .config/nvim/version hash: {{ include "dot_config/nvim/version" | sha256sum }}
 
 # Define color codes
 NC="\033[0m"
@@ -12,13 +12,16 @@ HIGHLIGHT="\033[1;36m" # Cyan
 CMD="\033[1;90m"       # Gray
 SUCCESS="\033[1;92m"   # Bright Green
 
-set -eu
-
-{{ if eq .applyNeovim true}}
 if ! command -v nvim >/dev/null; then
   # TODO: Add instructions for installing Neovim on different Linux distributions, e.g. Ubuntu24.04, Ubuntu20.04, Kali, etc.
-  echo -e "${WARNING}You need to install Neovim first. Please run the following command to install Neovim:${NC}"
-  echo -e "${HIGHLIGHT}sudo snap install nvim --classic${NC}"
+  echo -e "${WARNING}Neovim is not installed. Automatically installing Neovim...${NC}"
+  {{ if eq .chezmoi.os "darwin" -}}
+  cmd="brew install neovim"
+  {{ else if eq .chezmoi.os "linux" -}}
+  cmd="sudo apt install neovim -y"
+  {{ end -}}
+  echo -e "${CMD}$cmd${NC}"
+  eval $cmd
   exit 1
 fi
 if ! command -v git >/dev/null; then
@@ -26,6 +29,3 @@ if ! command -v git >/dev/null; then
   echo -e "${HIGHLIGHT}sudo apt install git -y${NC}"
   exit 1
 fi
-{{ end -}}
-
-{{ end -}}
