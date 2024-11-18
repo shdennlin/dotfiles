@@ -20,7 +20,7 @@ echo "Installing packages..."
   ( eq .chezmoi.osRelease.id "debian" )
   ( eq .chezmoi.osRelease.id "raspbian" )
   ( eq .chezmoi.osRelease.id "kali" )) }}
-echo -e "${CMD}"
+echo -e "${CMD}sudo apt update"
 sudo apt update
 echo -e "${NC}"
 install_cmd="sudo apt-get install -qq -y"
@@ -28,7 +28,7 @@ install_cmd="sudo apt-get install -qq -y"
   ( eq .chezmoi.osRelease.id "fedora" )
   ( eq .chezmoi.osRelease.id "centos" )
   ( eq .chezmoi.osRelease.id "rhel" )) }}
-echo -e "${CMD}"
+echo -e "${CMD}sudo dnf check-update"
 sudo dnf check-update
 echo -e "${NC}"
 install_cmd="sudo dnf install -y"
