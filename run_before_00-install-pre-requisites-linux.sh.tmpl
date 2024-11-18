@@ -1,4 +1,4 @@
-{{ if eq .chezmoi.os "darwin" -}}
+{{ if eq .chezmoi.os "linux" -}}
 #!/bin/bash
 
 # Define color codes
@@ -14,17 +14,10 @@ SUCCESS="\033[1;92m"   # Bright Green
 
 set -eu
 
-if ! command -v brew >/dev/null; then
-  echo -e "${WARNING}You need to install Homebrew first.  Please visit ${NC}https://brew.sh/${WARNING} for installation instructions.
-Or run the following command to install Homebrew:${NC}"
-  echo -e "${HIGHLIGHT}/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)\"${NC}"
-  exit 1
-fi
-
 {{ if eq .applyNeovim true}}
 if ! command -v nvim >/dev/null; then
   echo -e "${WARNING}You need to install Neovim first. Please run the following command to install Neovim:${NC}"
-  echo -e "${HIGHLIGHT}brew install neovim${NC}"
+  echo -e "${HIGHLIGHT}sudo snap install nvim --classic${NC}"
   exit 1
 fi
 {{ end -}}

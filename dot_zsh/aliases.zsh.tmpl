@@ -95,7 +95,8 @@ alias df='df -h'
 alias rm='rm -r'
 alias rsync='rsync -avh'
 alias s='sudo'
-alias sv='sudoedit'
+{{ if eq .chezmoi.os "darwin" }}alias sv='sudo $EDITOR'{{ end }}
+{{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
 
 # git
 alias gb='fzf-git-branch'
@@ -111,7 +112,7 @@ alias spk9='sudo pkill -9'
 
 # docker
 alias dk='docker'
-alias dknw='docker inspect -f "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"'
+alias dknw='docker inspect -f "{{ "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" }}"'
 alias dirn='docker image prune --filter="dangling=true"'
 
 # network
