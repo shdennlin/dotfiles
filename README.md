@@ -47,7 +47,7 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
     # Using asdf
     asdf plugin add chezmoi && asdf install chezmoi latest && asdf global chezmoi latest
     # Or Install binary and put it in your PATH like `/usr/local/bin`
-    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/.local/bin
+    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
 ```
 
 Get More information about how to install chezmoi from [here](https://www.chezmoi.io/install/)
