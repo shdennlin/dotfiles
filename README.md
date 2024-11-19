@@ -21,10 +21,10 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
 
 ## Features
 
-1. **Git** Configurations
-2. **Neovim** as the default editor and Configurations
-3. **Tmux** as the default terminal multiplexer and Configurations
-4. **Zsh** as the default shell and Configurations
+1. **Git** Configurations, file: [~/.gitconfig](./dot_gitconfig.tmpl)
+2. **Neovim** as the default editor and Configurations, folder: [~/.config/nvim](./dot_config/nvim/)
+3. **Tmux** as the default terminal multiplexer and Configurations, file: [~/.tmux.conf](./dot_tmux.conf)
+4. **Zsh** as the default shell and Configurations, file: [~/.zshrc](./dot_zshrc.tmpl), [~/.p10k.zsh](./dot_p10k.zsh), folder: [~/.zsh](./dot_zsh/)
 5. Install **Useful Packages**, package list can be found in [.chezmoidata/packages.toml](./.chezmoidata/packages.toml)
 
 > [!IMPORTANT]  
