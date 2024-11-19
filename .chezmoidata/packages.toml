@@ -40,6 +40,8 @@ packages = [
   "gh",
   "git",
   "git-lfs",
+  "net-tools",
+  "plocate",
   "ripgrep",
   "thefuck",
   "tmux",

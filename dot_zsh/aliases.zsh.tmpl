@@ -70,17 +70,21 @@ change_alias_global 'pbcopy' 'C' '| c'
 change_alias 'chezmoi' 'cz' 'chezmoi'
 
 change_alias 'aria2c' 'dl' 'aria2c -x 16 -s 16 --retry-wait=1'
+
+# find
+change_alias 'fdfind' 'fd'  'fdfind'
+change_alias 'fdfind' 'fdd' 'fdfind --type directory'
+change_alias 'fdfind' 'fdd' 'fdfind --type directory'
 change_alias 'fd' 'fdd' 'fd --type directory'
 change_alias 'fd' 'fdf' 'fd --type file'
 
-if (( $+commands["thefuck"] )); then
+if (( $+commands[thefuck] )); then
     eval $(thefuck --alias)
+    change_alias 'thefuck' 'fk' 'fuck'
 fi
-change_alias 'fuck' 'fk' 'fuck'
 
 change_alias 'gh' 'gce' 'gh copilot explain'
 change_alias 'gh' 'gcs' 'gh copilot suggest'
-
 
 eza="eza"
 if ! command -v eza >/dev/null; then
