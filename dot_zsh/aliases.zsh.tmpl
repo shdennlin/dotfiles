@@ -1,0 +1,128 @@
+# This function changes an alias if the specified command exists.
+# 
+# Parameters:
+#   $1 - The command to check for existence.
+#   $2 - The alias name to set.
+#   $3 - The command that the alias should point to.
+#
+# Usage:
+#   change_alias <command> <alias_name> <alias_command>
+#
+# Example:
+#   change_alias ls l 'ls -la'
+#   This will create an alias 'l' for 'ls -la' if 'ls' command exists.
+change_alias () {
+    if (( $+commands[$1] )); then
+        alias "$2"="$3"
+    fi
+}
+change_alias_global () {
+    if (( $+commands[$1] )); then
+        alias -g "$2"="$3"
+    fi
+}
+
+# ref link: https://polothy.github.io/post/2019-08-19-fzf-git-checkout/
+fzf-git-branch() {
+    git rev-parse HEAD > /dev/null 2>&1 || return
+
+    git branch --color=always --all --sort=-committerdate |
+        grep -v HEAD |
+        fzf --height 50% --ansi --no-multi --preview-window right:65% \
+            --preview 'git log -n 50 --color=always --date=short --pretty="format:%C(auto)%cd %h%d %s" $(sed "s/.* //" <<< {})' |
+        sed "s/.* //"
+}
+
+fzf-git-checkout() {
+    git rev-parse HEAD > /dev/null 2>&1 || return
+
+    local branch
+
+    branch=$(fzf-git-branch)
+    if [[ "$branch" = "" ]]; then
+        echo "No branch selected."
+        return
+    fi
+
+    # If branch name starts with 'remotes/' then it is a remote branch. By
+    # using --track and a remote branch name, it is the same as:
+    # git checkout -b branchName --track origin/branchName
+    if [[ "$branch" = 'remotes/'* ]]; then
+        git checkout --track $branch
+    else
+        git checkout $branch;
+    fi
+}
+
+# ============alias=============
+
+alias -g R='| rg'
+alias -g ee='--help'
+alias -g el='--help | less'
+alias -g yy='--yes'
+
+
+change_alias 'batcat' 'bat' 'batcat'
+
+change_alias 'pbcopy' 'c' 'pbcopy'
+change_alias_global 'pbcopy' 'C' '| c'
+
+change_alias 'chezmoi' 'cz' 'chezmoi'
+
+change_alias 'aria2c' 'dl' 'aria2c -x 16 -s 16 --retry-wait=1'
+change_alias 'fd' 'fdd' 'fd --type directory'
+change_alias 'fd' 'fdf' 'fd --type file'
+
+if (( $+commands["thefuck"] )); then
+    eval $(thefuck --alias)
+fi
+change_alias 'fuck' 'fk' 'fuck'
+
+change_alias 'gh' 'gce' 'gh copilot explain'
+change_alias 'gh' 'gcs' 'gh copilot suggest'
+
+
+eza="eza"
+if ! command -v eza >/dev/null; then
+    eza="exa"
+fi
+change_alias "${eza}" 'l'  "${eza} -laghH"
+change_alias "${eza}" 'lb' "${eza} -lghHB"
+change_alias "${eza}" 'ls' "${eza}"
+change_alias "${eza}" 'la' "${eza} -a"
+change_alias "${eza}" 'll' "${eza} -lghH"
+
+change_alias 'vim' 'v' 'vim'
+change_alias 'nvim' 'v' 'nvim'
+
+# Common shell functions
+alias cl='clear'
+alias cp='cp -r'
+alias du='du -h'
+alias df='df -h'
+alias rm='rm -r'
+alias rsync='rsync -avh'
+alias s='sudo'
+{{ if eq .chezmoi.os "darwin" }}alias sv='sudo $EDITOR'{{ end }}
+{{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
+
+# git
+alias gb='fzf-git-branch'
+alias gco='fzf-git-checkout'
+
+# kill
+alias ka9='killall -9'
+alias k9='kill -9'
+alias pk9='pkill -9'
+alias ska9='sudo killall -9'
+alias sk9='sudo kill -9'
+alias spk9='sudo pkill -9'
+
+# docker
+alias dk='docker'
+alias dknw='docker inspect -f "{{ "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" }}"'
+alias dirn='docker image prune --filter="dangling=true"'
+
+# network
+alias lsofp='sudo lsof -i -P -n | grep LISTEN'
+alias netport='sudo netstat -tulpn | grep LISTEN'

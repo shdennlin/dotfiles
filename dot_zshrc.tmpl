@@ -1,0 +1,80 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+export ZSH_CONFIG_DIR="$HOME/.zsh"
+# Znap init
+[[ -r $ZSH_CONFIG_DIR/znap/znap.zsh ]] ||
+  git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git $ZSH_CONFIG_DIR/znap
+source $ZSH_CONFIG_DIR/znap/znap.zsh  # Start Znap
+
+# ====================== setting start =======================
+# bindkey -e
+bindkey -M emacs '^[[1;9C' forward-word  # [Ctrl-RightArrow] - move forward one word
+bindkey -M emacs '^[[1;9D' backward-word # [Ctrl-LeftArrow] - move backward one word
+
+# This line sets the WORDCHARS variable to a string of characters that are considered part of a word
+# in the zsh shell. This affects how words are recognized and manipulated in the shell, particularly
+# for operations like word movement and deletion. The characters included are:
+# * ? _ - . [ ] ~ = & ; ! # $ % ^ ( ) { } < >
+WORDCHARS='*?_-.[]~=&;!#$%^(){}<>'
+
+# zsh options
+setopt multios                # enable redirect to multiple streams: echo >file1 >file2
+setopt long_list_jobs         # show long list format job notifications
+setopt interactivecomments    # recognize comments
+
+# environment variables
+export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
+export EDITOR=nvim
+export LANG=en_US.UTF-8
+# ======================= setting end ========================
+
+# ======================= PATH start =========================
+export PATH="$HOME/.cargo/bin:$PATH"
+{{ if eq .chezmoi.os "darwin" -}}export PATH="/opt/homebrew/bin:$PATH"{{ end }}
+# ======================== PATH end ==========================
+
+# ====================== plugins start =======================
+znap prompt romkatv/powerlevel10k
+
+znap source zsh-users/zsh-autosuggestions
+znap source zsh-users/zsh-completions
+znap source zsh-users/zsh-syntax-highlighting
+znap source hlissner/zsh-autopair
+znap source olets/zsh-window-title
+
+# from oh-my-zsh
+[[ ! -d $ZSH_CONFIG_DIR/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
+znap source ohmyzsh/ohmyzsh lib/directories
+znap source ohmyzsh/ohmyzsh lib/history.zsh
+znap source ohmyzsh/ohmyzsh lib/key-bindings
+znap source ohmyzsh/ohmyzsh plugins/aliases
+znap source ohmyzsh/ohmyzsh plugins/command-not-found
+znap source ohmyzsh/ohmyzsh plugins/common-aliases
+znap source ohmyzsh/ohmyzsh plugins/cp
+znap source ohmyzsh/ohmyzsh plugins/direnv
+znap source ohmyzsh/ohmyzsh plugins/docker-compose
+znap source ohmyzsh/ohmyzsh plugins/extract # command: extract
+znap source ohmyzsh/ohmyzsh plugins/fzf
+znap source Aloxaf/fzf-tab
+znap source ohmyzsh/ohmyzsh plugins/asdf
+znap source ohmyzsh/ohmyzsh plugins/git
+znap source ohmyzsh/ohmyzsh plugins/globalias
+znap source ohmyzsh/ohmyzsh plugins/kubectl
+znap source ohmyzsh/ohmyzsh plugins/sudo
+znap source ohmyzsh/ohmyzsh plugins/systemd
+znap source ohmyzsh/ohmyzsh plugins/tmux
+znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
+# ======================= plugins end ========================
+
+# ======================= source start =======================
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f $HOME/.p10k.zsh ]]                  || source $HOME/.p10k.zsh
+[[ ! -f $HOME/.zprofile ]]                  || source $HOME/.zprofile
+[[ ! -f $ZSH_CONFIG_DIR/aliases.zsh ]]      || source $ZSH_CONFIG_DIR/aliases.zsh
+[[ ! -f $ZSH_CONFIG_DIR/package_init.zsh ]] || source $ZSH_CONFIG_DIR/package_init.zsh
+# ======================== source end ========================
