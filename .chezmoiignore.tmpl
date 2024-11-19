@@ -1,0 +1,26 @@
+{{ if not .applyGit }}
+.gitconfig
+{{ end }}
+
+{{ if not .applyNeovim }}
+nvim-plugin-checking.sh
+nvim-plugin-install.sh
+.config/nvim
+{{ end }}
+
+
+{{ if not .applyTmux }}
+.tmux.conf
+{{ end }}
+
+{{ if not .applyZsh }}
+zsh-checking.sh
+.zsh
+.zshrc
+.p10k.zsh
+{{ end }}
+
+{{ if not .installUsefulPackages }}
+00_install-packages-darwin.sh
+00_install-packages-linux.sh
+{{ end }}

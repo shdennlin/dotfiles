@@ -1,0 +1,195 @@
+[init]
+  defaultBranch = main
+
+[user]
+  name = {{ .git.name }}
+  username = {{ .git.username }}
+  email = {{ .git.email }}
+  signingkey = {{ .git.signingkey }}
+
+[core]
+  longpaths = true
+  editor = nvim
+  ignorecase= false
+  pager =
+  quotepath = false
+  # Normalizing Line Endings
+  eol = lf
+  autocrlf = input
+  safecrlf = true
+
+[commit]
+  gpgsign = {{ .git.gpgsign | default "true" }}
+
+[gpg]
+  program = {{ if ( or ( eq .chezmoi.os "darwin" ) ( eq .chezmoi.os "linux" )) }}gpg{{ else if eq .chezmoi.os "windows" }}C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe{{ end }}
+
+[filter "lfs"]
+  required = true
+  clean = git-lfs clean -- %f
+  smudge = git-lfs smudge -- %f
+  # smudge = git-lfs smudge --skip -- %f
+  process = git-lfs filter-process
+  # process = git-lfs filter-process --skip
+
+[credential]
+  helper = store
+
+[color]
+  ui = auto
+[color "branch"]
+  current = yellow bold
+  local = green bold
+  remote = cyan bold
+[color "diff"]
+  meta = yellow bold
+  frag = magenta bold
+  old = red bold
+  new = green bold
+  whitespace = red reverse
+[color "status"]
+  added = green bold
+  changed = yellow bold
+  untracked = red bold
+
+[diff]
+  tool = vimdiff
+[difftool]
+  prompt = false
+
+[alias]
+  ######## add ########
+  a   = add
+  ai  = add -i
+  aa  = add -A
+  ########  branch ########
+  b   = branch
+  ba  = branch -a
+  bd  = branch -d       #branch delete
+  bm  = branch -m       #branch rename
+  br  = branch -r       #branch remote
+  ######## commit ########
+  c   = commit
+  ca  = commit --amend
+  can = commit --amend --no-edit
+  cm  = commit --message
+  cam = commit --message --amend
+  ci  = commit --interactive
+  ######## clone ########
+  cl  = clone
+  cl1 = clone --depth 1
+  ######## diff ########
+  d   = diff
+  dc  = diff --cached
+  dk  = diff --check
+  dck = diff --cached --check
+  dt  = difftool
+  dct = difftool --cached
+  dHH = diff HEAD^ HEAD
+  ######## fetch ########
+  f  = fetch
+  fo = fetch origin
+  fu = fetch upstream
+  ######## grep ########
+  g = grep
+  ######## log ########
+  l   = log --graph --oneline -15
+  ll  = log --graph --oneline -40
+  la  = log --graph --oneline --all
+
+  lg  = log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -15
+  lgl = log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short -40
+  lga = log --graph --pretty=format:'%C(yellow)%h%Creset %ad |%C(red)%d%Creset %s %Cgreen(%cr)%Creset %C(bold blue)<%an>%Creset' --abbrev-commit --date=short
+  ######## merge ########
+  m   = merge
+  ma  = merge --abort
+  mc  = merge --continue
+  me  = merge --edit      #merge and edit message
+  mn  = merge --no-commit #merge but don't commit
+  ms  = merge --skip
+  ######## checkout ########
+  o  = checkout        #checkout branch
+  ob = checkout -b     #checkout new branch
+
+  om  = checkout main
+  omm = checkout master
+  od  = checkout develop
+  os  = checkout source
+  oh  = checkout hotfix
+  or  = checkout release
+  of  = checkout feature
+  ######## push ########
+  ps   = push
+  psf  = push -f
+  psu  = push -u
+  pst = push --tags
+
+  pso  = push origin
+  psfo = push -f origin
+  psuo = push -u origin
+  psao = push --all origin
+
+  psom  = push origin main
+  psaom = push --all origin main
+  psfom = push -f origin main
+  psuom = push -u origin main
+  ######## pull ########
+  pl = pull
+  plr = pull --rebase
+
+  plo   = pull origin
+  plor  = pull --rebase origin
+  plom  = pull origin main
+  plrom = pull --rebase origin main
+
+  plu  = pull upstream
+  plum = pull upstream main
+  pbum = pull --rebase upstream main
+  ######## remote ########
+  r   = remote
+  ra  = remote add
+  rr  = remote rm
+  rv  = remote -v
+  rn  = remote rename
+  rp  = remote prune
+  rs  = remote show
+  rao = remote add origin
+  rau = remote add upstream
+  rro = remote remove origin
+  rru = remote remove upstream
+  rso = remote show origin
+  rsu = remote show upstream
+  rpo = remote prune origin
+  rpu = remote prune upstream
+  ######## rebase ########
+  rb   = rebase
+  rba  = rebase --abort
+  rbc  = rebase --continue
+  rbi  = rebase --interactive
+  rbsk = rebase --skip	
+  ######## reset ########
+  re = reset
+  rh = reset HEAD
+  reh = reset --hard
+  rem = reset --mixed
+  res = reset --soft
+  rehh = reset --hard HEAD
+  remh = reset --mixed HEAD
+  resh = reset --soft HEAD
+  rehom = reset --hard origin/main
+  ######## rm ########
+  rmf = rm -f
+  rmrf = rm -r -f
+  ######## status ########
+  s  = status
+  ss = status -s -b
+  ######## sub ########
+  sub = submodule
+  subi = submodule init
+  subu = submodule update
+  ######## tag ########
+  t = tag
+  td = tag -d
+  ######## show ########
+  w = show
+  wp = show -p

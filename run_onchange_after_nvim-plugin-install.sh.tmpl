@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Define color codes
+NC="\033[0m"
+INFO="\033[1;32m"      # Green
+WARNING="\033[1;33m"   # Yellow
+ERROR="\033[1;31m"     # Red
+DEBUG="\033[1;34m"     # Blue
+FATAL="\033[1;41m"     # Red background
+HIGHLIGHT="\033[1;36m" # Cyan
+CMD="\033[1;90m"       # Gray
+SUCCESS="\033[1;92m"   # Bright Green
+
+# .config/nvim/version hash: {{ include "dot_config/nvim/version" | sha256sum }}
+echo -e "${INFO}Neovim Change Detected. Running post-change script...${NC}"
+
+# Install packer.nvim
+dir="$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim"
+if [ ! -d $dir ] ; then
+    echo -e "Install packer.nvim..."
+    echo -e "${CMD}git clone --depth 1 https://github.com/wbthomason/packer.nvim $dir"
+    git clone --depth 1 https://github.com/wbthomason/packer.nvim $dir > /dev/null
+    echo -en "${NC}"
+else
+    echo -e "Update packer.nvim..."
+    echo -e "${CMD}cd $dir && git pull > /dev/null && cd - > /dev/null${NC}"
+    cd $dir && git pull > /dev/null && cd - > /dev/null
+fi
+
+# Install plugins
+echo -e "Install plugins..."
+echo -e "${CMD}nvim +PackerSync +sleep 7 +q +q${NC}"
+nvim +"PackerSync" +"sleep 7" +"q" +"q"
+
+echo -e "${SUCCESS}Neovim post-change script complete.${NC}"
