@@ -39,16 +39,16 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
 1. [Git](https://git-scm.com/)
 2. [chezmoi](https://www.chezmoi.io/). You can install it by running the following command:
 
-```bash
-    # MacOS
-    brew install chezmoi
-    # Base on Arch Linux
-    sudo pacman -S chezmoi
-    # Using asdf
-    asdf plugin add chezmoi && asdf install chezmoi latest && asdf global chezmoi latest
-    # Or Install binary and put it in your PATH like `/usr/local/bin`
-    sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
-```
+   ```bash
+   # MacOS
+   brew install chezmoi
+   # Base on Arch Linux
+   sudo pacman -S chezmoi
+   # Using asdf
+   asdf plugin add chezmoi && asdf install chezmoi latest && asdf global chezmoi latest
+   # Or Install binary and put it in your PATH like `/usr/local/bin`
+   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+   ```
 
 Get More information about how to install chezmoi from [here](https://www.chezmoi.io/install/)
 
@@ -57,22 +57,22 @@ Get More information about how to install chezmoi from [here](https://www.chezmo
 Quick Installations:
 
 ```bash
-    chezmoi init --apply shdennlin
+chezmoi init --apply shdennlin
 ```
 
 Or you can install it manually and apply the configurations by following the steps below:
 
 ```bash
-    chezmoi init shdennlin
-    chezmoi edit-config # Edit the config file, set the value you want
-    chezmoi apply --dry-run # Check the changes, you can skip this step if you want
-    chezmoi apply
+chezmoi init shdennlin
+chezmoi edit-config # Edit the config file, set the value you want
+chezmoi apply --dry-run # Check the changes, you can skip this step if you want
+chezmoi apply
 ```
 
 Apply the configurations if you have already installed the configurations or got failed during the installation:
 
 ```bash
-    chezmoi apply
+chezmoi apply
 ```
 
 ## Q/A
@@ -80,7 +80,7 @@ Apply the configurations if you have already installed the configurations or got
 ### Update to my latest configurations
 
 ```bash
-    chezmoi update
+chezmoi update
 ```
 
 ### Configuration file
