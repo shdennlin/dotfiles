@@ -35,6 +35,7 @@ packages = [
   "curl",
   "exa",
   "eza",
+  "fd",
   "fd-find",
   "fzf",
   "gh",
