@@ -34,8 +34,8 @@ export LANG=en_US.UTF-8
 # ======================= setting end ========================
 
 # ======================= PATH start =========================
-export PATH="$HOME/.cargo/bin:$PATH"
-{{ if eq .chezmoi.os "darwin" -}}export PATH="/opt/homebrew/bin:$PATH"{{ end }}
+[[ -d $HOME/.cargo/bin ]]  && export PATH="$HOME/.cargo/bin:$PATH"
+[[ -d /opt/homebrew/bin ]] && export PATH="/opt/homebrew/bin:$PATH"
 # ======================== PATH end ==========================
 
 # ====================== plugins start =======================
@@ -49,6 +49,7 @@ znap source olets/zsh-window-title
 
 # from oh-my-zsh
 [[ ! -d $ZSH_CONFIG_DIR/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
+znap source ohmyzsh/ohmyzsh plugins/asdf # asdf-vm must to be loaded before other oh-my-zsh plugins
 znap source ohmyzsh/ohmyzsh lib/directories
 znap source ohmyzsh/ohmyzsh lib/history.zsh
 znap source ohmyzsh/ohmyzsh lib/key-bindings
@@ -61,7 +62,6 @@ znap source ohmyzsh/ohmyzsh plugins/docker-compose
 znap source ohmyzsh/ohmyzsh plugins/extract # command: extract
 znap source ohmyzsh/ohmyzsh plugins/fzf
 znap source Aloxaf/fzf-tab
-znap source ohmyzsh/ohmyzsh plugins/asdf
 znap source ohmyzsh/ohmyzsh plugins/git
 znap source ohmyzsh/ohmyzsh plugins/globalias
 znap source ohmyzsh/ohmyzsh plugins/kubectl
