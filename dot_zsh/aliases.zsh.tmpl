@@ -66,6 +66,7 @@ change_alias 'batcat' 'bat' 'batcat'
 
 change_alias 'pbcopy' 'c' 'pbcopy'
 change_alias_global 'pbcopy' 'C' '| c'
+change_alias_global 'pbcopy' 'pwdc' 'pwd | c'
 
 change_alias 'chezmoi' 'cz' 'chezmoi'
 
@@ -129,4 +130,4 @@ alias dirn='docker image prune --filter="dangling=true"'
 
 # network
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
-alias netport='sudo netstat -tulpn | grep LISTEN'
+{{ if ne .chezmoi.os "darwin" }}alias netport='sudo netstat -tulpn | grep LISTEN'{{ end }}

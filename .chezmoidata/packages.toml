@@ -54,3 +54,19 @@ cmd = [
   ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
   ["dua-cli", "dua", "curl -LSfs https://raw.githubusercontent.com/Byron/dua-cli/master/ci/install.sh | sh -s -- --git Byron/dua-cli --target x86_64-unknown-linux-musl --crate dua --tag v2.29.0"],
 ]
+
+miniPackages = [
+  "bat",
+  "curl",
+  "exa",
+  "eza",
+  "fzf",
+  "net-tools",
+  "ripgrep",
+  "tmux",
+  "zoxide"
+]
+
+miniCmd = [
+  ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
+]

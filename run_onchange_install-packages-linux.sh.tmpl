@@ -44,33 +44,57 @@ echo -e "If you want to install the packages manually, you can find the list in 
 exit 1
 {{ end }}
 
-{{ range .packages.linux.packages -}}
-package={{ . | quote }}
-cmd="$install_cmd $package"
-eval "$cmd > /dev/null 2>&1 | tee; exit_code=\${PIPESTATUS[0]};"
-if [ $exit_code -eq 0 ]; then
-  echo -e "${INFO}Package $package\tinstalled successfully.\t${CMD} $cmd${NC}"
-else
-  echo -e "${HIGHLIGHT}Package $package\tnot found, Skipping...\t${CMD} $cmd${NC}"
-fi
-{{ end -}}
+function install_package() {
+  package=$1
+  cmd="$install_cmd $package"
+  eval "$cmd > /dev/null 2>&1 | tee; exit_code=\${PIPESTATUS[0]};"
+  if [ $exit_code -eq 0 ]; then
+    echo -e "${INFO}Package $package\tinstalled successfully.\t${CMD} $cmd${NC}"
+  else
+    echo -e "${HIGHLIGHT}Package $package\tnot found, Skipping...\t${CMD} $cmd${NC}"
+  fi
+}
 
-{{ range .packages.linux.cmd}}
+{{ if not .miniPackages }}
+  {{ range .packages.linux.packages }}
 package={{ . | quote }}
-# Remove the square brackets
-content=${package#[}
-content=${content%]}
-# Use read to split into variables
-read package_name judge_cmd install_cmd <<< "$(echo "$content" | awk '{print $1, $2, substr($0, index($0,$3))}')"
+install_package $package
+  {{ end }}
+{{ else }}
+  {{ range .packages.linux.miniPackages }}
+package={{ . | quote }}
+install_package $package
+  {{ end }}
+{{ end }}
 
-if ! command -v ${judge_cmd} >/dev/null; then
-  echo -e "${INFO}Installing ${package_name}... ${CMD}${install_cmd}"
-  eval "${install_cmd}"
-  echo -en ${NC}
-else
-  echo -e "${HIGHLIGHT}${package_name}\tis already installed. Skipping...\t${CMD}${install_cmd}${NC}"
-fi
-{{ end -}}
+function install_cmd(){
+  package=$1
+  # Remove the square brackets
+  content=${package#[}
+  content=${content%]}
+  # Use read to split into variables
+  read package_name judge_cmd install_cmd <<< "$(echo "$content" | awk '{print $1, $2, substr($0, index($0,$3))}')"
+
+  if ! command -v ${judge_cmd} >/dev/null; then
+    echo -e "${INFO}Installing ${package_name}... ${CMD}${install_cmd}"
+    eval "${install_cmd}"
+    echo -en ${NC}
+  else
+    echo -e "${HIGHLIGHT}${package_name}\tis already installed. Skipping...\t${CMD}${install_cmd}${NC}"
+  fi
+}
+
+{{ if not .miniPackages }}
+  {{ range .packages.linux.cmd}}
+package={{ . | quote }}
+install_cmd $package
+  {{ end -}}
+{{ else }}
+  {{ range .packages.linux.miniCmd}}
+package={{ . | quote }}
+install_cmd $package
+  {{ end }}
+{{ end }}
 
 echo -e "${SUCCESS}All packages installed successfully.${NC}"
 {{ end -}}
