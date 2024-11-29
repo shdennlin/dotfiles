@@ -30,6 +30,7 @@ setopt interactivecomments    # recognize comments
 # environment variables
 export GPG_TTY=$TTY # https://github.com/romkatv/powerlevel10k#how-do-i-export-gpg_tty-when-using-instant-prompt 
 export EDITOR=nvim
+export SUDO_EDITOR=nvim
 export LANG=en_US.UTF-8
 # ======================= setting end ========================
 
