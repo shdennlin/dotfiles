@@ -44,7 +44,6 @@ packages = [
   "net-tools",
   "plocate",
   "ripgrep",
-  "thefuck",
   "tmux",
   "zoxide"
 ]
