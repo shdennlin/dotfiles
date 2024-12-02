@@ -68,7 +68,7 @@ install_package $package
 {{ end }}
 
 function install_cmd(){
-  package=$1
+  package=${@}
   # Remove the square brackets
   content=${package#[}
   content=${content%]}
