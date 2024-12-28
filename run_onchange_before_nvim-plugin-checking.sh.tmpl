@@ -24,7 +24,7 @@ function snapCheck(){
 if ! command -v nvim >/dev/null; then
   echo -e "${WARNING}Neovim is not installed. Automatically installing Neovim...${NC}"
   {{ if eq .chezmoi.os "darwin"}}
-  install_cmd="brew install"
+  install_cmd="brew install neovim"
   {{ else if ( or 
     ( eq .chezmoi.osRelease.id "ubuntu" )
     ( eq .chezmoi.osRelease.id "debian" )
