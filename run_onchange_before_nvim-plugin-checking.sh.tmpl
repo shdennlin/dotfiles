@@ -31,7 +31,7 @@ if ! command -v nvim >/dev/null; then
     ( eq .chezmoi.osRelease.id "kali" )) }}
   os_pretty_name="{{ .chezmoi.osRelease.prettyName }}"
   case "$os_pretty_name" in
-      Ubuntu\ 22.04* | Ubuntu\ 22.10*)
+      Ubuntu\ 22.04* | Ubuntu\ 22.10* | Debian\ GNU/Linux\ 12*)
           snapCheck
           install_cmd="sudo snap install nvim --classic"
           ;;
