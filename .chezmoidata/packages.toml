@@ -24,8 +24,8 @@ brews = [
 
 casks = [
   "font-hack-nerd-font",
-  "iterm2",
-  "orbstack"
+  # "iterm2",
+  # "orbstack"
 ]
 
 # The Useful Packages for Linux Systems
