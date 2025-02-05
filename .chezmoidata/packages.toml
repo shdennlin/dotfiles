@@ -50,7 +50,7 @@ packages = [
 ]
 
 cmd = [
-  ["asdf", "asdf", "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.14.1 2>/dev/null || echo \"Repo already exists. Skipping clone.\""],
+  ["asdf", "asdf", "mkdir -p $HOME/.local/bin; cd $HOME/.local/bin; curl -L -o asdf-v0.16.1-linux-amd64.tar.gz https://github.com/asdf-vm/asdf/releases/download/v0.16.1/asdf-v0.16.1-linux-amd64.tar.gz && tar -xvf asdf-v0.16.1-linux-amd64.tar.gz && rm -f asdf-v0.16.1-linux-amd64.tar.gz && cd -"],
   ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
   ["dua-cli", "dua", "curl -LSfs https://raw.githubusercontent.com/Byron/dua-cli/master/ci/install.sh | sh -s -- --git Byron/dua-cli --target x86_64-unknown-linux-musl --crate dua --tag v2.29.0"],
 ]

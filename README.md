@@ -11,6 +11,7 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
     - [Update to my latest configurations](#update-to-my-latest-configurations)
     - [Configuration file](#configuration-file)
     - [The font of the terminal is not correct](#the-font-of-the-terminal-is-not-correct)
+    - [ASDF can't work](#asdf-cant-work)
 
 ## Support OS
 
@@ -46,8 +47,8 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
    sudo pacman -S chezmoi
    # Using asdf
    asdf plugin add chezmoi && asdf install chezmoi latest && asdf global chezmoi latest
-   # Or Install binary and put it in your PATH like `/usr/local/bin`
-   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /usr/local/bin
+   # Or Install binary and put it in your PATH like `$HOME/.local/bin`
+   mkdir -p $HOME/.local/bin; sh -c "$(curl -fsLS get.chezmoi.io)" -- -b $HOME/.local/bin
    ```
 
 Get More information about how to install chezmoi from [here](https://www.chezmoi.io/install/)
@@ -121,3 +122,11 @@ If you are using macOS, it will install automatically if you set `installUsefulP
 If you are using Linux, you need to install the font manually then set the font to `Hack Nerd Font` in the terminal.
 
 You can download the font from [here](https://www.nerdfonts.com/font-downloads). And get more information about the font [here](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/Hack)
+
+### ASDF can't work
+
+The ASDF will be installed automatically if you set `installUsefulPackages` to `true` in the config file. But currently, it only supports the x86_64 architecture on Linux. If you are using other architectures, you need to install ASDF manually to the folder `~/.local/bin`.
+
+To install ASDF manually, you can find the binary from [here](https://github.com/asdf-vm/asdf/releases/latest)
+
+Find more information about ASDF from [here](https://asdf-vm.com/guide/upgrading-to-v0-16.html)
