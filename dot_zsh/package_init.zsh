@@ -55,11 +55,11 @@ if (( $+commands[poetry] )) && [ ! -f $FUNCTION_DIR/_poetry ]; then
 fi
 
 
-if (( $+commands[asdf] )) && [ ! -f $ASDF_DIR/completions/_asdf.zwc ]; then
-    znap compile $ASDF_DIR/completions/_asdf
-    znap compile $ASDF_DIR/completions/asdf.bash
+if (( $+commands[asdf] )) && [ ! -f $FUNCTION_DIR/_asdf ]; then
+    znap fpath _asdf "asdf completion zsh"
+    znap compile $FUNCTION_DIR
 elif (( $+commands[asdf] )); then
-    fpath=( $ASDF_DIR/completions $fpath )
+    export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 fi
 
 if (( $+commands[croc] )) && [ ! -f $FUNCTION_DIR/_croc ]; then
