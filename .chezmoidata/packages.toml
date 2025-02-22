@@ -15,10 +15,12 @@ brews = [
   "gh",
   "git",
   "git-lfs",
+  "git-delta",
   "neovim",
   "ripgrep",
   "thefuck",
   "tmux",
+  "tldr",
   "zoxide"
 ]
 
