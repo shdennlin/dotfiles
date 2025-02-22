@@ -2,26 +2,16 @@
 
 FUNCTION_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions"
 
-if (( $+commands[zoxide] )); then
-    eval "$(zoxide init zsh)"
-fi
-
-if (( $+commands[thefuck] || $+commands[fuck] )); then
-    znap function _fuck fuck 'eval $(thefuck --alias)'
-    compdef _fuck fuck
-fi
-
-if (( $+commands[poetry] )) && [ ! -f $FUNCTION_DIR/_poetry ]; then
-    znap fpath _poetry "poetry completions zsh"
-    znap compile $FUNCTION_DIR
-fi
-
-
 if (( $+commands[asdf] )) && [ ! -f $FUNCTION_DIR/_asdf ]; then
     znap fpath _asdf "asdf completion zsh"
     znap compile $FUNCTION_DIR
 elif (( $+commands[asdf] )); then
     export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+fi
+
+if (( $+commands[chezmoi] )) && [ ! -f $FUNCTION_DIR/_chezmoi ]; then
+    znap fpath _chezmoi "chezmoi completion zsh"
+    znap compile $FUNCTION_DIR
 fi
 
 if (( $+commands[croc] )) && [ ! -f $FUNCTION_DIR/_croc ]; then
@@ -41,12 +31,21 @@ if (( $+commands[navi] )); then
     eval "$(navi widget zsh)"
 fi
 
-if (( $+commands[chezmoi] )) && [ ! -f $FUNCTION_DIR/_chezmoi ]; then
-    znap fpath _chezmoi "chezmoi completion zsh"
+if (( $+commands[poetry] )) && [ ! -f $FUNCTION_DIR/_poetry ]; then
+    znap fpath _poetry "poetry completions zsh"
     znap compile $FUNCTION_DIR
 fi
 
 if (( $+commands[rg] )) && [ ! -f $FUNCTION_DIR/_rg ]; then
     znap fpath _rg "rg --generate=complete-zsh"
     znap compile $FUNCTION_DIR
+fi
+
+if (( $+commands[thefuck] || $+commands[fuck] )); then
+    znap function _fuck fuck 'eval $(thefuck --alias)'
+    compdef _fuck fuck
+fi
+
+if (( $+commands[zoxide] )); then
+    eval "$(zoxide init zsh)"
 fi
