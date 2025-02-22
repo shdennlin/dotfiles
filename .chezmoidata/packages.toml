@@ -16,6 +16,7 @@ brews = [
   "git",
   "git-lfs",
   "git-delta",
+  "navi",
   "neovim",
   "ripgrep",
   "thefuck",
