@@ -56,10 +56,19 @@ fzf-git-checkout() {
 
 # ============alias=============
 
+# global alias
 alias -g R='| rg'
 alias -g ee='--help'
 alias -g el='--help | less'
 alias -g yy='--yes'
+
+if (( $+commands[bat] )); then
+    alias -g B='| bat'
+fi
+
+if (( $+commands[lnav] )); then
+    alias -g LV=' 2>&1 | lnav'
+fi
 
 
 change_alias 'batcat' 'bat' 'batcat'

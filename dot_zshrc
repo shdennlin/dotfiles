@@ -51,6 +51,7 @@ znap source olets/zsh-window-title
 
 # from oh-my-zsh
 [[ ! -d $ZSH_CONFIG_DIR/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
+znap source ohmyzsh/ohmyzsh plugins/asdf # the asdf plugin must be loaded before other plugins to import the shims PATH
 znap source ohmyzsh/ohmyzsh lib/directories
 znap source ohmyzsh/ohmyzsh lib/history.zsh
 znap source ohmyzsh/ohmyzsh lib/key-bindings

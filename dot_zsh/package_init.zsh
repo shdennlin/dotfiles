@@ -5,8 +5,6 @@ FUNCTION_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/site-functions"
 if (( $+commands[asdf] )) && [ ! -f $FUNCTION_DIR/_asdf ]; then
     znap fpath _asdf "asdf completion zsh"
     znap compile $FUNCTION_DIR
-elif (( $+commands[asdf] )); then
-    export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 fi
 
 if (( $+commands[chezmoi] )) && [ ! -f $FUNCTION_DIR/_chezmoi ]; then
