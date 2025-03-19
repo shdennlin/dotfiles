@@ -12,9 +12,9 @@ export ZSH_CONFIG_DIR="$HOME/.zsh"
 source $ZSH_CONFIG_DIR/znap/znap.zsh  # Start Znap
 
 # ====================== setting start =======================
-# bindkey -e
-bindkey -M emacs '^[[1;9C' forward-word  # [Ctrl-RightArrow] - move forward one word
-bindkey -M emacs '^[[1;9D' backward-word # [Ctrl-LeftArrow] - move backward one word
+# bindkey
+bindkey -M emacs '^[^[[C' forward-word  # [alt-RightArrow] - move forward one word
+bindkey -M emacs '^[^[[D' backward-word # [alt-LeftArrow] - move backward one word
 
 # This line sets the WORDCHARS variable to a string of characters that are considered part of a word
 # in the zsh shell. This affects how words are recognized and manipulated in the shell, particularly
