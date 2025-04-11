@@ -85,14 +85,30 @@ function install_cmd(){
 }
 
 {{ if not .miniPackages }}
-  {{ range .packages.linux.cmd}}
-package={{ . | quote }}
-install_cmd $package
+  {{ range .packages.linux.packages }}
+    package={{ . | quote }}
+    install_package $package
+  {{ end }}
+
+  {{ if eq .chezmoi.arch "amd64" -}}
+    {{ range .packages.linux.cmd.amd64 }}
+      package={{ . | quote }}
+      install_cmd $package
+    {{ end }}
+  {{ else if eq .chezmoi.arch "arm64" -}}
+    {{ range .packages.linux.cmd.arm64 }}
+      package={{ . | quote }}
+      install_cmd $package
+    {{ end }}
   {{ end -}}
 {{ else }}
+  {{ range .packages.linux.miniPackages }}
+    package={{ . | quote }}
+    install_package $package
+  {{ end }}
   {{ range .packages.linux.miniCmd}}
-package={{ . | quote }}
-install_cmd $package
+    package={{ . | quote }}
+    install_cmd $package
   {{ end }}
 {{ end }}
 
