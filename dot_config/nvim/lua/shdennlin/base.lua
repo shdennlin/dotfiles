@@ -19,3 +19,5 @@ vim.opt.expandtab = true
 vim.opt.smarttab = true
 vim.opt.breakindent = true
 vim.opt.mouse=a
+
+vim.keymap.set('x', 'p', '"_dP', { noremap = true, silent = true })
