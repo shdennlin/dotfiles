@@ -59,6 +59,7 @@ fzf-git-checkout() {
 # global alias
 alias -g R='| rg'
 alias -g ee='--help'
+alias -g vv='--version'
 alias -g el='--help | less'
 alias -g yy='--yes'
 
@@ -120,6 +121,7 @@ alias rsync='rsync -avh'
 alias s='sudo'
 {{ if eq .chezmoi.os "darwin" }}alias sv='sudo $EDITOR'{{ end }}
 {{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
+{{ if eq .chezmoi.os "darwin" }}alias timeout='gtimeout'{{ end }}
 
 # git
 alias gb='fzf-git-branch'
