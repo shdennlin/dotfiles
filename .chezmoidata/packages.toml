@@ -32,6 +32,17 @@ casks = [
   # "orbstack"
 ]
 
+miniPackages = [
+  "bat",
+  "curl",
+  "eza",
+  "fzf",
+  "git",
+  "ripgrep",
+  "tmux",
+  "zoxide"
+]
+
 # The Useful Packages for Linux Systems
 [packages.linux]
 packages = [
