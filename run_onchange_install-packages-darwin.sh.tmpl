@@ -23,18 +23,18 @@ fi
 
 echo "Installing/Updating Homebrew packages..."
 brew bundle --file=/dev/stdin <<EOF
-{{ if not .miniPackages -}}
-{{ range .packages.darwin.brews -}}
+{{ if not .miniPackages }}
+{{ range .packages.darwin.brews }}
 brew {{ . | quote }}
-{{ end -}} # {{ range .packages.darwin.brews -}}
-{{ range .packages.darwin.casks -}}
+{{ end }}
+{{ range .packages.darwin.casks }}
 cask {{ . | quote }}
-{{ end -}} # {{ range .packages.darwin.casks -}}
-{{ else -}} # {{ if not .miniPackages -}}
-{{ range .packages.darwin.miniPackages -}}
+{{ end }}
+{{ else }}
+{{ range .packages.darwin.miniPackages }}
 brew {{ . | quote }}
-{{ end -}} # {{ range .packages.darwin.miniPackages -}}
-{{ end -}} # {{ if not .miniPackages -}}
+{{ end }}
+{{ end }}
 EOF
 echo "Homebrew packages installed/updated successfully."
 {{ end -}}
