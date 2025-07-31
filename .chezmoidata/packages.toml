@@ -55,12 +55,12 @@ packages = [
 ]
 
 cmd.amd64 = [
-  ["asdf", "asdf", "mkdir -p $HOME/.local/bin; cd $HOME/.local/bin; curl -L -o asdf-v0.16.7-linux-amd64.tar.gz https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-amd64.tar.gz && tar -xvf asdf-v0.16.7-linux-amd64.tar.gz && rm -f asdf-v0.16.7-linux-amd64.tar.gz && cd -"],
+  ["asdf", "asdf", "mkdir -p $HOME/.local/bin; cd $HOME/.local/bin; curl -L -o asdf-v0.18.0-linux-amd64.tar.gz https://github.com/asdf-vm/asdf/releases/download/v0.18.0/asdf-v0.18.0-linux-amd64.tar.gz && tar -xvf asdf-v0.18.0-linux-amd64.tar.gz && rm -f asdf-v0.18.0-linux-amd64.tar.gz && cd -"],
   ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
 ]
 
 cmd.arm64 = [
-  ["asdf", "asdf", "mkdir -p $HOME/.local/bin; cd $HOME/.local/bin; curl -L -o asdf-v0.16.7-linux-arm64.tar.gz https://github.com/asdf-vm/asdf/releases/download/v0.16.7/asdf-v0.16.7-linux-arm64.tar.gz && tar -xvf asdf-v0.16.7-linux-arm64.tar.gz && rm -f asdf-v0.16.7-linux-arm64.tar.gz && cd -"],
+  ["asdf", "asdf", "mkdir -p $HOME/.local/bin; cd $HOME/.local/bin; curl -L -o asdf-v0.18.0-linux-arm64.tar.gz https://github.com/asdf-vm/asdf/releases/download/v0.18.0/asdf-v0.18.0-linux-arm64.tar.gz && tar -xvf asdf-v0.18.0-linux-arm64.tar.gz && rm -f asdf-v0.18.0-linux-arm64.tar.gz && cd -"],
   ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
 ]
 
