@@ -38,6 +38,7 @@ miniPackages = [
   "eza",
   "fzf",
   "git",
+  "git-delta",
   "ripgrep",
   "tmux",
   "zoxide"
@@ -57,6 +58,7 @@ packages = [
   "gh",
   "git",
   "git-lfs",
+  "git-delta",
   "lazygit",
   "net-tools",
   "plocate",
@@ -81,6 +83,7 @@ miniPackages = [
   "exa",
   "eza",
   "fzf",
+  "git-delta",
   "net-tools",
   "ripgrep",
   "tmux",
