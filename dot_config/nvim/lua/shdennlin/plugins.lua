@@ -18,6 +18,7 @@ end
 return packer.startup(function(use)
   use 'wbthomason/packer.nvim'
   use 'nvim-lua/plenary.nvim' -- Common utilities
+  use 'nvim-tree/nvim-web-devicons' -- Icons for plugins
 
 	use { 'max397574/better-escape.nvim',
 		config = function() require("better_escape").setup() end
@@ -50,10 +51,10 @@ return packer.startup(function(use)
     config = function()
       require('nvim-treesitter.configs').setup {
         -- A list of parser names, or "all"
-        ensure_installed = { 
+        ensure_installed = {
           "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline",
           "go", "python", "javascript", "typescript", "html", "css", "json",
-          "yaml", "toml", "bash", "rust", "c", "cpp", "java"
+          "yaml", "toml", "bash", "rust", "c", "cpp", "java", "latex"
         },
 
         -- Install parsers synchronously (only applied to `ensure_installed`)
@@ -89,6 +90,16 @@ return packer.startup(function(use)
         },
       }
     end
+  }
+
+  -- Markdown rendering
+  use {
+    'MeanderingProgrammer/render-markdown.nvim',
+    after = { 'nvim-treesitter' },
+    requires = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      require('render-markdown').setup({})
+    end,
   }
 
   -- Automatically set up your configuration after cloning packer.nvim
