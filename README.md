@@ -12,6 +12,7 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
     - [Configuration file](#configuration-file)
     - [The font of the terminal is not correct](#the-font-of-the-terminal-is-not-correct)
     - [ASDF can't work](#asdf-cant-work)
+    - [Neovim: tree-sitter CLI not found error](#neovim-tree-sitter-cli-not-found-error)
 
 ## Support OS
 
@@ -130,3 +131,27 @@ The ASDF will be installed automatically if you set `installUsefulPackages` to `
 To install ASDF manually, you can find the binary from [here](https://github.com/asdf-vm/asdf/releases/latest)
 
 Find more information about ASDF from [here](https://asdf-vm.com/guide/upgrading-to-v0-16.html)
+
+### Neovim: tree-sitter CLI not found error
+
+If you see an error like `tree-sitter CLI not found: tree-sitter is not executable!` when opening Neovim, it means the tree-sitter CLI tool is missing. This is required for certain treesitter parsers (like `latex`) that need to be compiled from grammar definitions.
+
+**Solution for macOS:**
+```bash
+brew install tree-sitter-cli
+```
+
+**Solution for Linux:**
+```bash
+# Arch-based
+sudo pacman -S tree-sitter-cli
+
+# Debian-based (Ubuntu, etc.)
+# Download from releases: https://github.com/tree-sitter/tree-sitter/releases
+# Or build from source: cargo install tree-sitter-cli
+```
+
+After installation, restart Neovim and the parsers will install automatically.
+
+> [!NOTE]
+> The `tree-sitter` package (library) and `tree-sitter-cli` (CLI tool) are separate packages on most systems.
