@@ -54,6 +54,31 @@ fzf-git-checkout() {
     fi
 }
 
+# nnn file manager with cd-on-quit and file preview
+# Based on official quitcd implementation from nnn repository
+nnn_cd() {
+    # Block nesting of nnn in subshells
+    [ "${NNNLVL:-0}" -eq 0 ] || {
+        echo "nnn is already running"
+        return
+    }
+
+    # Export NNN_TMPFILE so nnn knows where to write the last directory
+    # This enables cd-on-quit behavior (nnn checks if NNN_TMPFILE is set)
+    export NNN_TMPFILE="${XDG_CONFIG_HOME:-$HOME/.config}/nnn/.lastd"
+
+    # Use 'command' builtin to avoid alias recursion
+    # -P p enables file preview with fzf
+    command nnn -P p "$@"
+
+    # Source the tmpfile to execute the cd command nnn wrote
+    # (nnn writes 'cd "path"' to the file, not just the path)
+    [ ! -f "$NNN_TMPFILE" ] || {
+        . "$NNN_TMPFILE"
+        rm -f -- "$NNN_TMPFILE" > /dev/null
+    }
+}
+
 # ============alias=============
 
 # global alias
@@ -109,6 +134,9 @@ change_alias "${eza}" 'll' "${eza} -lghH"
 
 change_alias 'vim' 'v' 'vim'
 change_alias 'nvim' 'v' 'nvim'
+
+# nnn file manager
+change_alias 'nnn' 'n' 'nnn_cd'
 
 # Common shell functions
 alias cl='clear'
