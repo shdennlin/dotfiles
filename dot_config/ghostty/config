@@ -1,0 +1,45 @@
+# ====================== Theme =======================
+theme = Dracula
+
+# ====================== Appearance ===================
+font-size = 15
+background-opacity = 0.95
+minimum-contrast = 1.2
+cursor-style = block
+cursor-style-blink = false
+mouse-hide-while-typing = true
+
+# ====================== Terminal ======================
+term = xterm-256color
+
+# ====================== Behavior =====================
+copy-on-select = clipboard
+scrollback-limit = 10000000
+confirm-close-surface = true
+clipboard-paste-protection = false
+
+# ====================== Window =======================
+window-save-state = always
+window-padding-x = 4
+window-padding-y = 4
+macos-titlebar-style = tabs
+
+# ====================== Quick Terminal ================
+quick-terminal-position = top
+quick-terminal-animation-duration = 0.1
+
+# ====================== Shell Integration =============
+shell-integration = detect
+shell-integration-features = cursor,title,sudo
+
+# ====================== Keybindings ===================
+# Split navigation (vim-style)
+keybind = opt+h=goto_split:left
+keybind = opt+j=goto_split:bottom
+keybind = opt+k=goto_split:top
+keybind = opt+l=goto_split:right
+
+# Split management
+keybind = cmd+d=new_split:right
+keybind = cmd+shift+d=new_split:down
+keybind = cmd+shift+enter=toggle_split_zoom
