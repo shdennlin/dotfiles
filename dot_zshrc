@@ -72,6 +72,29 @@ znap source ohmyzsh/ohmyzsh plugins/sudo
 znap source ohmyzsh/ohmyzsh plugins/systemd
 znap source ohmyzsh/ohmyzsh plugins/tmux
 znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
+
+# zsh-vi-mode (must load AFTER oh-my-zsh key-bindings which forces emacs mode)
+# Set ZSH_VI_MODE=1 in your .zprofile to enable
+if [[ "$ZSH_VI_MODE" == "1" ]]; then
+  ZVM_VI_INSERT_ESCAPE_BINDKEY=jk
+  ZVM_INIT_MODE=sourcing
+  ZVM_LAZY_KEYBINDINGS=false
+
+  # Define hooks BEFORE sourcing zsh-vi-mode (ZVM_INIT_MODE=sourcing fires them during source)
+  zvm_after_init() {
+    if [ -f ~/.fzf.zsh ]; then
+      source ~/.fzf.zsh
+    elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]; then
+      source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+    elif [ -f /usr/share/fzf/key-bindings.zsh ]; then
+      source /usr/share/fzf/key-bindings.zsh
+    fi
+    bindkey -M viins '\ef' forward-word
+    bindkey -M viins '\eb' backward-word
+  }
+
+  znap source jeffreytse/zsh-vi-mode
+fi
 # ======================= plugins end ========================
 
 # ======================= source start =======================
