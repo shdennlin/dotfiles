@@ -9,6 +9,9 @@ cursor-style = block
 cursor-style-blink = false
 mouse-hide-while-typing = true
 
+# ====================== Terminal ======================
+term = xterm-256color
+
 # ====================== Behavior =====================
 copy-on-select = clipboard
 scrollback-limit = 10000000
