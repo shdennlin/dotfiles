@@ -74,17 +74,20 @@ znap source ohmyzsh/ohmyzsh plugins/tmux
 znap source ohmyzsh/ohmyzsh plugins/universalarchive # command: ua
 
 # zsh-vi-mode (must load AFTER oh-my-zsh key-bindings which forces emacs mode)
-ZVM_VI_INSERT_ESCAPE_BINDKEY=jk
-ZVM_INIT_MODE=sourcing
-znap source jeffreytse/zsh-vi-mode
+# Set ZSH_VI_MODE=1 in your .zprofile to enable
+if [[ "$ZSH_VI_MODE" == "1" ]]; then
+  ZVM_VI_INSERT_ESCAPE_BINDKEY=jk
+  ZVM_INIT_MODE=sourcing
+  znap source jeffreytse/zsh-vi-mode
 
-# Re-bind fzf keys after zsh-vi-mode init
-zvm_after_init() {
-  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-  bindkey '^R' fzf-history-widget
-  bindkey '^T' fzf-file-widget
-  bindkey '\ec' fzf-cd-widget
-}
+  # Re-bind fzf keys after zsh-vi-mode init
+  zvm_after_init() {
+    [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+    bindkey '^R' fzf-history-widget
+    bindkey '^T' fzf-file-widget
+    bindkey '\ec' fzf-cd-widget
+  }
+fi
 # ======================= plugins end ========================
 
 # ======================= source start =======================
