@@ -106,3 +106,8 @@ fi
 # ======================== source end ========================
 
 znap fpath _ '#' # Fix the issue where fpath sometimes does not work
+
+# Added by Spectra
+if [[ -z ${path[(r)$HOME/.local/bin]} ]]; then
+  path=("$HOME/.local/bin" $path)
+fi
