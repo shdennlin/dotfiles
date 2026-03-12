@@ -103,6 +103,17 @@ change_alias 'pbcopy' 'c' 'pbcopy'
 change_alias_global 'pbcopy' 'C' '| c'
 change_alias_global 'pbcopy' 'pwdc' 'pwd | c'
 
+# copy last command/output to clipboard
+if (( $+commands[pbcopy] )); then
+    cpc() { print -r "$ $(fc -ln -1 | sed 's/^ *//')" | pbcopy; print "✓ cmd" }
+    cpo() { eval "$(fc -ln -1)" 2>&1 | pbcopy; print "✓ out" }
+    cpa() {
+        local cmd=$(fc -ln -1 | sed 's/^ *//')
+        { print -r "$ $cmd"; eval "$cmd" 2>&1 } | pbcopy
+        print "✓ all"
+    }
+fi
+
 change_alias 'chezmoi' 'cz' 'chezmoi'
 
 change_alias 'aria2c' 'dl' 'aria2c -x 16 -s 16 --retry-wait=1'
@@ -150,6 +161,7 @@ alias s='sudo'
 {{ if eq .chezmoi.os "darwin" }}alias sv='sudo $EDITOR'{{ end }}
 {{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
 {{ if eq .chezmoi.os "darwin" }}alias timeout='gtimeout'{{ end }}
+alias rp='realpath'
 
 # git
 alias gb='fzf-git-branch'

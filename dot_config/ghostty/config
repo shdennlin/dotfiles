@@ -1,6 +1,10 @@
 # ====================== Theme =======================
 theme = Dracula
 
+# ====================== Font =========================
+font-family = MesloLGS NF
+font-family = Noto Sans Mono CJK TC
+
 # ====================== Appearance ===================
 font-size = 15
 background-opacity = 0.95
@@ -30,7 +34,7 @@ quick-terminal-animation-duration = 0.1
 
 # ====================== Shell Integration =============
 shell-integration = detect
-shell-integration-features = cursor,title,sudo
+shell-integration-features = cursor,title,sudo,no-cursor
 
 # ====================== Keybindings ===================
 # Split navigation (vim-style)
@@ -43,3 +47,9 @@ keybind = opt+l=goto_split:right
 keybind = cmd+d=new_split:right
 keybind = cmd+shift+d=new_split:down
 keybind = cmd+shift+enter=toggle_split_zoom
+
+# Tab management
+keybind = cmd+shift+r=prompt_tab_title
+
+# Quick terminal (global)
+keybind = global:cmd+shift+space=toggle_quick_terminal
