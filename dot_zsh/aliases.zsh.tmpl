@@ -162,6 +162,20 @@ alias s='sudo'
 {{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
 {{ if eq .chezmoi.os "darwin" }}alias timeout='gtimeout'{{ end }}
 alias rp='realpath'
+rpc() { realpath "$@" | pbcopy; print "✓ copied" }
+# relative path from git root (toplevel, not submodule)
+grp() {
+    local root
+    root=$(git rev-parse --show-superproject-working-tree 2>/dev/null)
+    [[ -z "$root" ]] && root=$(git rev-parse --show-toplevel 2>/dev/null)
+    [[ -z "$root" ]] && { echo "not in a git repo" >&2; return 1; }
+    {{ if eq .chezmoi.os "darwin" -}}
+    grealpath --relative-to="$root" "${@:-.}"
+    {{- else -}}
+    realpath --relative-to="$root" "${@:-.}"
+    {{- end }}
+}
+grpc() { grp "$@" | pbcopy; print "✓ copied" }
 
 # git
 alias gb='fzf-git-branch'
