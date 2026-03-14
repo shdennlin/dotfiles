@@ -10,14 +10,17 @@
 [core]
   longpaths = true
   editor = nvim
-  ignorecase= false
-  pager =
+  ignorecase = false
   quotepath = false
+  excludesfile = ~/.gitignore_global
   # Normalizing Line Endings
   eol = lf
   autocrlf = input
   safecrlf = true
-  excludesfile = ~/.gitignore_global
+{{- if lookPath "delta" }}
+  # Delta pager (https://github.com/dandavison/delta)
+  pager = delta
+{{- end }}
 
 [commit]
   gpgsign = {{ .git.gpgsign | default "true" }}
@@ -25,11 +28,7 @@
 [gpg]
   program = {{ if ( or ( eq .chezmoi.os "darwin" ) ( eq .chezmoi.os "linux" )) }}gpg{{ else if eq .chezmoi.os "windows" }}C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe{{ end }}
 
-# --------------- Delta Configuration Start ---------------
-# https://github.com/dandavison/delta
-# A syntax-highlighting pager for git, diff, grep, and blame output
-[core]
-  pager = delta
+{{- if lookPath "delta" }}
 
 [interactive]
   diffFilter = delta --color-only
@@ -39,10 +38,20 @@
   dark = true      # or light = true, or omit for auto-detection
   side-by-side = true
   line-numbers = true
+{{- end }}
 
 [merge]
   conflictstyle = zdiff3
-# --------------- Delta Configuration End ---------------
+
+[push]
+  autoSetupRemote = true
+  default = current
+
+[pull]
+  rebase = false
+
+[fetch]
+  prune = true
 
 [filter "lfs"]
   required = true
@@ -217,6 +226,12 @@
   ######## tag ########
   t = tag
   td = tag -d
+  ######## worktree ########
+  wt  = worktree
+  wta = worktree add
+  wtl = worktree list
+  wtr = worktree remove
+  wtp = worktree prune
   ######## show ########
   w = show
   wp = show -p
