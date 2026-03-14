@@ -146,57 +146,30 @@
   ######## checkout ########
   o  = checkout        #checkout branch
   ob = checkout -b     #checkout new branch
-
-  om  = checkout main
-  omm = checkout master
-  od  = checkout develop
-  os  = checkout source
-  oh  = checkout hotfix
-  or  = checkout release
-  of  = checkout feature
+  om = checkout main
+  od = checkout develop
   ######## push ########
-  ps   = push
-  psf  = push -f
-  psu  = push -u
+  ps  = push
+  psf = push -f
+  psu = push -u
   pst = push --tags
-
   pso  = push origin
-  psfo = push -f origin
-  psuo = push -u origin
-  psao = push --all origin
-
-  psom  = push origin main
-  psaom = push --all origin main
-  psfom = push -f origin main
-  psuom = push -u origin main
+  psom = push origin main
   ######## pull ########
-  pl = pull
-  plr = pull --rebase
-
-  plo   = pull origin
-  plor  = pull --rebase origin
-  plom  = pull origin main
-  plrom = pull --rebase origin main
-
+  pl   = pull
+  plr  = pull --rebase
+  plo  = pull origin
+  plom = pull origin main
   plu  = pull upstream
   plum = pull upstream main
-  pbum = pull --rebase upstream main
   ######## remote ########
-  r   = remote
-  ra  = remote add
-  rr  = remote rm
-  rv  = remote -v
-  rn  = remote rename
-  rp  = remote prune
-  rs  = remote show
-  rao = remote add origin
-  rau = remote add upstream
-  rro = remote remove origin
-  rru = remote remove upstream
-  rso = remote show origin
-  rsu = remote show upstream
-  rpo = remote prune origin
-  rpu = remote prune upstream
+  r  = remote
+  ra = remote add
+  rr = remote rm
+  rv = remote -v
+  rn = remote rename
+  rp = remote prune
+  rs = remote show
   ######## rebase ########
   rb   = rebase
   rba  = rebase --abort
