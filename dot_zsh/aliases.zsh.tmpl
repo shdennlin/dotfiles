@@ -109,7 +109,7 @@ if (( $+commands[pbcopy] )); then
     cpo() { eval "$(fc -ln -1)" 2>&1 | pbcopy; print "✓ out" }
     cpa() {
         local cmd=$(fc -ln -1 | sed 's/^ *//')
-        { print -r "$ $cmd"; eval "$cmd" 2>&1 } | pbcopy
+        { print -r "[${PWD/#$HOME/~}]"; print -r "$ $cmd"; eval "$cmd" 2>&1 } | pbcopy
         print "✓ all"
     }
 fi
