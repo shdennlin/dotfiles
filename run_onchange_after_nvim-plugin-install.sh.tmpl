@@ -14,22 +14,9 @@ SUCCESS="\033[1;92m"   # Bright Green
 # .config/nvim/version hash: {{ include "dot_config/nvim/version" | sha256sum }}
 echo -e "${INFO}Neovim Change Detected. Running post-change script...${NC}"
 
-# Install packer.nvim
-dir="$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim"
-if [ ! -d $dir ] ; then
-    echo -e "Install packer.nvim..."
-    echo -e "${CMD}git clone --depth 1 https://github.com/wbthomason/packer.nvim $dir"
-    git clone --depth 1 https://github.com/wbthomason/packer.nvim $dir > /dev/null
-    echo -en "${NC}"
-else
-    echo -e "Update packer.nvim..."
-    echo -e "${CMD}cd $dir && git pull > /dev/null && cd - > /dev/null${NC}"
-    cd $dir && git pull > /dev/null && cd - > /dev/null
-fi
-
-# Install plugins
-echo -e "Install plugins..."
-echo -e "${CMD}nvim +PackerSync +sleep 7 +q +q${NC}"
-nvim +"PackerSync" +"sleep 7" +"q" +"q"
+# lazy.nvim bootstraps itself, just trigger plugin sync
+echo -e "Syncing plugins via lazy.nvim..."
+echo -e "${CMD}nvim --headless '+Lazy! sync' +qa${NC}"
+nvim --headless "+Lazy! sync" +qa
 
 echo -e "${SUCCESS}Neovim post-change script complete.${NC}"

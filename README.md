@@ -7,6 +7,7 @@ This is my dotfiles repository, which is managed by [chezmoi](https://www.chezmo
   - [Features](#features)
   - [Prerequisites](#prerequisites)
   - [How To Use](#how-to-use)
+  - [Component Guides](#component-guides)
   - [Q/A](#qa)
     - [Update to my latest configurations](#update-to-my-latest-configurations)
     - [Configuration file](#configuration-file)
@@ -76,6 +77,14 @@ Apply the configurations if you have already installed the configurations or got
 ```bash
 chezmoi apply
 ```
+
+## Component Guides
+
+Each component has its own documentation with detailed setup, key bindings, and customization instructions:
+
+| Component | Guide | Description |
+|-----------|-------|-------------|
+| **Neovim** | [dot_config/nvim/README.md](./dot_config/nvim/README.md) | Plugin list, key bindings, LSP setup, plugin management |
 
 ## Q/A
 
