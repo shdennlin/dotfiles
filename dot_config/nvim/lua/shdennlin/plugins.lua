@@ -47,48 +47,40 @@ return packer.startup(function(use)
 
   -- Tree-sitter for enhanced syntax highlighting
   use { 'nvim-treesitter/nvim-treesitter',
+    branch = 'main',
     run = ':TSUpdate',
     config = function()
-      require('nvim-treesitter.configs').setup {
-        -- A list of parser names, or "all"
-        ensure_installed = {
-          "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline",
-          "go", "python", "javascript", "typescript", "html", "css", "json",
-          "yaml", "toml", "bash", "rust", "c", "cpp", "java", "latex"
-        },
+      require('nvim-treesitter').setup {}
 
-        -- Install parsers synchronously (only applied to `ensure_installed`)
-        sync_install = false,
-
-        -- Automatically install missing parsers when entering buffer
-        auto_install = true,
-
-        -- List of parsers to ignore installing
-        ignore_install = {},
-
-        highlight = {
-          enable = true,
-          -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
-          -- Set this to `true` if you depend on 'syntax' being enabled (like for indentation).
-          -- Using this option may slow down your editor, and you may see some duplicate highlights.
-          -- Instead of true it can also be a list of languages
-          additional_vim_regex_highlighting = false,
-        },
-
-        incremental_selection = {
-          enable = true,
-          keymaps = {
-            init_selection = "gnn",
-            node_incremental = "grn",
-            scope_incremental = "grc",
-            node_decremental = "grm",
-          },
-        },
-
-        indent = {
-          enable = true
-        },
+      -- Auto-install missing parsers on startup
+      local ensure_installed = {
+        "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline",
+        "go", "python", "javascript", "typescript", "html", "css", "json",
+        "yaml", "toml", "bash", "rust", "c", "cpp", "java", "latex"
       }
+      vim.defer_fn(function()
+        local installed = require('nvim-treesitter.config').get_installed()
+        local missing = vim.tbl_filter(function(lang)
+          return not vim.list_contains(installed, lang)
+        end, ensure_installed)
+        if #missing > 0 then
+          require('nvim-treesitter.install').install(missing)
+        end
+      end, 0)
+
+      -- Enable treesitter highlighting for all filetypes with available parsers
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function(ev)
+          pcall(vim.treesitter.start, ev.buf)
+        end,
+      })
+
+      -- Enable treesitter-based indentation
+      vim.api.nvim_create_autocmd('FileType', {
+        callback = function(ev)
+          vim.bo[ev.buf].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        end,
+      })
     end
   }
 
