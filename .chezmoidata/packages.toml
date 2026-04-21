@@ -92,6 +92,4 @@ miniPackages = [
   "zoxide"
 ]
 
-miniCmd = [
-  ["croc", "croc", "curl https://getcroc.schollz.com | bash"],
-]
+miniCmd = []
