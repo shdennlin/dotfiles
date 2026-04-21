@@ -82,9 +82,9 @@ cmd.arm64 = [
 miniPackages = [
   "bat",
   "curl",
-  "exa",
   "eza",
   "fzf",
+  "git",
   "git-delta",
   "net-tools",
   "ripgrep",
