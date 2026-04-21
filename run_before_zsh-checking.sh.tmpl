@@ -11,6 +11,17 @@ HIGHLIGHT="\033[1;36m" # Cyan
 CMD="\033[1;90m"       # Gray
 SUCCESS="\033[1;92m"   # Bright Green
 
+function run_as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    echo -e "${ERROR}Need root privileges. Re-run as root or install sudo.${NC}" >&2
+    exit 1
+  fi
+}
+
 if ! command -v zsh > /dev/null; then
   echo -e "${WARNING}Zsh is not installed. Automatically installing Zsh...${NC}"
   {{ if eq .chezmoi.os "darwin"}}
@@ -20,17 +31,17 @@ if ! command -v zsh > /dev/null; then
     ( eq .chezmoi.osRelease.id "debian" )
     ( eq .chezmoi.osRelease.id "raspbian" )
     ( eq .chezmoi.osRelease.id "kali" )) }}
-  cmd="sudo apt-get install zsh -y"
+  cmd="run_as_root apt-get install zsh -y"
   {{ else if ( or 
     ( eq .chezmoi.osRelease.id "fedora" )
     ( eq .chezmoi.osRelease.id "centos" )
     ( eq .chezmoi.osRelease.id "rhel" )) }}
-  cmd="sudo dnf install zsh -y"
+  cmd="run_as_root dnf install zsh -y"
   {{ else if ( or 
     ( eq .chezmoi.osRelease.id "arch" ) 
     ( eq .chezmoi.osRelease.id "archarm" ) 
     ( eq .chezmoi.osRelease.id "manjaro" )) }}
-  cmd="sudo pacman -S zsh --noconfirm"
+  cmd="run_as_root pacman -S zsh --noconfirm"
   {{ else }}
   echo -e "${ERROR}Your OS is not supported. Please install Zsh manually.${NC}" 
   exit 1
