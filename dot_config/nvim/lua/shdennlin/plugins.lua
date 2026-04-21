@@ -94,17 +94,26 @@ require("lazy").setup({
   {
     'nvim-treesitter/nvim-treesitter',
     branch = 'main',
-    build = ':TSUpdate',
+    build = function()
+      if vim.fn.executable('tree-sitter') == 1 then
+        vim.cmd('TSUpdate')
+      end
+    end,
     event = 'VeryLazy',
     config = function()
       require('nvim-treesitter').setup {}
 
+      local has_tree_sitter_cli = vim.fn.executable('tree-sitter') == 1
       local ensure_installed = {
         "lua", "vim", "vimdoc", "query", "markdown", "markdown_inline",
         "go", "python", "javascript", "typescript", "html", "css", "json",
         "yaml", "toml", "bash", "rust", "c", "cpp", "java", "latex",
       }
       vim.defer_fn(function()
+        if not has_tree_sitter_cli then
+          return
+        end
+
         local installed = require('nvim-treesitter.config').get_installed()
         local missing = vim.tbl_filter(function(lang)
           return not vim.list_contains(installed, lang)
