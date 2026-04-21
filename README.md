@@ -143,7 +143,12 @@ Find more information about ASDF from [here](https://asdf-vm.com/guide/upgrading
 
 ### Neovim: tree-sitter CLI not found error
 
-If you see an error like `tree-sitter CLI not found: tree-sitter is not executable!` when opening Neovim, it means the tree-sitter CLI tool is missing. This is required for certain treesitter parsers (like `latex`) that need to be compiled from grammar definitions.
+If you need automatic Tree-sitter parser installation in Neovim, install the
+Tree-sitter CLI tool. Some parsers need it to compile from grammar definitions.
+
+The Neovim config skips automatic parser installation when `tree-sitter` is not
+available, so server-side Neovim can still open without parser build warnings.
+Already-installed parsers continue to work.
 
 **Solution for macOS:**
 ```bash

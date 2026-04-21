@@ -17,10 +17,15 @@ Modular Neovim configuration with lazy.nvim plugin manager, treesitter-based syn
 
 ## Requirements
 
-- **Neovim** >= 0.12.0
+- **Neovim** >= 0.11.3 (0.12.x recommended/tested)
 - **Git** (for plugin installation)
 - **Nerd Font** (for icons, see [main README](../../README.md#the-font-of-the-terminal-is-not-correct))
 - **tree-sitter-cli** (optional, for compiling some parsers like `latex`)
+
+> [!WARNING]
+> Debian 13 (`trixie`) ships Neovim 0.10.x via apt. This config follows the
+> current `nvim-lspconfig` API and expects Nvim 0.11+. On Debian stable, install
+> Neovim from the official tarball or pin older LSP plugins.
 
 ## Plugin List
 
@@ -63,7 +68,10 @@ In the Lazy UI:
 | `P` | Show profiling (startup time per plugin) |
 | `q` | Close |
 
-Treesitter parsers are installed automatically on first launch. To manually manage parsers:
+Treesitter parsers are installed automatically on first launch only when the
+`tree-sitter` CLI is available. On minimal servers without `tree-sitter`, parser
+installation is skipped quietly so Neovim can still start. To manually manage
+parsers:
 
 ```vim
 :TSInstall <language>    " Install a parser
@@ -149,14 +157,18 @@ Plugins are version-locked via `lazy-lock.json`. This ensures consistent version
   'neovim/nvim-lspconfig',
   event = 'VeryLazy',
   config = function()
-    local lspconfig = require('lspconfig')
-    lspconfig.lua_ls.setup {}       -- Lua
-    lspconfig.pyright.setup {}      -- Python
-    lspconfig.ts_ls.setup {}        -- TypeScript
-    lspconfig.gopls.setup {}        -- Go
+    vim.lsp.enable('lua_ls')   -- Lua
+    vim.lsp.enable('pyright')  -- Python
+    vim.lsp.enable('ts_ls')    -- TypeScript
+    vim.lsp.enable('gopls')    -- Go
   end,
 },
 ```
+
+> [!WARNING]
+> This LSP example requires Nvim 0.11+. Use `vim.lsp.config()` for per-server
+> overrides and `vim.lsp.enable()` to enable servers. Avoid the deprecated
+> `require('lspconfig').SERVER.setup({})` API.
 
 ## Troubleshooting
 
