@@ -12,11 +12,22 @@ HIGHLIGHT="\033[1;36m" # Cyan
 CMD="\033[1;90m"       # Gray
 SUCCESS="\033[1;92m"   # Bright Green
 
+function run_as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    echo -e "${ERROR}Need root privileges. Re-run as root or install sudo.${NC}" >&2
+    exit 1
+  fi
+}
+
 function snapCheck(){
   if ! command -v snap >/dev/null; then
     echo -e "${WARNING}Snap is not installed. You need to install Snap first.${NC}"
     echo -e "Please install Snap by running the following command:"
-    echo -e "${HIGHLIGHT}sudo apt update && sudo apt install snapd -y && sudo snap install core${NC}"
+    echo -e "${HIGHLIGHT}run_as_root apt update && run_as_root apt install snapd -y && run_as_root snap install core${NC}"
     exit 1
   fi
 }
@@ -33,20 +44,20 @@ if ! command -v nvim >/dev/null; then
   case "$os_pretty_name" in
       Ubuntu\ 22.04* | Ubuntu\ 22.10* | Debian\ GNU/Linux\ 12*)
           snapCheck
-          install_cmd="sudo snap install nvim --classic"
+          install_cmd="run_as_root snap install nvim --classic"
           ;;
       *)
-          echo -e "${CMD}sudo apt update"
-          eval "sudo apt update"
+          echo -e "${CMD}run_as_root apt update"
+          run_as_root apt update
           echo -e "${NC}"
-          install_cmd="sudo apt-get install -qq -y neovim"
+          install_cmd="run_as_root apt-get install -qq -y neovim"
           ;;
   esac
   {{ else if ( or 
     ( eq .chezmoi.osRelease.id "arch" ) 
     ( eq .chezmoi.osRelease.id "archarm" ) 
     ( eq .chezmoi.osRelease.id "manjaro" )) }}
-  install_cmd="sudo pacman -S --noconfirm neovim"
+  install_cmd="run_as_root pacman -S --noconfirm neovim"
   {{ else }}
   echo -e "${ERROR}Your OS is not supported. Please install Neovim manually.${NC}" 
   echo -e "After installing Neovim, Re-run the script(${HIGHLIGHT}chezmoi apply${NC}) to continue installing the Neovim plugins."

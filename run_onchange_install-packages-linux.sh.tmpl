@@ -15,28 +15,39 @@ SUCCESS="\033[1;92m"   # Bright Green
 set -eu
 echo "Installing packages..."
 
+function run_as_root() {
+  if [ "$(id -u)" -eq 0 ]; then
+    "$@"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo "$@"
+  else
+    echo -e "${ERROR}Need root privileges. Re-run as root or install sudo.${NC}" >&2
+    exit 1
+  fi
+}
+
 {{ if ( or 
   ( eq .chezmoi.osRelease.id "ubuntu" )
   ( eq .chezmoi.osRelease.id "debian" )
   ( eq .chezmoi.osRelease.id "raspbian" )
   ( eq .chezmoi.osRelease.id "kali" )) }}
-echo -e "${CMD}sudo apt update"
-sudo apt update
+echo -e "${CMD}run_as_root apt update"
+run_as_root apt update
 echo -e "${NC}"
-install_cmd="sudo apt-get install -qq -y"
+install_cmd="run_as_root apt-get install -qq -y"
 {{ else if ( or 
   ( eq .chezmoi.osRelease.id "fedora" )
   ( eq .chezmoi.osRelease.id "centos" )
   ( eq .chezmoi.osRelease.id "rhel" )) }}
-echo -e "${CMD}sudo dnf check-update"
-sudo dnf check-update
+echo -e "${CMD}run_as_root dnf check-update"
+run_as_root dnf check-update
 echo -e "${NC}"
-install_cmd="sudo dnf install -y"
+install_cmd="run_as_root dnf install -y"
 {{ else if ( or 
   ( eq .chezmoi.osRelease.id "arch" ) 
   ( eq .chezmoi.osRelease.id "archarm" ) 
   ( eq .chezmoi.osRelease.id "manjaro" )) }}
-install_cmd="sudo pacman -S --noconfirm"
+install_cmd="run_as_root pacman -S --noconfirm"
 {{ else }}
 echo -e "${ERROR}Your OS is not supported.${NC}" 
 echo -e "Please set installUsefulPackages to ${HIGHILIGHT}false${NC} using ${HIGHLIGHT}chezmoi edit-config${NC} and re-run the script(${HIGHLIGHT}chezmoi apply${NC})."
