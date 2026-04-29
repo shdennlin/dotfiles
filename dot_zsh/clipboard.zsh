@@ -4,11 +4,17 @@
 # .zshrc). All blocks are gated by `$+functions[clipcopy]` so this file
 # fails gracefully if the omz lib didn't load.
 #
+# In SSH context, clipcopy is wrapped to use OSC 52 — the clipboard write
+# is sent via terminal escape sequences and the LOCAL terminal (Ghostty,
+# iTerm2, kitty, WezTerm, etc.) intercepts and writes to the local
+# clipboard. No daemons, no port forwarding. Works through tmux via DCS
+# passthrough. Apple Terminal does not support OSC 52.
+#
 # Provides:
-#   c, C (global), pwdc      — short-form copy aliases
+#   c, C (global), pwdc      — short-form copy aliases (C/pwdc tee to terminal)
 #   Ctrl+O                   — copybuffer (copies current command-line buffer)
 #   cpc / cpc -d             — copy last command (bare / with workdir comment)
-#   cpw <cmd>                — run cmd + auto-copy [path]/$cmd/<output>
+#   cpw <cmd>                — run cmd + auto-copy [path]/# ts/$cmd/<output>
 #       aliases: cw, X, ','  — short forms for cpw (trial: pick the one that sticks)
 #   cpr [N]                  — quick replay slot N from history (0 = newest)
 #   cph                      — interactive history picker (fzf w/ preview, or list fallback)
@@ -20,10 +26,58 @@
 # (loaded via znap in .zshrc). Falls back across pbcopy / xclip / xsel /
 # wl-copy / clip.exe / tmux buffer / etc. so cp* works on macOS, Linux, WSL,
 # SSH (lemonade), Termux, and tmux without code changes.
+#
+# OSC 52 wrap: in SSH context use OSC 52 escape sequence to bridge the
+# clipboard back to the LOCAL terminal; otherwise fall through to omz's
+# detected native tool. clippaste is left untouched (omz's native still
+# works locally; reading clipboard via OSC 52 is gated by terminals for
+# security and not worth bypassing).
+if (( $+functions[clipcopy] )) && (( $+functions[detect-clipboard] )); then
+    # Force omz lazy detection now to resolve clipcopy to its platform
+    # impl. Without this we'd snapshot omz's lazy stub, which calls itself
+    # by name and would infinite-loop after we shadow it. Calling clipcopy
+    # directly would empty the system clipboard as a side effect, so call
+    # detect-clipboard instead — it only redefines functions.
+    detect-clipboard 2>/dev/null
+
+    # Snapshot omz's resolved native clipcopy so we can fall through to it
+    # for non-SSH usage.
+    functions[_native_clipcopy]=$functions[clipcopy]
+
+    # Send payload via OSC 52 escape sequence to the controlling terminal
+    # (/dev/tty, not stdout — stdout could be redirected). Inside tmux,
+    # wrap in DCS passthrough so tmux forwards to the outer terminal
+    # (requires `set -g allow-passthrough on` in tmux.conf, tmux 3.3+).
+    _osc52_clipcopy() {
+        emulate -L zsh
+        local content
+        content=$(cat "${1:-/dev/stdin}" | base64 | tr -d '\n')
+        # 2>/dev/null: silently no-op if /dev/tty isn't writable
+        # (e.g., non-interactive shell). Better than spewing errors.
+        if [[ -n "$TMUX" ]]; then
+            printf '\ePtmux;\e\e]52;c;%s\a\e\\' "$content" > /dev/tty 2>/dev/null
+        else
+            printf '\e]52;c;%s\a' "$content" > /dev/tty 2>/dev/null
+        fi
+    }
+
+    # New clipcopy: dispatch on SSH presence. Every cp* caller automatically
+    # benefits — they all funnel through clipcopy.
+    clipcopy() {
+        if [[ -n "$SSH_CONNECTION$SSH_TTY" ]]; then
+            _osc52_clipcopy "$@"
+        else
+            _native_clipcopy "$@"
+        fi
+    }
+fi
+
+# Short-form aliases. C and pwdc tee to /dev/tty so the output is visible
+# on screen as well as copied (vs `c`, which stays silent for scripting use).
 if (( $+functions[clipcopy] )); then
     alias c=clipcopy
-    alias -g C='| clipcopy'
-    alias -g pwdc='pwd | clipcopy'
+    alias -g C='| tee /dev/tty | clipcopy'
+    alias -g pwdc='pwd | tee /dev/tty | clipcopy'
 fi
 
 # copybuffer — Ctrl+O copies the current command-line buffer (pre-run capture).
