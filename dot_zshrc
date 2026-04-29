@@ -90,9 +90,16 @@ if [[ "$ZSH_VI_MODE" == "1" ]]; then
       source ~/.fzf.zsh
     elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]; then
       source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+    elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
+      source /usr/share/doc/fzf/examples/key-bindings.zsh
     elif [ -f /usr/share/fzf/key-bindings.zsh ]; then
       source /usr/share/fzf/key-bindings.zsh
     fi
+    # zsh-vi-mode resets keymaps at init; rebind fzf widgets explicitly to viins
+    # so ^R / ^T / Alt-c work on the first prompt (not only after toggling normal mode).
+    bindkey -M viins '^R' fzf-history-widget
+    bindkey -M viins '^T' fzf-file-widget
+    bindkey -M viins '\ec' fzf-cd-widget
     bindkey -M viins '\ef' forward-word
     bindkey -M viins '\eb' backward-word
   }
