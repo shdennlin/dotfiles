@@ -6,6 +6,9 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 export ZSH_CONFIG_DIR="$HOME/.zsh"
+# Znap maintenance check: confirmed low-activity but alive 2026-04 (last push 2025-08).
+# Re-evaluate 2027-04 — switch only if archived, broken on zsh upgrade, or author goes silent.
+# Migration candidates if needed: antidote (closest match) or zinit (turbo mode, fastest).
 # Znap init
 [[ -r $ZSH_CONFIG_DIR/znap/znap.zsh ]] ||
   git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git $ZSH_CONFIG_DIR/znap
