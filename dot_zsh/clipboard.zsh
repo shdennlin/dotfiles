@@ -14,8 +14,7 @@
 #   c, C (global), pwdc      — short-form copy aliases (C/pwdc tee to terminal)
 #   Ctrl+O                   — copybuffer (copies current command-line buffer)
 #   cpc / cpc -d             — copy last command (bare / with workdir comment)
-#   cpw <cmd>                — run cmd + auto-copy [path]/# ts/$cmd/<output>
-#       aliases: cw, X, ','  — short forms for cpw (trial: pick the one that sticks)
+#   cpw <cmd>  /  , <cmd>    — run cmd + auto-copy [path]/# ts/$cmd/<output>
 #   cpr [N]                  — quick replay slot N from history (0 = newest)
 #   cph                      — interactive history picker (fzf w/ preview, or list fallback)
 #   --help / -h on any cp*   — shared help (see _cp_help)
@@ -115,7 +114,7 @@ cp* family — copy command/output to clipboard
   cpc -d        copy: # workdir: <path>              (annotated for re-run elsewhere)
                       <cmd>
   cpw <cmd>     run + copy:  [path] / \$ <cmd> / <output>
-                short aliases:  cw  /  X  /  ,
+                short alias:  ,
   cpr [N]       quick replay slot N to clipboard    (default 0 = newest)
   cph           interactive history picker          (fzf with preview; Tab = multi-select → concat)
 
@@ -204,23 +203,21 @@ EOF
         print "✓ all (copied)"
     }
     (( $+functions[compdef] )) && compdef _precommand cpw
-    # short aliases for cpw (trial)
-    for _n in cw X ','; do
-        alias "$_n=cpw"
-        (( $+functions[compdef] )) && compdef _precommand "$_n"
-    done
-    unset _n
+    # short alias for cpw — `,` chosen over cw/X for: 1-char, no shift,
+    # outside the English namespace, visually distinct as a wrapper.
+    alias ','=cpw
+    (( $+functions[compdef] )) && compdef _precommand ','
 
     # Inline-expand regular aliases used as cpw's first arg. zsh normally
     # only expands regular aliases at command position — `l` inside
     # `cpw l ...` stays unexpanded. omz globalias handles the global
     # alias case but uses _expand_alias which has the same limitation.
-    # This widget overrides space: when LBUFFER is `<cpw|cw|X|,> <word>`
-    # and <word> is a regular alias, rewrite the buffer inline; then
+    # This widget overrides space: when LBUFFER is `<cpw|,> <word>` and
+    # <word> is a regular alias, rewrite the buffer inline; then
     # delegate to globalias (or self-insert) for the actual space.
     _cpw_alias_space() {
         emulate -L zsh
-        if [[ $LBUFFER =~ '^[[:space:]]*(cpw|cw|X|,)[[:space:]]+([a-zA-Z0-9_.-]+)$' ]]; then
+        if [[ $LBUFFER =~ '^[[:space:]]*(cpw|,)[[:space:]]+([a-zA-Z0-9_.-]+)$' ]]; then
             local word="${match[2]}"
             if [[ -n "${aliases[$word]:-}" ]]; then
                 LBUFFER="${LBUFFER%$word}${aliases[$word]}"
