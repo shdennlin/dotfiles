@@ -211,6 +211,31 @@ EOF
     done
     unset _n
 
+    # Inline-expand regular aliases used as cpw's first arg. zsh normally
+    # only expands regular aliases at command position — `l` inside
+    # `cpw l ...` stays unexpanded. omz globalias handles the global
+    # alias case but uses _expand_alias which has the same limitation.
+    # This widget overrides space: when LBUFFER is `<cpw|cw|X|,> <word>`
+    # and <word> is a regular alias, rewrite the buffer inline; then
+    # delegate to globalias (or self-insert) for the actual space.
+    _cpw_alias_space() {
+        emulate -L zsh
+        if [[ $LBUFFER =~ '^[[:space:]]*(cpw|cw|X|,)[[:space:]]+([a-zA-Z0-9_.-]+)$' ]]; then
+            local word="${match[2]}"
+            if [[ -n "${aliases[$word]:-}" ]]; then
+                LBUFFER="${LBUFFER%$word}${aliases[$word]}"
+            fi
+        fi
+        if (( $+functions[globalias] )); then
+            zle globalias
+        else
+            zle .self-insert
+        fi
+    }
+    zle -N _cpw_alias_space
+    bindkey -M emacs ' ' _cpw_alias_space
+    bindkey -M viins ' ' _cpw_alias_space
+
     # cpr [N] — replay N-th-back copy (0 = most recent, default)
     cpr() {
         [[ $1 == --help || $1 == -h ]] && { _cp_help; return }
