@@ -99,20 +99,7 @@ fi
 
 change_alias 'batcat' 'bat' 'batcat'
 
-change_alias 'pbcopy' 'c' 'pbcopy'
-change_alias_global 'pbcopy' 'C' '| c'
-change_alias_global 'pbcopy' 'pwdc' 'pwd | c'
-
-# copy last command/output to clipboard
-if (( $+commands[pbcopy] )); then
-    cpc() { print -r "$ $(fc -ln -1 | sed 's/^ *//')" | pbcopy; print "✓ cmd" }
-    cpo() { eval "$(fc -ln -1)" 2>&1 | pbcopy; print "✓ out" }
-    cpa() {
-        local cmd=$(fc -ln -1 | sed 's/^ *//')
-        { print -r "[${PWD/#$HOME/~}]"; print -r "$ $cmd"; eval "$cmd" 2>&1 } | pbcopy
-        print "✓ all"
-    }
-fi
+# Clipboard utilities (cp* family, copybuffer, c/C/pwdc) live in clipboard.zsh.
 
 change_alias 'chezmoi' 'cz' 'chezmoi'
 
@@ -162,7 +149,7 @@ alias s='sudo'
 {{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
 {{ if eq .chezmoi.os "darwin" }}alias timeout='gtimeout'{{ end }}
 alias rp='realpath'
-rpc() { realpath "$@" | pbcopy; print "✓ copied" }
+rpc() { realpath "$@" | clipcopy; print "✓ copied" }
 # relative path from git root (toplevel, not submodule)
 grp() {
     local root
@@ -175,7 +162,7 @@ grp() {
     realpath --relative-to="$root" "${@:-.}"
     {{- end }}
 }
-grpc() { grp "$@" | pbcopy; print "✓ copied" }
+grpc() { grp "$@" | clipcopy; print "✓ copied" }
 
 # git
 alias gb='fzf-git-branch'
