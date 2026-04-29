@@ -140,10 +140,34 @@ EOF
     }
 
     # cpw — wrap & run; auto-copies [path] + # timestamp + $ cmd + output
+    #
+    # When $1 resolves to a real binary, runs via script(1) to provide a
+    # pty so the wrapped command (eza, ls, grep, git, bat, etc.) keeps
+    # its colors visible on the terminal. Falls back to plain eval for
+    # aliases/functions/builtins where script(1) can't be used (script
+    # exec's argv directly, no shell parser → aliases not expanded).
+    #
+    # The output stream is split: tee /dev/tty shows it on the terminal
+    # (with colors), then sed+tr strip ANSI escapes and pty control bytes
+    # so the clipboard payload is plain text suitable for pasting.
     cpw() {
         [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]] && { _cp_help; return }
         local buf; buf=$(mktemp) || return 1
-        eval "$@" 2>&1 | tee "$buf"
+        {
+            if (( $+commands[script] )) && [[ -n "$(whence -p "$1" 2>/dev/null)" ]]; then
+                case "$OSTYPE" in
+                    darwin*|freebsd*|netbsd*) script -q /dev/null "$@" 2>&1 ;;
+                    linux*)                   script -qc "$*" /dev/null 2>&1 ;;
+                    *)                        eval "$@" 2>&1 ;;
+                esac
+            else
+                eval "$@" 2>&1
+            fi
+        } | tee /dev/tty 2>/dev/null \
+          | sed -E $'s/\x1b\\[[0-9;?]*[a-zA-Z]//g; s/\x1b\\][^\x07]*\x07//g' \
+          | LC_ALL=C tr -d '\001-\010\013\014\015\016-\037\177' \
+          | sed -E '1s/^\^D//' \
+          > "$buf"
         {
             print -r -- "[${PWD/#$HOME/~}]"
             print -r -- "# $(date '+%Y-%m-%d %H:%M:%S')"
