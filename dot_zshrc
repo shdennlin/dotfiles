@@ -56,6 +56,7 @@ znap source olets/zsh-window-title
 
 # from oh-my-zsh
 [[ ! -d $ZSH_CONFIG_DIR/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
+znap source ohmyzsh/ohmyzsh lib/clipboard
 znap source ohmyzsh/ohmyzsh lib/directories
 znap source ohmyzsh/ohmyzsh lib/history.zsh
 znap source ohmyzsh/ohmyzsh lib/key-bindings
@@ -105,6 +106,7 @@ fi
 [[ ! -f $HOME/.p10k.zsh ]]                  || source $HOME/.p10k.zsh
 [[ ! -f $HOME/.zprofile ]]                  || source $HOME/.zprofile
 [[ ! -f $ZSH_CONFIG_DIR/aliases.zsh ]]      || source $ZSH_CONFIG_DIR/aliases.zsh
+[[ ! -f $ZSH_CONFIG_DIR/clipboard.zsh ]]    || source $ZSH_CONFIG_DIR/clipboard.zsh
 [[ ! -f $ZSH_CONFIG_DIR/package_init.zsh ]] || source $ZSH_CONFIG_DIR/package_init.zsh
 # ======================== source end ========================
 
