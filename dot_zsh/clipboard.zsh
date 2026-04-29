@@ -141,23 +141,49 @@ EOF
 
     # cpw — wrap & run; auto-copies [path] + # timestamp + $ cmd + output
     #
-    # When $1 resolves to a real binary, runs via script(1) to provide a
-    # pty so the wrapped command (eza, ls, grep, git, bat, etc.) keeps
-    # its colors visible on the terminal. Falls back to plain eval for
-    # aliases/functions/builtins where script(1) can't be used (script
-    # exec's argv directly, no shell parser → aliases not expanded).
+    # Builds a shell-runnable command string from the args, then runs it
+    # under script(1) to provide a pty so the wrapped command (eza, ls,
+    # grep, git, bat, etc.) keeps its colors visible on the terminal:
+    #
+    #   - $1 is alias       → expand via $aliases[name], append remaining
+    #                          args (quoted), pass to `sh -c`
+    #   - $1 is binary      → quote all args, pass to `sh -c`
+    #   - $1 is function/builtin → cmd_string stays empty, fall back to eval
+    #
+    # Falling through to `sh -c` (rather than exec'ing argv directly) lets
+    # alias bodies containing pipes/redirects work naturally. After alias
+    # expansion we re-check that the first word is a real binary, since
+    # an alias could resolve to another function (e.g. `cw → cpw`).
     #
     # The output stream is split: tee /dev/tty shows it on the terminal
     # (with colors), then sed+tr strip ANSI escapes and pty control bytes
-    # so the clipboard payload is plain text suitable for pasting.
+    # so the clipboard payload is plain text suitable for pasting. macOS
+    # BSD script appends a literal `^D\b\b` end-of-file marker that's
+    # invisible on a TTY but shows up when piped — the trailing sed
+    # strips that line-1 prefix.
     cpw() {
         [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]] && { _cp_help; return }
         local buf; buf=$(mktemp) || return 1
+
+        local cmd_string="" first_word=""
+        if [[ -n "${aliases[$1]:-}" ]]; then
+            cmd_string="${aliases[$1]}"
+            local arg
+            for arg in "${@:2}"; do cmd_string+=" ${(q)arg}"; done
+            first_word="${${(z)cmd_string}[1]}"
+        elif [[ -n "$(whence -p "$1" 2>/dev/null)" ]]; then
+            cmd_string="${(q)1}"
+            local arg
+            for arg in "${@:2}"; do cmd_string+=" ${(q)arg}"; done
+            first_word="$1"
+        fi
+
         {
-            if (( $+commands[script] )) && [[ -n "$(whence -p "$1" 2>/dev/null)" ]]; then
+            if [[ -n "$cmd_string" ]] && (( $+commands[script] )) \
+               && [[ -n "$(whence -p "$first_word" 2>/dev/null)" ]]; then
                 case "$OSTYPE" in
-                    darwin*|freebsd*|netbsd*) script -q /dev/null "$@" 2>&1 ;;
-                    linux*)                   script -qc "$*" /dev/null 2>&1 ;;
+                    darwin*|freebsd*|netbsd*) script -q /dev/null sh -c "$cmd_string" 2>&1 ;;
+                    linux*)                   script -qc "$cmd_string" /dev/null 2>&1 ;;
                     *)                        eval "$@" 2>&1 ;;
                 esac
             else
