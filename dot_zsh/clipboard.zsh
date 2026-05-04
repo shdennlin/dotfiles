@@ -15,7 +15,9 @@
 #   Ctrl+O                   — copybuffer (copies current command-line buffer)
 #   cpc / cpc -d             — copy last command (bare / with workdir comment)
 #   cpw <cmd>  /  , <cmd>    — run cmd + auto-copy [path]/# ts/$cmd/<output>
-#   cpr [N]                  — quick replay slot N from history (0 = newest)
+#   <pipeline> ,,            — tail-of-pipeline variant (works with `|`, no quoting)
+#   cpr                      — rerun last shell-history cmd through cpw
+#   cps [N]                  — paste slot N from ring buffer to clipboard (0 = newest)
 #   cph                      — interactive history picker (fzf w/ preview, or list fallback)
 #   --help / -h on any cp*   — shared help (see _cp_help)
 #
@@ -115,7 +117,10 @@ cp* family — copy command/output to clipboard
                       <cmd>
   cpw <cmd>     run + copy:  [path] / \$ <cmd> / <output>
                 short alias:  ,
-  cpr [N]       quick replay slot N to clipboard    (default 0 = newest)
+                pipelines:    quote — cpw 'a | b' — or use ,, (below)
+  <pipe> ,,     tail-of-pipeline collector (no quoting needed; loses colors)
+  cpr           rerun last shell-history cmd through cpw
+  cps [N]       paste slot N from ring buffer to clipboard   (default 0 = newest)
   cph           interactive history picker          (fzf with preview; Tab = multi-select → concat)
 
   --help, -h    show this help (works on any cp* command)
@@ -233,8 +238,60 @@ EOF
     bindkey -M emacs ' ' _cpw_alias_space
     bindkey -M viins ' ' _cpw_alias_space
 
-    # cpr [N] — replay N-th-back copy (0 = most recent, default)
+    # _cpw_pipe — tail-of-pipeline collector. Used via the `,,` global alias:
+    #     find . -type f | grep foo ,,
+    # Why this exists: zsh parses `cpw a | b` as a pipeline before cpw runs,
+    # so cpw only ever sees `a`. Quoting works (`cpw 'a | b'`) but is awkward.
+    # Putting the collector at the tail lets the user write the pipeline
+    # naturally; we recover the full command line via $history[$HISTCMD]
+    # (the in-flight cmd, populated before execution and *before* alias
+    # expansion — so the literal ",," is present and we can trim it).
+    #
+    # Tradeoff: no pty injection, so upstream tools that auto-disable color
+    # on non-tty stdout (eza, ls, grep, git) will already have done so by
+    # the time we receive bytes. For pipelines, plain text is usually
+    # what's wanted anyway.
+    _cpw_pipe() {
+        emulate -L zsh
+        # Capture stdin while still echoing to terminal (visibility).
+        # 2>/dev/null silences "tee: /dev/tty: Device not configured" when
+        # there's no controlling tty (e.g. inside subshell/script).
+        local out
+        out=$(tee /dev/tty 2>/dev/null)
+        # Recover original command line and strip the trailing ",,".
+        # ${var% pat} = remove shortest match from end. ",," is always a
+        # whole token, so a leading space is reliable.
+        local full="${history[$HISTCMD]}"
+        local shown="${full% ,,*}"
+        [[ $shown == $full ]] && shown="${full%,,*}"  # safety: no leading space
+        {
+            print -r -- "[${PWD/#$HOME/~}]"
+            print -r -- "# $(date '+%Y-%m-%d %H:%M:%S')"
+            print -r -- "$ ${shown}"
+            print -r -- "$out"
+        } | _cp_send
+        print "✓ all (copied)"
+    }
+    # Global alias so `,,` at the tail of a pipeline expands inline.
+    # Two commas chosen to mirror the `,` short alias for cpw — semantic
+    # pair: prefix `,` for the run-it form, suffix `,,` for the pipe form.
+    alias -g ',,'='| _cpw_pipe'
+
+    # cpr — rerun the previous shell-history command through cpw, so the
+    # path/timestamp/cmd/output preamble is captured. Routing through cpw
+    # (rather than reimplementing) keeps formatting consistent; cpw's
+    # "first word isn't a binary or alias" branch falls through to eval,
+    # which handles complex strings (pipes, redirects, quotes) naturally.
     cpr() {
+        [[ $1 == --help || $1 == -h ]] && { _cp_help; return }
+        local cmd
+        cmd=$(_cp_last)
+        [[ -z $cmd ]] && { print "✗ no previous command"; return 1 }
+        cpw "$cmd"
+    }
+
+    # cps [N] — paste N-th-back ring-buffer slot to clipboard (0 = newest, default)
+    cps() {
         [[ $1 == --help || $1 == -h ]] && { _cp_help; return }
         local back=${1:-0}
         [[ -s $_CP_DIR/.idx ]] || { print "✗ no copies yet"; return 1 }
@@ -286,7 +343,7 @@ EOF
     }
 
     # cph — interactive history picker. fzf with preview pane if available,
-    # else falls back to a text list + hint to use 'cpr <N>'.
+    # else falls back to a text list + hint to use 'cps <N>'.
     # Tab in fzf: multi-select; Enter on multi-selection concatenates the
     # selected slots (blank-line separated, fzf's input order = newest first)
     # and copies the combined block — useful for handing a sequence of
@@ -324,7 +381,7 @@ EOF
                 print "✓ concat'd $n slots"
             else
                 local back=${selected%%$'\t'*}
-                cpr "$back"
+                cps "$back"
             fi
         else
             _cp_slots | while IFS=$'\t' read -r i _ cmd dir ts; do
@@ -334,7 +391,7 @@ EOF
                     printf '  -%-2d %-19s %s\n' $i "$ts" "${cmd:0:60}"
                 fi
             done
-            print "  → fzf not found; use 'cpr <N>' to copy a slot"
+            print "  → fzf not found; use 'cps <N>' to copy a slot"
         fi
     }
 fi
