@@ -133,8 +133,17 @@ change_alias "${eza}" 'll' "${eza} -lghH"
 change_alias 'vim' 'v' 'vim'
 change_alias 'nvim' 'v' 'nvim'
 
-# nnn file manager
-change_alias 'nnn' 'n' 'nnn_cd'
+# yazi
+function n() {
+  local tmp="$(mktemp -t 'yazi-cwd.XXXXXX')"
+  yazi "$@" --cwd-file="$tmp"
+  if [[ -f "$tmp" ]]; then
+    local cwd
+    IFS= read -r -d '' cwd < "$tmp"
+    [[ -n "$cwd" && "$cwd" != "$PWD" && -d "$cwd" ]] && builtin cd -- "$cwd"
+    rm -f -- "$tmp"
+  fi
+}
 
 # Common shell functions
 alias cl='clear'
