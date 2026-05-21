@@ -247,6 +247,11 @@ EOF
     # (the in-flight cmd, populated before execution and *before* alias
     # expansion — so the literal ",," is present and we can trim it).
     #
+    # stderr capture: ,, expands to `|& _cpw_pipe`, which merges stderr of the
+    # *last* pipeline stage into the capture (common case: `some_cmd ,,`
+    # grabs everything). For multi-stage pipelines, upstream stderr still
+    # needs an explicit redirect: `cmd1 |& grep foo ,,` or `cmd1 2>&1 | grep foo ,,`.
+    #
     # Tradeoff: no pty injection, so upstream tools that auto-disable color
     # on non-tty stdout (eza, ls, grep, git) will already have done so by
     # the time we receive bytes. For pipelines, plain text is usually
@@ -275,7 +280,9 @@ EOF
     # Global alias so `,,` at the tail of a pipeline expands inline.
     # Two commas chosen to mirror the `,` short alias for cpw — semantic
     # pair: prefix `,` for the run-it form, suffix `,,` for the pipe form.
-    alias -g ',,'='| _cpw_pipe'
+    # `|&` (= `2>&1 |`) so errors from the last stage are captured too —
+    # usually the whole point of copying a command's output is to share a failure.
+    alias -g ',,'='|& _cpw_pipe'
 
     # cpr — rerun the previous shell-history command through cpw, so the
     # path/timestamp/cmd/output preamble is captured. Routing through cpw
