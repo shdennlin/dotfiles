@@ -176,7 +176,7 @@ grpc() { grp "$@" | clipcopy; print "✓ copied" }
 # git
 alias gb='fzf-git-branch'
 alias gco='fzf-git-checkout'
-alias lg='lazygit'
+change_alias 'lazygit' 'lzg' 'lazygit'
 
 # kill
 alias ka9='killall -9'
@@ -190,6 +190,7 @@ alias spk9='sudo pkill -9'
 alias dk='docker'
 alias dknw='docker inspect -f "{{ "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" }}"'
 alias dirn='docker image prune --filter="dangling=true"'
+change_alias 'lazydocker' 'lzd' 'lazydocker'
 
 # network
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
