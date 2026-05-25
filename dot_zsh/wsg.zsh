@@ -601,7 +601,19 @@ EOF
 
 wsg() {
   _wsg_load_raw  # re-parse $WSG_GROUPS_RAW so direnv updates take effect
-  local sub=$1
+  local sub=$1 resolved
+  case $sub in
+    pick|p)    resolved=pick ;;
+    wall|w)    resolved=wall ;;
+    groups|g)  resolved=groups ;;
+    -h|--help) resolved=help ;;
+    *)         resolved=dump ;;
+  esac
+  # 30-day usage log (2026-05-25 ~ 2026-06-25, for 砍-feature evaluation):
+  #   awk '{print $2}' ~/.cache/wsg-usage.log | sort | uniq -c | sort -rn
+  [[ -d $HOME/.cache ]] || mkdir -p $HOME/.cache
+  print -r -- "$(date +%Y-%m-%d_%H:%M) $resolved" >> $HOME/.cache/wsg-usage.log
+
   case $sub in
     pick|p)    shift; _wsg_cmd_pick "$@" ;;
     wall|w)    shift; _wsg_cmd_wall "$@" ;;
