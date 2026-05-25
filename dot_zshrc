@@ -114,6 +114,7 @@ fi
 [[ ! -f $HOME/.zprofile ]]                  || source $HOME/.zprofile
 [[ ! -f $ZSH_CONFIG_DIR/aliases.zsh ]]      || source $ZSH_CONFIG_DIR/aliases.zsh
 [[ ! -f $ZSH_CONFIG_DIR/clipboard.zsh ]]    || source $ZSH_CONFIG_DIR/clipboard.zsh
+[[ ! -f $ZSH_CONFIG_DIR/wsg.zsh ]]          || source $ZSH_CONFIG_DIR/wsg.zsh
 [[ ! -f $ZSH_CONFIG_DIR/package_init.zsh ]] || source $ZSH_CONFIG_DIR/package_init.zsh
 # ======================== source end ========================
 
