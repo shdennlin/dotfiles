@@ -575,8 +575,33 @@ _wsg_sync_one() {
   fi
 }
 
+# Colorize one plain _wsg_sync_one result line ("<sym> <name>[ <rest>]").
+# Palette matches _wsg_header: bold blue name, red ↓, yellow detached.
+# Symbols stay, so color never carries meaning on its own.
+_wsg_sync_paint() {
+  setopt local_options extended_glob
+  local E=$'\033' R=$'\033[0m'
+  local sym=${1%% *} rest=${1#* }
+  local name=${rest%% *} tail=${rest#${rest%% *}}
+  [[ $name == *: ]] && { name=${name%:}; tail=":$tail" }   # fetch's "✗ name: err"
+  local C_SYM
+  case $sym in
+    ✓) C_SYM="${E}[1;32m" ;;   # bold green: something changed
+    ·) C_SYM="${E}[2m"    ;;   # dim: no-op
+    ⏭) C_SYM="${E}[1;33m" ;;   # yellow: skipped
+    ✗) C_SYM="${E}[1;31m"      # bright red: failed (error text red too)
+       print -r -- "${C_SYM}${sym}${R} ${E}[1;34m${name}${R}${E}[31m${tail}${R}"
+       return ;;
+    *) print -r -- $1; return ;;
+  esac
+  tail=${tail//(#b)(↓[0-9]##)/${E}[31m${match[1]}${R}}
+  print -r -- "${C_SYM}${sym}${R} ${E}[1;34m${name}${R}${tail}"
+}
+
 # Run _wsg_sync_one over all resolved repos in parallel; print results in
 # discovery order (each job writes its own temp file, printed after wait).
+# Jobs write plain text; color is added here, only when stdout is a tty and
+# NO_COLOR is unset (a job can't test -t 1 — its stdout is the temp file).
 # Returns 1 if any repo failed.
 _wsg_cmd_sync() {
   local mode=$1; shift
@@ -601,10 +626,13 @@ _wsg_cmd_sync() {
   # `wait` would also block on the user's unrelated background jobs.
   wait $pids
 
-  local rc=0
+  local rc=0 color=0 line
+  [[ -t 1 && -z $NO_COLOR ]] && color=1
   for i in {1..${#paths}}; do
-    cat $tmp/$i
-    grep -q '^✗' $tmp/$i && rc=1
+    while IFS= read -r line; do
+      [[ $line == ✗* ]] && rc=1
+      if (( color )); then _wsg_sync_paint $line; else print -r -- $line; fi
+    done < $tmp/$i
   done
   rm -rf $tmp
   return $rc
