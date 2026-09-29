@@ -5,11 +5,13 @@
 #   wsg pick                 — fzf interactive picker with live graph preview
 #   wsg wall [opts] [repos]  — tmux tiled multi-pane monitoring wall
 #   wsg groups               — list defined repo groups
+#   wsg fetch [repos]        — parallel `git fetch --all --prune` (safe anytime)
+#   wsg pull [repos]         — parallel `git pull --ff-only`; skips detached HEAD
 #   wsg -h | --help          — full help
 #
 # Discovery (when no repos given):
 #   1. $WSG_ROOTS (colon-separated) → find -name .git
-#   2. else if pwd is in a git repo → repo toplevel + submodules
+#   2. else if pwd is in a git repo → repo toplevel + submodules (recursive)
 #   3. else → error hint
 #
 # Groups: define WSG_GROUPS[name]="repo1 repo2" in the groups file
@@ -31,6 +33,11 @@
 # uses a native shell loop with `printf '\033[2J\033[H'` (ANSI clear).
 
 typeset -gA WSG_GROUPS
+
+# Absolute path of this file, captured at source time. `wsg wall` panes run
+# in a fresh shell and re-source it to recompute the header every tick.
+typeset -g _WSG_SELF=${${(%):-%x}:A}
+
 : ${WSG_GROUPS_FILE:=${ZSH_CONFIG_DIR:-$HOME/.zsh}/wsg.groups.zsh}
 [[ -f $WSG_GROUPS_FILE ]] && source $WSG_GROUPS_FILE
 
@@ -103,7 +110,9 @@ _wsg_discover() {
   local top
   top=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
   print -r -- $top
-  git -C $top submodule foreach --quiet 'echo "$displaypath"' 2>/dev/null \
+  # --recursive: include nested submodules (e.g. exploit-server/script/exploit-tools);
+  # $displaypath carries the full relative prefix in recursive mode.
+  git -C $top submodule foreach --quiet --recursive 'echo "$displaypath"' 2>/dev/null \
     | while read -r sub; do
         [[ -n $sub ]] && print -r -- "$top/$sub"
       done
@@ -403,13 +412,14 @@ _wsg_cmd_wall() {
   _wsg_wall_cmd() {
     local repo=$1
     local pq=${(q)repo}
-    # Static header (name/branch/markers) computed at launch; cheap and stable.
-    # If you check out a different branch, re-run wsg wall to refresh header.
-    # _wsg_header returns a fully ANSI-colored "═══ ... ═══" string with real
-    # ESC bytes. ${(q)header_text} preserves those bytes for shell re-parsing;
-    # printf %s emits the string verbatim — terminal interprets the ESC bytes.
-    local header_text=$(_wsg_header $repo)
-    local header_cmd="printf '%s\\n' ${(q)header_text}"
+    # Header is recomputed EVERY tick so ↑N ↓M / markers / ⚙ stale / branch
+    # reflect `wsg fetch` / `wsg pull` / checkouts without relaunching the wall.
+    # The pane shell doesn't have wsg's functions, so it spawns `zsh -f` that
+    # re-sources this file ($_WSG_SELF) and calls _wsg_header. Nested ${(q)}:
+    # inner quotes the args for the zsh -c script, outer quotes that script
+    # as one word for the pane shell.
+    local header_script="source ${(q)_WSG_SELF}; _wsg_header ${(q)repo}"
+    local header_cmd="zsh -fc ${(q)header_script}"
 
     # Default log format: short hash, dim relative timestamp, decorations,
     # subject. %ar is "3 days ago"-style; we pipe through sed to compact
@@ -514,6 +524,92 @@ _wsg_cmd_wall() {
   unfunction _wsg_wall_cmd
 }
 
+# ---- subcommand: fetch / pull ----------------------------------------------
+
+# Pick the informative line out of git's stderr: the first fatal:/error: line
+# (git often ends with a generic "Aborting"), else the last line.
+_wsg_errline() {
+  local hit=${${(M)${(f)1}:#(fatal|error):*}[1]}
+  print -r -- ${hit:-${1##*$'\n'}}
+}
+
+# One repo, one result line. Args: mode (fetch|pull), repo path.
+#   ✓ changed   · no-op   ⏭ skipped   ✗ failed (git's fatal:/error: line)
+# fetch: "changed" = any remote-tracking ref moved/appeared/was pruned;
+#   ↓N is appended whenever HEAD is behind its upstream, changed or not.
+# --no-recurse-submodules: repos run in parallel and each submodule is already
+# its own job; letting the super's fetch recurse (fetch.recurseSubmodules
+# defaults to on-demand) would race the submodule's own job for ref locks.
+_wsg_sync_one() {
+  local mode=$1 repo=$2 name=${2:t} err
+  if [[ $mode == fetch ]]; then
+    local refs_before refs_after behind mark='·'
+    refs_before=$(git -C $repo for-each-ref --format='%(objectname) %(refname)' refs/remotes)
+    err=$(git -C $repo fetch --all --prune --quiet --no-recurse-submodules 2>&1) \
+      || { print -r -- "✗ $name: $(_wsg_errline $err)"; return }
+    refs_after=$(git -C $repo for-each-ref --format='%(objectname) %(refname)' refs/remotes)
+    [[ $refs_before != $refs_after ]] && mark='✓'
+    behind=$(git -C $repo rev-list --count HEAD..@{u} 2>/dev/null)
+    if [[ -n $behind && $behind != 0 ]]; then
+      print -r -- "$mark $name ↓$behind"
+    else
+      print -r -- "$mark $name"
+    fi
+    return
+  fi
+
+  # pull: fast-forward only, never manufacture a merge commit in a batch op
+  git -C $repo symbolic-ref -q HEAD >/dev/null \
+    || { print -r -- "⏭ $name (detached)"; return }
+  git -C $repo rev-parse -q --verify @{u} >/dev/null 2>&1 \
+    || { print -r -- "⏭ $name (no upstream)"; return }
+  local before after
+  before=$(git -C $repo rev-parse --short HEAD)
+  err=$(git -C $repo pull --ff-only --quiet --no-recurse-submodules 2>&1) \
+    || { print -r -- "✗ $name ($(git -C $repo branch --show-current)): $(_wsg_errline $err)"; return }
+  after=$(git -C $repo rev-parse --short HEAD)
+  if [[ $before == $after ]]; then
+    print -r -- "· $name"
+  else
+    print -r -- "✓ $name $before..$after (+$(git -C $repo rev-list --count $before..$after))"
+  fi
+}
+
+# Run _wsg_sync_one over all resolved repos in parallel; print results in
+# discovery order (each job writes its own temp file, printed after wait).
+# Returns 1 if any repo failed.
+_wsg_cmd_sync() {
+  local mode=$1; shift
+  local -a paths
+  local t out
+  for t in "$@"; do
+    [[ $t == -h || $t == --help ]] && { _wsg_help; return 0 }
+    out=$(_wsg_expand_token $t) || return 1
+    paths+=(${(f)out})
+  done
+  (( ${#paths} == 0 )) && paths=(${(f)"$(_wsg_discover)"})
+  (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos found"; return 1 }
+
+  setopt local_options no_monitor no_notify
+  local tmp=$(mktemp -d) i
+  local -a pids
+  for i in {1..${#paths}}; do
+    _wsg_sync_one $mode ${paths[i]} >$tmp/$i &
+    pids+=($!)
+  done
+  # Wait only on our own jobs: wsg runs in the interactive shell, so a bare
+  # `wait` would also block on the user's unrelated background jobs.
+  wait $pids
+
+  local rc=0
+  for i in {1..${#paths}}; do
+    cat $tmp/$i
+    grep -q '^✗' $tmp/$i && rc=1
+  done
+  rm -rf $tmp
+  return $rc
+}
+
 # ---- subcommand: groups ----------------------------------------------------
 
 _wsg_cmd_groups() {
@@ -543,9 +639,16 @@ USAGE
   wsg pick | p               fzf interactive picker with live graph preview
   wsg wall | w [opts] [repos] tmux tiled monitoring wall (must be inside tmux)
   wsg groups | g             list defined repo groups
+  wsg fetch | f [repos]      parallel 'git fetch --all --prune' (never touches
+                             working trees; shows ↓N behind upstream)
+  wsg pull | pl [repos]      parallel 'git pull --ff-only'; skips detached HEAD
+                             and branches with no upstream; never merges
   wsg -h | --help            this help
 
-  Subcommand shortcuts: p = pick, w = wall, g = groups
+  Subcommand shortcuts: p = pick, w = wall, g = groups, f = fetch, pl = pull
+
+  Typical loop: keep 'wsg wall' open, run 'wsg f', read ↓N in the pane
+  headers (recomputed every tick), then 'wsg pl' when ready.
 
 DUMP OPTIONS
   -s, --status             also show 'git status --short' under each graph
@@ -563,7 +666,7 @@ REPO TOKENS
 
 DISCOVERY (when no repos given)
   1. $WSG_ROOTS (colon-separated) → find -name .git -maxdepth $WSG_DEPTH
-  2. else if pwd in git repo → toplevel + submodules
+  2. else if pwd in git repo → toplevel + submodules (recursive, incl. nested)
   3. else → error hint
 
 ENV VARS
@@ -606,6 +709,8 @@ wsg() {
     pick|p)    resolved=pick ;;
     wall|w)    resolved=wall ;;
     groups|g)  resolved=groups ;;
+    fetch|f)   resolved=fetch ;;
+    pull|pl)   resolved=pull ;;
     -h|--help) resolved=help ;;
     *)         resolved=dump ;;
   esac
@@ -618,6 +723,8 @@ wsg() {
     pick|p)    shift; _wsg_cmd_pick "$@" ;;
     wall|w)    shift; _wsg_cmd_wall "$@" ;;
     groups|g)  shift; _wsg_cmd_groups "$@" ;;
+    fetch|f)   shift; _wsg_cmd_sync fetch "$@" ;;
+    pull|pl)   shift; _wsg_cmd_sync pull "$@" ;;
     -h|--help) _wsg_help ;;
     *)         _wsg_cmd_dump "$@" ;;
   esac
