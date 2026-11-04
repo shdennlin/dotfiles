@@ -2,6 +2,7 @@
 #
 # Provides:
 #   wsg [opts] [repos...]    — dump mini graph + status header per repo
+#   wsg status [repos]       — one line per repo: branch, ↑↓, (+/- lines), markers
 #   wsg pick                 — fzf interactive picker with live graph preview
 #   wsg wall [opts] [repos]  — tmux tiled multi-pane monitoring wall
 #   wsg groups               — list defined repo groups
@@ -289,15 +290,21 @@ _wsg_render_one() {
 # ---- subcommand: dump ------------------------------------------------------
 
 _wsg_cmd_dump() {
-  local show_status=0
+  local show_status=0 out
+  # Scope -n/-N to this call (wsg runs in the interactive shell; a bare
+  # assignment would leak into every later `wsg`). Callees see it — zsh
+  # locals are dynamically scoped.
+  local WSG_LINES=$WSG_LINES
   local -a paths
   while [[ $# -gt 0 ]]; do
     case $1 in
       -s|--status) show_status=1; shift ;;
       -n|--lines)  WSG_LINES=$2; shift 2 ;;
+      -<->)        WSG_LINES=${1#-}; shift ;;   # git-style -N; -0 = no graph
       -h|--help)   _wsg_help; return 0 ;;
       *)
-        local out
+        # `local out` must stay outside the loop: re-running `local` on an
+        # existing var makes zsh print "out=<value>".
         out=$(_wsg_expand_token $1) || return 1
         paths+=(${(f)out})
         shift
@@ -319,6 +326,174 @@ _wsg_cmd_dump() {
 
   local p
   for p in $paths; do _wsg_render_one $p $show_status $width; done | less -RFX
+}
+
+# ---- subcommand: status ----------------------------------------------------
+
+# Collect ONE repo's status as 0x1f-separated plain-text fields (the caller
+# aligns and paints). Order:
+#   1 name  2 branch/label  3 ahead  4 behind  5 +lines  6 -lines  7 markers
+#   8 default-branch name  9 ahead  10 behind  11 stale submodules  12 decoration
+# Empty ahead/behind = no upstream. Empty 8-10 = comparison not shown.
+# Field 2 == "!" means the repo is unreachable.
+_wsg_status_one() {
+  local repo=$1 verbose=$2 name=${1:t} US=$'\037'
+  local info branch label markers="" ahead behind nums add del
+  local dref dname dahead dbehind stale=0 decor=""
+  local -a f c
+
+  info=$(git -C $repo status --porcelain=v2 --branch 2>/dev/null) \
+    || { print -r -- "${name}${US}!"; return }
+
+  # One awk pass: head, +ahead, -behind, then 0/1 flags for * + ?
+  f=("${(@f)$(print -r -- $info | awk '
+    /^# branch.head/ { h=$3 }
+    /^# branch.ab/   { a=$3; b=$4 }
+    /^[12] /         { if (substr($2,2,1) ~ /[MADRC]/) m=1; if (substr($2,1,1) ~ /[MADRC]/) s=1 }
+    /^u /            { m=1 }
+    /^\?/            { u=1 }
+    END { print h; print a; print b; print m+0; print s+0; print u+0 }')}")
+  branch=$f[1]
+  ahead=${f[2]#+}; behind=${f[3]#-}
+  (( f[4] )) && markers+="*"
+  (( f[5] )) && markers+="+"
+  (( f[6] )) && markers+="?"
+
+  if [[ $branch == "(detached)" ]]; then
+    label="(detached @$(git -C $repo rev-parse --short HEAD 2>/dev/null))"
+  else
+    label=$branch
+  fi
+
+  # Uncommitted line counts (staged + unstaged vs HEAD). Binary files show
+  # "-" and are skipped; submodule pointer bumps are excluded (they would
+  # count as +1/-1 "Subproject commit" lines); untracked files are invisible
+  # to git diff. No HEAD yet (fresh repo) → diff fails → 0 0.
+  nums=$(git -C $repo diff HEAD --numstat --ignore-submodules=all 2>/dev/null \
+    | awk '$1 ~ /^[0-9]+$/ {a+=$1} $2 ~ /^[0-9]+$/ {d+=$2} END {print a+0, d+0}')
+  add=${nums% *}; del=${nums#* }
+
+  # Relative to the remote default branch (origin/HEAD, else origin/main|master)
+  if [[ $branch != "(detached)" ]]; then
+    dref=$(git -C $repo symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)
+    if [[ -z $dref ]]; then
+      for dref in origin/main origin/master; do
+        git -C $repo rev-parse -q --verify refs/remotes/$dref >/dev/null 2>&1 && break
+        dref=
+      done
+    fi
+    if [[ -n $dref && $branch != ${dref#origin/} ]]; then
+      c=(${=$(git -C $repo rev-list --left-right --count HEAD...$dref 2>/dev/null)})
+      if (( ${#c} == 2 )); then dname=${dref#origin/}; dahead=$c[1]; dbehind=$c[2]; fi
+    fi
+  fi
+
+  if [[ -f $repo/.gitmodules ]]; then
+    stale=$(git -C $repo submodule status 2>/dev/null | grep -c '^[+\-U]')
+  fi
+  (( verbose )) && decor=$(git -C $repo log -1 --format=%D 2>/dev/null)
+
+  print -r -- "${name}${US}${label}${US}${ahead}${US}${behind}${US}${add}${US}${del}${US}${markers}${US}${dname}${US}${dahead}${US}${dbehind}${US}${stale}${US}${decor}"
+}
+
+# Store one table cell: _wsg_st_cell <row> <col> <colored> <plain>.
+# Writes the caller's `cell`, `plen`, `w` (zsh locals are dynamically scoped)
+# so column widths are tracked by *visible* length, not escape-code length.
+_wsg_st_cell() {
+  cell[$1:$2]=$3
+  plen[$1:$2]=${#4}
+  (( ${#4} > w[$2] )) && w[$2]=${#4}
+}
+
+_wsg_cmd_status() {
+  setopt local_options extended_glob
+  local verbose=0 out p rec i k line pad
+  local -a paths recs f tails
+  local -A cell plen
+  local -a w=(0 0 0 0 0 0)
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -v|--verbose) verbose=1; shift ;;
+      -h|--help)    _wsg_help; return 0 ;;
+      *)
+        out=$(_wsg_expand_token $1) || return 1
+        paths+=(${(f)out})
+        shift
+        ;;
+    esac
+  done
+  (( ${#paths} == 0 )) && paths=(${(f)"$(_wsg_discover)"})
+  (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos found."; return 1 }
+
+  # Palette (matches _wsg_header); empty when piped or NO_COLOR is set.
+  local E=$'\033' R="" C_NAME="" C_BR="" C_UP="" C_DN="" C_DIM="" C_DIRTY="" C_CLEAN="" C_WARN="" C_ERR=""
+  if [[ -t 1 && -z $NO_COLOR ]]; then
+    R="${E}[0m"; C_NAME="${E}[1;34m"; C_BR="${E}[32m"; C_UP="${E}[36m"; C_DN="${E}[31m"
+    C_DIM="${E}[2m"; C_DIRTY="${E}[1;33m"; C_CLEAN="${E}[2;32m"; C_WARN="${E}[1;33m"; C_ERR="${E}[1;31m"
+  fi
+
+  for p in $paths; do recs+=("$(_wsg_status_one $p $verbose)"); done
+
+  # Pass 1: build colored cells + track visible widths per column.
+  #   cols: 1 name | 2 branch | 3 ↑↓ | 4 (+,-) | 5 markers | 6 vs default branch
+  local branch_c ab_c ab_p ln_c mk_c mk_p df_c df_p ca cd tail_c
+  i=0
+  for rec in $recs; do
+    (( i++ ))
+    f=("${(@ps:\037:)rec}")
+    _wsg_st_cell $i 1 "${C_NAME}${f[1]}${R}" $f[1]
+    if [[ $f[2] == '!' ]]; then
+      _wsg_st_cell $i 2 "${C_ERR}(unreachable)${R}" "(unreachable)"
+      tails[$i]=""
+      continue
+    fi
+
+    branch_c=$C_BR; [[ $f[2] == "(detached"* ]] && branch_c=$C_WARN
+    _wsg_st_cell $i 2 "${branch_c}⎇ ${f[2]}${R}" "⎇ ${f[2]}"
+
+    if [[ -z $f[3] ]]; then
+      ab_p="no upstream"; ab_c="${C_DIM}no upstream${R}"
+    else
+      ab_p="↑${f[3]}↓${f[4]}"
+      ab_c="$( (( f[3] > 0 )) && print -rn -- $C_UP || print -rn -- $C_DIM )↑${f[3]}${R}$( (( f[4] > 0 )) && print -rn -- $C_DN || print -rn -- $C_DIM )↓${f[4]}${R}"
+    fi
+    _wsg_st_cell $i 3 $ab_c $ab_p
+
+    ca=$C_DIM; (( f[5] > 0 )) && ca=$C_BR
+    cd=$C_DIM; (( f[6] > 0 )) && cd=$C_DN
+    ln_c="${C_DIM}(${R}${ca}+${f[5]}${R}${C_DIM},${R}${cd}-${f[6]}${R}${C_DIM})${R}"
+    _wsg_st_cell $i 4 $ln_c "(+${f[5]},-${f[6]})"
+
+    if [[ -z $f[7] ]]; then mk_p="≡"; mk_c="${C_CLEAN}≡${R}"
+    else mk_p=$f[7]; mk_c="${C_DIRTY}${f[7]}${R}"; fi
+    _wsg_st_cell $i 5 $mk_c $mk_p
+
+    if [[ -n $f[8] ]]; then
+      df_p="│ ${f[8]} ↑${f[9]}↓${f[10]}"
+      df_c="${C_DIM}│${R} ${f[8]} $( (( f[9] > 0 )) && print -rn -- $C_UP || print -rn -- $C_DIM )↑${f[9]}${R}$( (( f[10] > 0 )) && print -rn -- $C_DN || print -rn -- $C_DIM )↓${f[10]}${R}"
+      _wsg_st_cell $i 6 $df_c $df_p
+    else
+      _wsg_st_cell $i 6 "" ""
+    fi
+
+    tail_c=""
+    (( f[11] > 0 )) && tail_c+="  ${E}[1;31m⚙${f[11]} stale${R}"
+    [[ -n $f[12] ]] && tail_c+="  ${C_DIM}(${f[12]})${R}"
+    tails[$i]=$tail_c
+  done
+
+  # Pass 2: pad each cell to its column's visible width and print.
+  for i in {1..${#recs}}; do
+    line=""
+    for k in {1..6}; do
+      pad=$(( w[k] - ${plen[$i:$k]:-0} ))
+      (( pad < 0 )) && pad=0
+      line+="${cell[$i:$k]}${(l:$pad:: :)}  "
+    done
+    line+=${tails[$i]}
+    print -r -- "${line%%[[:space:]]#}"
+  done
 }
 
 # ---- subcommand: pick ------------------------------------------------------
@@ -664,6 +839,8 @@ wsg — workspace graph: multi-repo git visualization
 
 USAGE
   wsg [opts] [repos...]      dump mini graph + status header per repo (less -R)
+  wsg status | s [-v] [repos] one line per repo, no graph, no pager:
+                             ⎇ branch  ↑ahead↓behind  (+add,-del)  markers  │ vs default branch
   wsg pick | p               fzf interactive picker with live graph preview
   wsg wall | w [opts] [repos] tmux tiled monitoring wall (must be inside tmux)
   wsg groups | g             list defined repo groups
@@ -673,14 +850,23 @@ USAGE
                              and branches with no upstream; never merges
   wsg -h | --help            this help
 
-  Subcommand shortcuts: p = pick, w = wall, g = groups, f = fetch, pl = pull
+  Subcommand shortcuts: s = status, p = pick, w = wall, g = groups, f = fetch,
+                        pl = pull
 
   Typical loop: keep 'wsg wall' open, run 'wsg f', read ↓N in the pane
   headers (recomputed every tick), then 'wsg pl' when ready.
 
 DUMP OPTIONS
   -s, --status             also show 'git status --short' under each graph
-  -n N, --lines N          show N commits per graph (default 20)
+  -n N, --lines N, -N      show N commits per graph (default 20), e.g. -3
+                           -s -0 = status only (header + status, no graph)
+
+STATUS OPTIONS
+  -v, --verbose            append the tip commit's ref decoration
+                           (HEAD -> x, origin/x, ...)
+  Columns: (+add,-del) = uncommitted lines vs HEAD (staged + unstaged;
+  untracked files and submodule pointer bumps not counted). '│ main ↑3↓0' =
+  current branch vs origin default branch, shown only when on another branch.
 
 WALL OPTIONS
   -l NAME, --layout NAME   tiled (default) | cols | rows | main | mainh
@@ -737,6 +923,7 @@ wsg() {
     pick|p)    resolved=pick ;;
     wall|w)    resolved=wall ;;
     groups|g)  resolved=groups ;;
+    status|s)  resolved=status ;;
     fetch|f)   resolved=fetch ;;
     pull|pl)   resolved=pull ;;
     -h|--help) resolved=help ;;
@@ -751,6 +938,7 @@ wsg() {
     pick|p)    shift; _wsg_cmd_pick "$@" ;;
     wall|w)    shift; _wsg_cmd_wall "$@" ;;
     groups|g)  shift; _wsg_cmd_groups "$@" ;;
+    status|s)  shift; _wsg_cmd_status "$@" ;;
     fetch|f)   shift; _wsg_cmd_sync fetch "$@" ;;
     pull|pl)   shift; _wsg_cmd_sync pull "$@" ;;
     -h|--help) _wsg_help ;;
