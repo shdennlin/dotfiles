@@ -27,7 +27,6 @@ window-save-state = always
 window-padding-x = 4
 window-padding-y = 4
 macos-titlebar-style = tabs
-
 # ====================== Quick Terminal ================
 quick-terminal-position = top
 quick-terminal-animation-duration = 0.1
