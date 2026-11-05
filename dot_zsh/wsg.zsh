@@ -987,8 +987,12 @@ wsg() {
   esac
   # 30-day usage log (2026-05-25 ~ 2026-06-25, for 砍-feature evaluation):
   #   awk '{print $2}' ~/.cache/wsg-usage.log | sort | uniq -c | sort -rn
-  [[ -d $HOME/.cache ]] || mkdir -p $HOME/.cache
-  print -r -- "$(date +%Y-%m-%d_%H:%M) $resolved" >> $HOME/.cache/wsg-usage.log
+  # WSG_NO_LOG=1 skips the log: automated callers (e.g. the Herdr superproject
+  # panel) would otherwise drown out real human usage in the evaluation.
+  if [[ -z $WSG_NO_LOG ]]; then
+    [[ -d $HOME/.cache ]] || mkdir -p $HOME/.cache
+    print -r -- "$(date +%Y-%m-%d_%H:%M) $resolved" >> $HOME/.cache/wsg-usage.log
+  fi
 
   case $sub in
     pick|p)    shift; _wsg_cmd_pick "$@" ;;
