@@ -79,6 +79,7 @@
   "layout:shawn-style": {
     "cmd-w": "spaces-agents.close",
     "ctrl-tab": "spaces-agents.last",
+    "cmd-9": "spaces-agents.tab9",
     "cmd-p": "mod.open:picker-live"
   }
 }

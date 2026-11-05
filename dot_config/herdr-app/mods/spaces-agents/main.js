@@ -91,6 +91,7 @@ export default class SpacesAgents extends View {
         const c = await nextCommand();
         if (c === "close") this.guardedClose();
         else if (c === "last") this.goLast();
+        else if (c === "tab9") this.goTab9();
         cx.notify();
       }
     });
@@ -119,6 +120,14 @@ export default class SpacesAgents extends View {
       return;
     }
     run("tab.next", {});
+  }
+
+  // cmd-9: tab 9 if this space has one, otherwise the rightmost tab (browser-style "last tab").
+  // Settled tabs are skipped, as in Herdr's own tab.select index numbering.
+  goTab9() {
+    const tabs = (spaces().find((s) => s.active)?.tabs ?? []).filter((t) => !t.settled);
+    const tab = tabs[Math.min(9, tabs.length) - 1];
+    if (tab) run("tab.select", { id: tab.id });
   }
 
   // cmd-w: close the shown tab, but ask first when an agent lives in it (Herdr only asks
