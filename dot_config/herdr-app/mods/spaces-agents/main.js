@@ -20,6 +20,7 @@ const PAL = {
   done: ["#34C759", "#3FCF6E"], read: ["#6FB58A", "#4A9B6B"], running: ["#2F7BF5", "#4C8DFF"],
   need: ["#E8920A", "#F5A524"], old: ["#E6C27A", "#A47220"], error: ["#E5342B", "#FF453A"],
 };
+const SUB_GRACE_S = 300;       // keep a stopped Claude sub agent listed this long (same as the hook's GRACE)
 const WAIT_DIM_AFTER_S = 900;  // a request this old probably got set aside on purpose, so it recedes
 const pal = (name) => PAL[name][settings()?.dark === false ? 0 : 1];
 const MARK = { ansi6: "#22a99a", ansi3: "#e3814f", ansi4: "#5b8def", ansi5: "#8b7cf6", ansi2: "#3fae6a", ansi1: "#d9649a" };
@@ -238,32 +239,42 @@ export default class SpacesAgents extends View {
     cx.spawn(async (cx) => {
       let text = "";
       try { text = (await readTextFile(`${appHome()}/data/subagents.json`)) ?? ""; } catch { text = ""; }
-      if (text === this.subsRaw) return;
+      // A stopped sub agent is on a timer (it expires in render), so keep reloading while any exist.
+      if (text === this.subsRaw && !this.hasStopped) return;
       this.subsRaw = text;
       const out = {};
+      let stopped = false;
       try {
         const now = Date.now() / 1000;
         for (const [term, byId] of Object.entries(JSON.parse(text || "{}"))) {
           const list = Object.entries(byId ?? {})
-            .filter(([, v]) => v && now - v.started < 3600)
-            .map(([id, v]) => ({ id, name: v.name || "subagent", started: v.started }))
+            .filter(([, v]) => v && now - v.started < 3600 && !(v.stopped && now - v.stopped > SUB_GRACE_S))
+            .map(([id, v]) => ({ id, name: v.name || "subagent", started: v.started, stopped: v.stopped ?? null }))
             .sort((a, b) => a.started - b.started);
           if (list.length) out[term] = list;
+          if (list.some((e) => e.stopped)) stopped = true;
         }
       } catch { /* torn write: keep nothing rather than guess */ }
       this.subs = out;
+      this.hasStopped = stopped;
       cx.notify();
     });
   }
 
   // One of Claude Code's own sub agents (the Task tool's), running inside agent `a`.
+  // After its SubagentStop it may only be waiting on a background job of its own, so it stays
+  // for SUB_GRACE_S as a faded "waiting" row instead of vanishing while it is still alive.
   taskRow(e, last, a, t, now) {
+    const waiting = Boolean(e.stopped);
     return h_flex().id(`sa-task-${e.id}`).h(22).flex_none().pl(18).pr(10).gap(5).items_center().rounded(7)
+      .when(waiting, (el) => el.opacity(0.6))
       .child(div().flex_none().text_size(11).text_color(t.dim).child(last ? "└" : "├"))
       .child(logo(a.program, 13, t.dim))
-      .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.muted).child(e.name))
+      .child(h_flex().flex_1().min_w(0).gap(5).items_center()
+        .child(div().min_w(0).truncate().text_size(12).text_color(waiting ? t.dim : t.muted).child(e.name))
+        .when(waiting, (el) => el.child(div().flex_none().text_size(10).text_color(t.dim).child("waiting"))))
       .child(div().flex_none().text_size(11).text_color(t.dim).child(ageLabel(now / 1000 - e.started)))
-      .child(this.statusGlyph({ status: "working" }, false, t));
+      .child(waiting ? this.badge(t.muted, false, "…", t) : this.statusGlyph({ status: "working" }, false, t));
   }
 
   // Live sub-agents of `addr` (terminals an agent started with `hc run`), depth first, each
@@ -293,6 +304,17 @@ export default class SpacesAgents extends View {
       .child(logo(k.program, 13, t.dim))
       .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.muted).child(name))
       .child(this.statusGlyph({ status: st }, false, t));
+  }
+
+  // A tab whose only content is a panel (a mod pane): listed by its tab name (or the panel's title),
+  // so tabs like the superproject panel don't vanish from the sidebar.
+  panelRow(tab, p, t) {
+    const label = tab.named && tab.name ? tab.name : (p.title || p.mod || tab.name);
+    return h_flex().id(`sa-pn-${tab.id}`).h(23).flex_none().pl(18).pr(10).gap(6).items_center().rounded(7)
+      .cursor_pointer().when(tab.active, (e) => e.bg(t.selected)).hover((s) => s.bg(t.hover))
+      .on_click(() => run("tab.select", { id: tab.id }))
+      .child(div().w(16).flex_none().text_size(11).text_color(t.dim).child("▦"))
+      .child(div().flex_1().min_w(0).truncate().text_size(12.5).text_color(t.muted).child(label));
   }
 
   // A tab with no agent in it: its first plain terminal, so shells still show up in the list.
@@ -364,14 +386,17 @@ export default class SpacesAgents extends View {
         const here = mine.filter((a) => a.tab === tab.id);
         for (const a of here) {
           rows.push(this.agentRow(a, t, now));
-          const tasks = this.subs[a.address] ?? [];
+          const tasks = (this.subs[a.address] ?? []).filter((e) => !(e.stopped && now / 1000 - e.stopped > SUB_GRACE_S));
           const kids = this.tree(all, a.address);
           tasks.forEach((e, i) => rows.push(this.taskRow(e, i === tasks.length - 1 && !kids.length, a, t, now)));
           for (const sub of kids) rows.push(this.subRow(sub, t, listed));
         }
         if (here.length || tab.settled) continue;
         const shell = ps.find((p) => p.tab === tab.id && p.terminal && !p.program?.agent);
-        if (shell) rows.push(this.shellRow(tab, shell, t));
+        if (shell) { rows.push(this.shellRow(tab, shell, t)); continue; }
+        // A tab that holds only a panel (the superproject panel, a markdown viewer...), no terminal.
+        const panel = ps.find((p) => p.tab === tab.id && !p.terminal);
+        if (panel) rows.push(this.panelRow(tab, panel, t));
       }
       if (mine.length) rows.push(this.summary(mine, t, now));
     }
