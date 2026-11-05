@@ -375,7 +375,34 @@ export default class SpacesAgents extends View {
       bySpace.get(a.space).push(a);
     }
     const rows = [];
-    for (const s of spaces()) {
+    // Machine headers (as the built-in spaces list): shown once any space lives off this computer.
+    const allSpaces = spaces();
+    const remote = [...new Set(allSpaces.map((s) => s.machine).filter(Boolean))].sort();
+    const grouped = remote.length > 0;
+    const folded = new Set(JSON.parse(localStorage.getItem("sa.folded") ?? "[]"));
+    const ordered = grouped ? [null, ...remote].flatMap((m) => allSpaces.filter((s) => (s.machine ?? null) === m)) : allSpaces;
+    let current = undefined;
+    for (const s of ordered) {
+      const m = s.machine ?? null;
+      if (grouped && m !== current) {
+        current = m;
+        const key = m ?? "local";
+        const closed = folded.has(key);
+        rows.push(
+          h_flex().id(`sa-mh-${key}`).h(28).flex_none().pl(8).pr(6).gap(6).items_center().rounded(8).cursor_pointer()
+            .hover((e) => e.bg(t.hover))
+            .on_click((_e, cx) => {
+              closed ? folded.delete(key) : folded.add(key);
+              localStorage.setItem("sa.folded", JSON.stringify([...folded]));
+              cx.notify();
+            })
+            .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.dim).child(m ?? "This computer"))
+            .child(div().id(`sa-mn-${key}`).w(22).h(22).flex().items_center().justify_center().rounded(6)
+              .text_color(t.dim).hover((e) => e.bg(t.raised))
+              .on_click((_e, cx) => { cx.stop_propagation(); run("space.new", { machine: m ?? "" }); }).child("+"))
+            .child(div().w(12).flex_none().text_size(11).text_color(t.dim).child(closed ? "›" : "⌄")));
+      }
+      if (grouped && folded.has(m ?? "local")) continue;
       const mine = (bySpace.get(s.id) ?? []).slice().sort((a, b) => a.tab_index - b.tab_index || a.address.localeCompare(b.address));
       rows.push(
         h_flex().id(`sa-sp-${s.id}`).h(28).flex_none().pl(4).pr(10).gap(8).items_center().rounded(8).cursor_pointer()
