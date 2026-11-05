@@ -341,6 +341,9 @@ _wsg_status_one() {
   local info branch label markers="" ahead behind nums add del
   local dref dname dahead dbehind stale=0 decor=""
   local -a f c
+  # Dir names may hold control chars (incl. our 0x1f delimiter): neutralise
+  # so a crafted name can't shift fields in the record.
+  name=${name//[[:cntrl:]]/?}
 
   info=$(git -C $repo status --porcelain=v2 --branch 2>/dev/null) \
     || { print -r -- "${name}${US}!"; return }
@@ -445,6 +448,13 @@ _wsg_cmd_status() {
     _wsg_st_cell $i 1 "${C_NAME}${f[1]}${R}" $f[1]
     if [[ $f[2] == '!' ]]; then
       _wsg_st_cell $i 2 "${C_ERR}(unreachable)${R}" "(unreachable)"
+      tails[$i]=""
+      continue
+    fi
+    # Fields below feed (( )), which evaluates strings as expressions — so
+    # refuse any record that isn't exactly 12 fields with digit-only counts.
+    if (( ${#f} != 12 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
+      _wsg_st_cell $i 2 "${C_ERR}(invalid record)${R}" "(invalid record)"
       tails[$i]=""
       continue
     fi
