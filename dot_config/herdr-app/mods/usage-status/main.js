@@ -1,9 +1,11 @@
 // Usage + Claude status, shown once in the bottom bar instead of in every session's status line.
 //
-// 5h / weekly usage: ~/.cache/claude-rate-limits.json, written by a hidden custom-command in the ccstatusline
-//   status line from the `rate_limits` Claude Code hands it on every redraw (account-wide, live). It is only
-//   rewritten while some Claude Code session is drawing its status line, so the age of the data is always
-//   shown and goes yellow when it is old.
+// 5h / weekly usage: ~/.cache/claude-rate-limits.json, which this mod only READS. Something has to write it from
+//   the `rate_limits` Claude Code puts in the status line JSON (account-wide, live). Without that file the usage
+//   part stays hidden. One way: a ccstatusline `custom-command` item with an empty output (so nothing shows) and
+//       f="$HOME/.cache/claude-rate-limits.json"; jq -ec 'select(.rate_limits != null) | {rate_limits, ts: (now|floor)}' > "$f.$$" 2>/dev/null && mv "$f.$$" "$f" || rm -f "$f.$$"
+//   The file is only rewritten while some Claude Code session is drawing its status line, so the age of the data
+//   is always shown and goes yellow when it is old.
 // Claude status: status.claude.com summary, component "Claude Code". Shown only when NOT operational.
 //   A notification is posted only when that status changes (the last one is kept in localStorage, so a
 //   hot reload or restart does not repeat it).
@@ -96,9 +98,7 @@ export default class UsageStatus extends View {
       win("wk", u.weekly, u.weeklyReset);
       const age = now - u.mtime;
       out.push({ text: age > STALE_MS ? `stale ${span(age)}` : `${minutes(age)}m ago`, tone: age > STALE_MS ? "warn" : "dim" });
-    } else {
-      out.push({ text: "usage: no data", tone: "dim" });
-    }
+    }   // no data file (nothing writes it here, or it was removed): show no usage at all
     const s = this.liveStatus;
     if (s && s !== "operational") out.push({ text: `⚠ ${COMPONENT}: ${pretty(s)}`, tone: s === "degraded_performance" ? "warn" : "bad" });
     return out;
