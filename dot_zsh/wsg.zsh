@@ -3,6 +3,8 @@
 # Provides:
 #   wsg [opts] [repos...]    — dump mini graph + status header per repo
 #   wsg status [repos]       — one line per repo: branch, ↑↓, (+/- lines), markers
+#                              (plus its linked worktrees, indented; -W to hide them)
+#   wsg worktrees [repos]    — only the linked worktrees (alias: wt)
 #   wsg pick                 — fzf interactive picker with live graph preview
 #   wsg wall [opts] [repos]  — tmux tiled multi-pane monitoring wall
 #   wsg groups               — list defined repo groups
@@ -147,6 +149,58 @@ _wsg_expand_token() {
   done
   print -u2 -- "wsg: cannot resolve repo: $token"
   return 1
+}
+
+# ---- worktrees -------------------------------------------------------------
+
+# Linked worktrees (`git worktree add`) are where AI agents often work: each has its own branch,
+# changes and ahead/behind, but a `.git` FILE rather than a directory, so neither the .git-dir `find`
+# nor `git submodule foreach` ever finds them.
+#
+# _wsg_with_worktrees <repo>...   sets $reply to each repo followed by its linked worktrees, in order,
+# and fills these maps, keyed by the worktree's canonical path (the repos themselves have no entry):
+#   _WSG_WT_PARENT  the repo it belongs to
+#   _WSG_WT_LABEL   a short name: its path inside the repo, else the last two path parts
+#   _WSG_WT_FLAGS   "locked", "prunable" (its directory is gone), "detached"
+# Call it directly, never inside $(...): the maps would be lost in the subshell.
+typeset -gA _WSG_WT_PARENT _WSG_WT_LABEL _WSG_WT_FLAGS
+
+_wsg_with_worktrees() {
+  _WSG_WT_PARENT=(); _WSG_WT_LABEL=(); _WSG_WT_FLAGS=()
+  reply=()
+  local -A seen
+  local repo own common line wpath wc flags
+  local -a lines
+  for repo in $argv; do
+    own=${repo:A}
+    [[ -n $seen[$own] ]] || { reply+=($repo); seen[$own]=1 }
+    # In a submodule, `git worktree list` reports the MAIN worktree as the gitdir
+    # (.git/modules/<name>), so skip an entry that is the repo, or the common git dir.
+    common=$(git -C $repo rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+    lines=("${(@f)$(git -C $repo worktree list --porcelain 2>/dev/null)}" "")   # "" flushes the last block
+    wpath=""; flags=""
+    for line in "${lines[@]}"; do      # quoted: unquoted, zsh drops the empty lines that end each block
+      case $line in
+        "worktree "*) wpath=${line#worktree }; flags="" ;;
+        locked*)      flags+="locked " ;;
+        prunable*)    flags+="prunable " ;;
+        detached)     flags+="detached " ;;
+        bare)         flags+="bare " ;;
+        "")
+          [[ -z $wpath ]] && continue
+          wc=${wpath:A}
+          if [[ $flags != *bare* && $wc != $own && ( -z $common || $wc != ${common:A} ) && -z $seen[$wc] ]]; then
+            reply+=($wc); seen[$wc]=1
+            _WSG_WT_PARENT[$wc]=$own
+            if [[ $wc == $own/* ]]; then _WSG_WT_LABEL[$wc]=${wc#$own/}
+            else _WSG_WT_LABEL[$wc]=${${wc:h}:t}/${wc:t}; fi
+            _WSG_WT_FLAGS[$wc]=${flags% }
+          fi
+          wpath=""; flags=""
+          ;;
+      esac
+    done
+  done
 }
 
 # ---- header (one-line status) ----------------------------------------------
@@ -392,7 +446,10 @@ _wsg_status_one() {
   fi
 
   if [[ -f $repo/.gitmodules ]]; then
-    stale=$(git -C $repo submodule status 2>/dev/null | grep -c '^[+\-U]')
+    # A linked worktree starts with its submodules uninitialized ('-'); that is not "out of sync".
+    local pat='^[-+U]'
+    [[ -n ${_WSG_WT_PARENT[${repo:A}]} ]] && pat='^[+U]'
+    stale=$(git -C $repo submodule status 2>/dev/null | grep -c -- $pat)
   fi
   (( verbose )) && decor=$(git -C $repo log -1 --format=%D 2>/dev/null)
 
@@ -410,7 +467,8 @@ _wsg_st_cell() {
 
 _wsg_cmd_status() {
   setopt local_options extended_glob
-  local verbose=0 json=0 out p rec i k line pad
+  local verbose=0 json=0 only_wt=0 out p rec i k line pad wt_of wt_label wt_flags
+  local worktrees=1; [[ ${WSG_WORKTREES:-1} == 0 ]] && worktrees=0
   local -a paths recs f tails
   local -A cell plen
   local -a w=(0 0 0 0 0 0)
@@ -419,6 +477,8 @@ _wsg_cmd_status() {
     case $1 in
       -v|--verbose) verbose=1; shift ;;
       -j|--json)    json=1; shift ;;
+      -W|--no-worktrees) worktrees=0; shift ;;
+      --worktrees-only)  only_wt=1; worktrees=1; shift ;;   # `wsg wt`
       -h|--help)    _wsg_help; return 0 ;;
       *)
         out=$(_wsg_expand_token $1) || return 1
@@ -429,6 +489,19 @@ _wsg_cmd_status() {
   done
   (( ${#paths} == 0 )) && paths=(${(f)"$(_wsg_discover)"})
   (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos found."; return 1 }
+
+  # Add each repo's linked worktrees right under it (-W / WSG_WORKTREES=0 to leave them out).
+  _WSG_WT_PARENT=(); _WSG_WT_LABEL=(); _WSG_WT_FLAGS=()
+  if (( worktrees )); then
+    _wsg_with_worktrees $paths
+    paths=($reply)
+    if (( only_wt )); then
+      local -a keep=()
+      for p in $paths; do [[ -n $_WSG_WT_PARENT[$p] ]] && keep+=($p); done
+      (( ${#keep} == 0 )) && { print -u2 -- "wsg: no linked worktrees."; return 0 }
+      paths=($keep)
+    fi
+  fi
 
   # Palette (matches _wsg_header); empty when piped or NO_COLOR is set.
   local E=$'\033' R="" C_NAME="" C_BR="" C_UP="" C_DN="" C_DIM="" C_DIRTY="" C_CLEAN="" C_WARN="" C_ERR=""
@@ -444,10 +517,17 @@ _wsg_cmd_status() {
   # are null when there is no upstream; vs_default is null when not applicable.
   if (( json )); then
     command -v jq &>/dev/null || { print -u2 -- "wsg: jq required for --json"; return 1 }
-    local jqf='def n: if . == "" then null else tonumber end;
+    # `worktree` is null for a repo, else {of: <its repo>, label, locked, prunable, detached}.
+    # Each case has its own filter: jq refuses to compile a filter that names an --arg it was not given,
+    # so one shared filter silently dropped every unreachable repo (e.g. a worktree whose directory is gone).
+    local wt='def wt: if $wt_of == "" then null
+        else {of:$wt_of, label:$wt_label, locked:($wt_flags|contains("locked")),
+              prunable:($wt_flags|contains("prunable")), detached:($wt_flags|contains("detached"))} end;'
+    local jq_bad="$wt {name:\$name, path:\$path, error:\$err, worktree: wt}"
+    local jqf="$wt"'
+      def n: if . == "" then null else tonumber end;
       def s: if . == "" then null else . end;
-      if $branch == "!" then {name:$name, path:$path, error:"unreachable"}
-      else {name:$name, path:$path, branch:$branch,
+      {name:$name, path:$path, branch:$branch,
         detached:($branch|startswith("(detached")),
         ahead:($ahead|n), behind:($behind|n),
         added:($add|n), deleted:($del|n),
@@ -455,28 +535,35 @@ _wsg_cmd_status() {
         untracked:($mk|contains("?")), dirty:($mk != ""),
         vs_default:(if $dname == "" then null
           else {branch:$dname, ahead:($dahead|n), behind:($dbehind|n)} end),
-        stale_submodules:($stale|n), stale:$stale_list, decoration:($decor|s)} end'
-    local stale_list   # declared once: `local` inside the loop would echo its value
+        stale_submodules:($stale|n), stale:$stale_list, decoration:($decor|s),
+        worktree: wt}'
+    local stale_list skip   # declared once: `local` inside the loop would echo its value
     i=0
     for rec in $recs; do
       (( i++ ))
       f=("${(@ps:\037:)rec}")
+      wt_of=${_WSG_WT_PARENT[$paths[i]]}; wt_label=${_WSG_WT_LABEL[$paths[i]]}; wt_flags=${_WSG_WT_FLAGS[$paths[i]]}
       if [[ $f[2] == '!' ]]; then
-        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg branch '!' "$jqf"
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg err unreachable \
+          --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jq_bad"
       elif (( ${#f} != 12 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
-        jq -nc --arg name "$f[1]" --arg path "$paths[i]" '{name:$name, path:$path, error:"invalid record"}'
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg err "invalid record" \
+          --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jq_bad"
       else
         # Which submodule pointers are out of sync (same rule as the count):
         # '+' moved (checked-out commit != recorded), '-' uninitialized, 'U' conflict.
+        # A linked worktree starts with its submodules uninitialized, so '-' is skipped there.
         # Paths containing whitespace are not supported (awk splits on it).
         stale_list="[]"
+        skip=0; [[ -n $wt_of ]] && skip=1
         [[ -f $paths[i]/.gitmodules ]] && stale_list=$(git -C $paths[i] submodule status 2>/dev/null \
-          | awk '/^[+U-]/ { s = substr($1,1,1); st = (s=="+") ? "moved" : (s=="-") ? "uninitialized" : "conflict"; print st, $2 }' \
+          | awk -v skip=$skip '/^[+U-]/ { s = substr($1,1,1); if (skip && s == "-") next; st = (s=="+") ? "moved" : (s=="-") ? "uninitialized" : "conflict"; print st, $2 }' \
           | jq -R 'split(" ") | {state: .[0], path: .[1]}' | jq -sc .)
         jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg branch "$f[2]" --argjson stale_list "$stale_list" \
           --arg ahead "$f[3]" --arg behind "$f[4]" --arg add "$f[5]" --arg del "$f[6]" \
           --arg mk "$f[7]" --arg dname "$f[8]" --arg dahead "$f[9]" --arg dbehind "$f[10]" \
-          --arg stale "$f[11]" --arg decor "$f[12]" "$jqf"
+          --arg stale "$f[11]" --arg decor "$f[12]" \
+          --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jqf"
       fi
     done | jq -s '{repos: .}'
     return 0
@@ -489,10 +576,17 @@ _wsg_cmd_status() {
   for rec in $recs; do
     (( i++ ))
     f=("${(@ps:\037:)rec}")
-    _wsg_st_cell $i 1 "${C_NAME}${f[1]}${R}" $f[1]
+    wt_of=${_WSG_WT_PARENT[$paths[i]]}; wt_label=${_WSG_WT_LABEL[$paths[i]]}; wt_flags=${_WSG_WT_FLAGS[$paths[i]]}
+    if [[ -z $wt_of ]]; then
+      _wsg_st_cell $i 1 "${C_NAME}${f[1]}${R}" $f[1]
+    elif (( only_wt )); then      # no repo row above it to hang under: say whose worktree it is
+      _wsg_st_cell $i 1 "${C_DIM}${wt_of:t}${R} ${C_DIM}↳${R} ${C_NAME}${wt_label}${R}" "${wt_of:t} ↳ ${wt_label}"
+    else
+      _wsg_st_cell $i 1 "  ${C_DIM}↳${R} ${C_NAME}${wt_label}${R}" "  ↳ ${wt_label}"
+    fi
     if [[ $f[2] == '!' ]]; then
       _wsg_st_cell $i 2 "${C_ERR}(unreachable)${R}" "(unreachable)"
-      tails[$i]=""
+      tails[$i]=${wt_flags:+"  ${C_WARN}[${wt_flags}]${R}"}
       continue
     fi
     # Fields below feed (( )), which evaluates strings as expressions — so
@@ -534,6 +628,7 @@ _wsg_cmd_status() {
     tail_c=""
     (( f[11] > 0 )) && tail_c+="  ${E}[1;31m⚙${f[11]} stale${R}"
     [[ -n $f[12] ]] && tail_c+="  ${C_DIM}(${f[12]})${R}"
+    [[ -n $wt_flags ]] && tail_c+="  ${C_WARN}[${wt_flags}]${R}"
     tails[$i]=$tail_c
   done
 
@@ -893,6 +988,7 @@ wsg — workspace graph: multi-repo git visualization
 
 USAGE
   wsg [opts] [repos...]      dump mini graph + status header per repo (less -R)
+  wsg worktrees | wt [repos]  only the linked worktrees of those repos, one line each
   wsg status | s [-v] [repos] one line per repo, no graph, no pager:
                              ⎇ branch  ↑ahead↓behind  (+add,-del)  markers  │ vs default branch
   wsg pick | p               fzf interactive picker with live graph preview
@@ -904,7 +1000,7 @@ USAGE
                              and branches with no upstream; never merges
   wsg -h | --help            this help
 
-  Subcommand shortcuts: s = status, p = pick, w = wall, g = groups, f = fetch,
+  Subcommand shortcuts: s = status, wt = worktrees, p = pick, w = wall, g = groups, f = fetch,
                         pl = pull
 
   Typical loop: keep 'wsg wall' open, run 'wsg f', read ↓N in the pane
@@ -919,7 +1015,12 @@ STATUS OPTIONS
   -v, --verbose            append the tip commit's ref decoration
                            (HEAD -> x, origin/x, ...)
   -j, --json               machine-readable JSON ({"repos":[...]}); needs jq.
-                           ahead/behind null = no upstream
+                           ahead/behind null = no upstream; worktree = null for a
+                           repo, else {of, label, locked, prunable, detached}
+  -W, --no-worktrees       leave linked worktrees out (or WSG_WORKTREES=0)
+  Linked worktrees (git worktree add) are listed under their repo as '↳ <path>':
+  AI agents often work in them. A [locked] / [prunable] tag marks those states;
+  a worktree's uninitialized submodules are not counted as stale.
   Columns: (+add,-del) = uncommitted lines vs HEAD (staged + unstaged;
   untracked files and submodule pointer bumps not counted). '│ main ↑3↓0' =
   current branch vs origin default branch, shown only when on another branch.
@@ -980,6 +1081,7 @@ wsg() {
     wall|w)    resolved=wall ;;
     groups|g)  resolved=groups ;;
     status|s)  resolved=status ;;
+    worktrees|wt) resolved=worktrees ;;
     fetch|f)   resolved=fetch ;;
     pull|pl)   resolved=pull ;;
     -h|--help) resolved=help ;;
@@ -999,6 +1101,7 @@ wsg() {
     wall|w)    shift; _wsg_cmd_wall "$@" ;;
     groups|g)  shift; _wsg_cmd_groups "$@" ;;
     status|s)  shift; _wsg_cmd_status "$@" ;;
+    worktrees|wt) shift; _wsg_cmd_status --worktrees-only "$@" ;;
     fetch|f)   shift; _wsg_cmd_sync fetch "$@" ;;
     pull|pl)   shift; _wsg_cmd_sync pull "$@" ;;
     -h|--help) _wsg_help ;;
