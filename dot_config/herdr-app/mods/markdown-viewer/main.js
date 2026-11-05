@@ -9,6 +9,8 @@ import { v_flex, h_flex, TextView } from "gpui-base";
 import { props, readTextFile, exec, theme, home } from "herdr";
 
 const MAX_CHARS = 400_000;
+// File types a link may open directly: images, PDF, plain data/text. No scripts, apps or installers.
+const SAFE_OPEN = /\.(png|jpe?g|gif|webp|svg|heic|pdf|txt|json|ya?ml|toml|csv|tsv|log)$/i;
 const dirname = (p) => p.replace(/\/[^/]*$/, "") || "/";
 const basename = (p) => p.split("/").pop();
 
@@ -75,7 +77,11 @@ export default class MarkdownViewer extends View {
       let exists = false;
       if (isMarkdown) { try { exists = (await readTextFile(path)) !== null; } catch { exists = false; } }
       if (isMarkdown && exists) this.go(path, cx);
-      else exec("open", [path]);                         // an image, a source file, a folder...
+      // A link in a markdown file is untrusted input (a cloned repo's README can point at
+      // "run.command" or "Evil.app"), and `open` would launch it. Only hand inert types to `open`;
+      // anything else (apps, scripts, folders, unknown types) is just revealed in Finder.
+      else if (SAFE_OPEN.test(path)) exec("open", [path]);
+      else exec("open", ["-R", path]);
     });
   }
 
