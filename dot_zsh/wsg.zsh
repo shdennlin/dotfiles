@@ -410,7 +410,7 @@ _wsg_st_cell() {
 
 _wsg_cmd_status() {
   setopt local_options extended_glob
-  local verbose=0 out p rec i k line pad
+  local verbose=0 json=0 out p rec i k line pad
   local -a paths recs f tails
   local -A cell plen
   local -a w=(0 0 0 0 0 0)
@@ -418,6 +418,7 @@ _wsg_cmd_status() {
   while [[ $# -gt 0 ]]; do
     case $1 in
       -v|--verbose) verbose=1; shift ;;
+      -j|--json)    json=1; shift ;;
       -h|--help)    _wsg_help; return 0 ;;
       *)
         out=$(_wsg_expand_token $1) || return 1
@@ -437,6 +438,49 @@ _wsg_cmd_status() {
   fi
 
   for p in $paths; do recs+=("$(_wsg_status_one $p $verbose)"); done
+
+  # --json: machine-readable output for dashboards (e.g. Herdr mods). Reuses
+  # the same records as the table, so there is one source of truth. ahead/behind
+  # are null when there is no upstream; vs_default is null when not applicable.
+  if (( json )); then
+    command -v jq &>/dev/null || { print -u2 -- "wsg: jq required for --json"; return 1 }
+    local jqf='def n: if . == "" then null else tonumber end;
+      def s: if . == "" then null else . end;
+      if $branch == "!" then {name:$name, path:$path, error:"unreachable"}
+      else {name:$name, path:$path, branch:$branch,
+        detached:($branch|startswith("(detached")),
+        ahead:($ahead|n), behind:($behind|n),
+        added:($add|n), deleted:($del|n),
+        modified:($mk|contains("*")), staged:($mk|contains("+")),
+        untracked:($mk|contains("?")), dirty:($mk != ""),
+        vs_default:(if $dname == "" then null
+          else {branch:$dname, ahead:($dahead|n), behind:($dbehind|n)} end),
+        stale_submodules:($stale|n), stale:$stale_list, decoration:($decor|s)} end'
+    local stale_list   # declared once: `local` inside the loop would echo its value
+    i=0
+    for rec in $recs; do
+      (( i++ ))
+      f=("${(@ps:\037:)rec}")
+      if [[ $f[2] == '!' ]]; then
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg branch '!' "$jqf"
+      elif (( ${#f} != 12 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" '{name:$name, path:$path, error:"invalid record"}'
+      else
+        # Which submodule pointers are out of sync (same rule as the count):
+        # '+' moved (checked-out commit != recorded), '-' uninitialized, 'U' conflict.
+        # Paths containing whitespace are not supported (awk splits on it).
+        stale_list="[]"
+        [[ -f $paths[i]/.gitmodules ]] && stale_list=$(git -C $paths[i] submodule status 2>/dev/null \
+          | awk '/^[+U-]/ { s = substr($1,1,1); st = (s=="+") ? "moved" : (s=="-") ? "uninitialized" : "conflict"; print st, $2 }' \
+          | jq -R 'split(" ") | {state: .[0], path: .[1]}' | jq -sc .)
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg branch "$f[2]" --argjson stale_list "$stale_list" \
+          --arg ahead "$f[3]" --arg behind "$f[4]" --arg add "$f[5]" --arg del "$f[6]" \
+          --arg mk "$f[7]" --arg dname "$f[8]" --arg dahead "$f[9]" --arg dbehind "$f[10]" \
+          --arg stale "$f[11]" --arg decor "$f[12]" "$jqf"
+      fi
+    done | jq -s '{repos: .}'
+    return 0
+  fi
 
   # Pass 1: build colored cells + track visible widths per column.
   #   cols: 1 name | 2 branch | 3 ↑↓ | 4 (+,-) | 5 markers | 6 vs default branch
@@ -874,6 +918,8 @@ DUMP OPTIONS
 STATUS OPTIONS
   -v, --verbose            append the tip commit's ref decoration
                            (HEAD -> x, origin/x, ...)
+  -j, --json               machine-readable JSON ({"repos":[...]}); needs jq.
+                           ahead/behind null = no upstream
   Columns: (+add,-del) = uncommitted lines vs HEAD (staged + unstaged;
   untracked files and submodule pointer bumps not counted). '│ main ↑3↓0' =
   current branch vs origin default branch, shown only when on another branch.
