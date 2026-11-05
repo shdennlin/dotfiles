@@ -26,6 +26,10 @@ zsh-checking.sh
 00_install-packages-linux.sh
 {{ end }}
 
+{{ if ne .chezmoi.os "darwin" }}
+Library
+{{ end }}
+
 README.md
 CLAUDE.md
 CLAUDE.local.md

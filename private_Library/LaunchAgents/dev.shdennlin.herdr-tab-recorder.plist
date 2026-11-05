@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.shdennlin.herdr-tab-recorder</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/shdennlin/.local/bin/herdr-tab-recorder</string>
+    <string>loop</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ProcessType</key><string>Background</string>
+  <key>Nice</key><integer>10</integer>
+  <key>LowPriorityBackgroundIO</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>StandardErrorPath</key><string>/Users/shdennlin/.cache/herdr-tab-recorder/err.log</string>
+  <key>StandardOutPath</key><string>/dev/null</string>
+</dict>
+</plist>
