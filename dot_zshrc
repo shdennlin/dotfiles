@@ -102,6 +102,14 @@ if [[ "$ZSH_VI_MODE" == "1" ]]; then
     bindkey -M viins '\ec' fzf-cd-widget
     bindkey -M viins '\ef' forward-word
     bindkey -M viins '\eb' backward-word
+
+    # Self-heal: if something later flips the main keymap back to emacs (seen in long-lived
+    # Herdr panes), `jk` / ESC stop working because they are only bound in viins. Re-link it.
+    autoload -Uz add-zsh-hook
+    _zvm_keep_viins() {
+      [[ $ZSH_VI_MODE == 1 && $(bindkey -lL main) != *viins* ]] && bindkey -A viins main
+    }
+    add-zsh-hook precmd _zvm_keep_viins
   }
 
   znap source jeffreytse/zsh-vi-mode
