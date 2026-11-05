@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+"""Claude Code hook (SubagentStart / SubagentStop): remember which built-in sub agents (the
+Task tool's) are running in which Herdr terminal, so the Herdr sidebar can list them.
+
+Herdr only knows about terminals started with `hc run`; Claude's own sub agents live inside
+Claude. The hook runs as a child of Claude, so $HC_TERMINAL_ID names the terminal it is in.
+
+State: ~/.config/herdr-app/data/subagents.json  {terminal: {agent_id: {name, started}}}
+Only the agent type is stored, never the prompt or any other text from the event.
+"""
+import fcntl, json, os, sys, tempfile, time
+
+APP_HOME = os.environ.get("HERDR_APP_HOME", os.path.expanduser("~/.config/herdr-app"))
+STORE = f"{APP_HOME}/data/subagents.json"
+TTL = 3600  # a Stop that never fires (agent killed) must not leave a row forever
+
+
+def main():
+    terminal = os.environ.get("HC_TERMINAL_ID")
+    if not terminal:
+        return 0  # not inside a Herdr terminal
+    try:
+        ev = json.load(sys.stdin)
+    except ValueError:
+        return 0
+    name = ev.get("hook_event_name")
+    aid = ev.get("agent_id")
+    if name not in ("SubagentStart", "SubagentStop") or not aid:
+        return 0
+
+    os.makedirs(os.path.dirname(STORE), exist_ok=True)
+    with open(STORE + ".lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)  # hooks can fire concurrently
+        try:
+            with open(STORE) as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                data = {}
+        except (OSError, ValueError):
+            data = {}
+        now = time.time()
+        for term in list(data):
+            data[term] = {a: v for a, v in (data[term] or {}).items()
+                          if isinstance(v, dict) and now - v.get("started", 0) < TTL}
+            if not data[term]:
+                del data[term]
+        mine = data.setdefault(terminal, {})
+        if name == "SubagentStart":
+            kind = ev.get("agent_type") or "subagent"
+            mine[aid] = {"name": str(kind)[:60], "started": now}
+        else:
+            mine.pop(aid, None)
+            if not mine:
+                del data[terminal]
+        tmp = tempfile.NamedTemporaryFile("w", dir=os.path.dirname(STORE), delete=False, suffix=".tmp")
+        try:
+            json.dump(data, tmp)
+            tmp.close()
+            os.replace(tmp.name, STORE)
+        except Exception:
+            os.unlink(tmp.name)
+            raise
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        sys.exit(main())
+    except Exception:
+        sys.exit(0)  # a hook must never break Claude
