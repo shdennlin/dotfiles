@@ -1005,3 +1005,23 @@ wsg() {
     *)         _wsg_cmd_dump "$@" ;;
   esac
 }
+
+# wsgp — open the Herdr superproject panel as its own tab (mod = its only pane) in
+# the Herdr space named $WSGP_SPACE (default: onelegion). Re-running selects the
+# existing "Superproject" tab instead of creating another. Close it with the tab's
+# close button / cmd-w. Needs the Herdr app running, and jq.
+wsgp() {
+  command -v jq &>/dev/null || { print -u2 -- "wsgp: jq required"; return 1 }
+  local space=${WSGP_SPACE:-onelegion} snap sid tid
+  snap=$(herdr-app ls 2>/dev/null) || { print -u2 -- "wsgp: Herdr app is not running"; return 1 }
+  sid=$(print -r -- $snap | jq -r --arg n $space '[.spaces[] | select(.name == $n)][0].id // empty')
+  [[ -z $sid ]] && { print -u2 -- "wsgp: no Herdr space named '$space'"; return 1 }
+  tid=$(print -r -- $snap | jq -r --arg n $space \
+    '[.spaces[] | select(.name == $n) | .tabs[] | select(.name == "Superproject")][0].id // empty')
+  herdr-app do space.select "$(jq -nc --arg id $sid '{id: $id}')" >/dev/null || return 1
+  if [[ -n $tid ]]; then
+    herdr-app do tab.select "$(jq -nc --arg id $tid '{id: $id}')" >/dev/null
+  else
+    herdr-app do tab.new "$(jq -nc --arg s $sid '{name: "Superproject", space: $s, mod: "superproject"}')" >/dev/null
+  fi
+}
