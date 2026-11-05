@@ -105,8 +105,7 @@
                     "color": "accent"
                   },
                   "radius": 0,
-                  "gap": 2,
-                  "lone": false
+                  "gap": 2
                 }
               }
             },
@@ -148,11 +147,30 @@
           "gap": 0
         },
         {
-          "id": "status",
-          "type": "block",
-          "content": {
-            "mod": "workspace-status"
-          },
+          "id": "node-1",
+          "type": "row",
+          "children": [
+            {
+              "id": "status",
+              "type": "block",
+              "content": {
+                "mod": "workspace-status"
+              },
+              "size": {
+                "weight": 1
+              }
+            },
+            {
+              "id": "usage",
+              "type": "block",
+              "content": {
+                "mod": "usage-status"
+              },
+              "size": {
+                "px": 300
+              }
+            }
+          ],
           "size": {
             "px": 28
           }
