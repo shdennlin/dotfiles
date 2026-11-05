@@ -1,0 +1,332 @@
+#!/usr/bin/python3
+"""herdr-tab-recorder — remember recently closed Herdr tabs so they can be re-created.
+
+Herdr has no "tab closed" event and forgets a tab's name/folder the moment it goes,
+so this keeps a snapshot of every live tab and, when one disappears, appends its
+last snapshot to a history file.
+
+  herdr-tab-recorder              run the loop (launchd keeps it alive)
+  herdr-tab-recorder once         take one snapshot / diff cycle (for tests)
+  herdr-tab-recorder list         print the history, newest first
+  herdr-tab-recorder restore [KEY] [--dry-run]
+                                  re-create a closed tab (default: the newest)
+
+Restore = same space, same name, same folder. A Claude Code tab is started with
+`claude --continue` (resumes the folder's latest conversation); the process itself
+cannot be brought back, and only the first terminal of a multi-terminal tab is.
+
+Env: HERDR_TAB_INTERVAL (seconds, default 5), HERDR_TAB_TTL_HOURS (default 48),
+HERDR_APP_HOME (default ~/.config/herdr-app).
+"""
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+
+HOME = os.path.expanduser("~")
+APP_HOME = os.environ.get("HERDR_APP_HOME", f"{HOME}/.config/herdr-app")
+HISTORY = f"{APP_HOME}/data/closed-tabs.jsonl"
+STATE_DIR = f"{HOME}/.cache/herdr-tab-recorder"
+STATE = f"{STATE_DIR}/state.json"
+INTERVAL = float(os.environ.get("HERDR_TAB_INTERVAL", "5"))
+TTL = float(os.environ.get("HERDR_TAB_TTL_HOURS", "48")) * 3600
+BIN = f"{HOME}/.local/bin"
+HERDR_APP = f"{BIN}/herdr-app"
+HC = f"{BIN}/hc"
+# Terminal output ("transcripts"), replayed into the restored shell like cmux does.
+TRANS_DIR = f"{STATE_DIR}/transcripts"
+TRANS_INTERVAL = float(os.environ.get("HERDR_TAB_TRANSCRIPT_INTERVAL", "60"))
+TRANS_LINES = int(os.environ.get("HERDR_TAB_TRANSCRIPT_LINES", "4000"))
+TRANS_MAX_CHARS = 400_000
+# Agent tabs are resumed with their own tooling and their screens are the most sensitive.
+SKIP_APPS = {"claude-code", "codex"}
+
+
+def run_json(cmd):
+    """Run a command and parse its stdout as JSON; None on any failure."""
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if r.returncode != 0:
+            return None
+        return json.loads(r.stdout)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return None
+
+
+def snapshot():
+    """{tab_id: entry}, {space names} for every live local tab, or None if Herdr
+    can't be read right now (never treat that as "everything was closed")."""
+    ls = run_json([HERDR_APP, "ls"])
+    hc = run_json([HC, "ls", "--json"])
+    if not isinstance(ls, dict) or "spaces" not in ls or not isinstance(hc, dict):
+        return None
+    live = {t.get("address"): t for t in hc.get("terminals", [])}
+    tabs, spaces = {}, set()
+    for sp in ls["spaces"]:
+        if sp.get("machine"):  # remote machines: cwd isn't local, skip
+            continue
+        spaces.add(sp["name"])
+        for tab in sp.get("tabs", []):
+            terms = []
+            for t in tab.get("terminals", []):
+                info = live.get(t.get("terminal"), {})
+                terms.append({"cwd": info.get("cwd"),
+                              "app": info.get("agent") or t.get("app"),
+                              "terminal": t.get("terminal")})
+            tabs[tab["id"]] = {"space": sp["name"], "tab": tab.get("name"),
+                               "terminals": terms}
+    return tabs, spaces
+
+
+def atomic_write(path, text):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = f"{path}.tmp.{os.getpid()}"
+    with open(tmp, "w") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def read_history():
+    out = []
+    try:
+        with open(HISTORY) as f:
+            for line in f:
+                try:
+                    out.append(json.loads(line))
+                except ValueError:
+                    pass
+    except OSError:
+        pass
+    return out
+
+
+def identity(e):
+    t = (e.get("terminals") or [{}])[0]
+    return (e.get("space"), e.get("tab"), t.get("cwd"), t.get("app"))
+
+
+def write_history(entries, now):
+    """Drop expired entries and older duplicates, keep chronological order."""
+    fresh = [e for e in entries if now - e.get("closed_at", 0) <= TTL]
+    seen, kept = set(), []
+    for e in reversed(fresh):  # newest first so the newest duplicate wins
+        k = identity(e)
+        if k not in seen:
+            seen.add(k)
+            kept.append(e)
+    kept.reverse()
+    atomic_write(HISTORY, "".join(json.dumps(e, ensure_ascii=False) + "\n" for e in kept))
+
+
+def transcript_path(tab_id):
+    return f"{TRANS_DIR}/{tab_id}.txt"
+
+
+def write_private(path, text):
+    """Atomic write with 0600 inside a 0700 directory."""
+    d = os.path.dirname(path)
+    os.makedirs(d, mode=0o700, exist_ok=True)
+    os.chmod(d, 0o700)
+    tmp = f"{path}.tmp.{os.getpid()}"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
+def read_terminal(address):
+    """The terminal's screen + history as plain text, or None."""
+    try:
+        r = subprocess.run([HC, "read", address, "--lines", str(TRANS_LINES)],
+                           capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if r.returncode != 0:
+        return None
+    # hc appends "[hc] ..." notes (e.g. "incomplete: older output may be missing").
+    lines = [l for l in r.stdout.split("\n") if not l.startswith("[hc] ")]
+    text = "\n".join(lines).rstrip() + "\n"
+    if len(text) > TRANS_MAX_CHARS:
+        text = text[-TRANS_MAX_CHARS:]
+        text = text[text.find("\n") + 1:]  # don't start mid-line
+    return text if text.strip() else None
+
+
+def capture_transcripts(cur, last):
+    """Save each eligible tab's first terminal. `last` maps tab_id -> text already on disk."""
+    for tid, e in cur.items():
+        first = (e.get("terminals") or [{}])[0]
+        if not first.get("terminal") or first.get("app") in SKIP_APPS:
+            continue
+        text = read_terminal(first["terminal"])
+        if text is None or last.get(tid) == text:
+            continue
+        write_private(transcript_path(tid), text)
+        last[tid] = text
+
+
+def gc_transcripts(cur):
+    """Delete transcripts of tabs that are neither open nor in the history."""
+    keep = set(cur) | {e.get("tab_id") for e in read_history()}
+    try:
+        names = os.listdir(TRANS_DIR)
+    except OSError:
+        return
+    now = time.time()
+    for n in names:
+        p = os.path.join(TRANS_DIR, n)
+        # Fresh files (e.g. one a restore just touched) get a grace period.
+        if n.endswith(".txt") and n[:-4] not in keep and now - os.path.getmtime(p) > 120:
+            try:
+                os.remove(p)
+            except OSError:
+                pass
+
+
+def load_state():
+    try:
+        with open(STATE) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def cycle(prev):
+    """One diff step. Returns the new state (prev unchanged if Herdr unreadable)."""
+    snap = snapshot()
+    if snap is None:
+        return prev, False
+    cur, spaces = snap
+    now = time.time()
+    closed = []
+    for tid, e in prev.items():
+        if tid in cur or not e.get("terminals"):  # still open / nothing to restore
+            continue
+        entry = {**e, "tab_id": tid, "closed_at": now,
+                 "space_gone": e["space"] not in spaces}
+        if os.path.exists(transcript_path(tid)):
+            entry["transcript"] = transcript_path(tid)
+        closed.append(entry)
+    if closed:
+        write_history(read_history() + closed, now)
+    if cur != prev:
+        atomic_write(STATE, json.dumps(cur, ensure_ascii=False))
+    return cur, True
+
+
+def loop():
+    state = load_state()
+    write_history(read_history(), time.time())  # prune on start
+    misses = 0
+    last_text, last_capture = {}, 0.0
+    while True:
+        state, ok = cycle(state)
+        misses = 0 if ok else misses + 1
+        if ok and time.time() - last_capture >= TRANS_INTERVAL:
+            capture_transcripts(state, last_text)
+            gc_transcripts(state)
+            last_capture = time.time()
+        # Herdr not running: back off instead of spawning two processes every few seconds.
+        time.sleep(INTERVAL if misses < 3 else min(INTERVAL * 6, 30))
+
+
+def ago(ts):
+    s = int(time.time() - ts)
+    return f"{s}s" if s < 60 else f"{s // 60}m" if s < 3600 else f"{s // 3600}h" if s < 86400 else f"{s // 86400}d"
+
+
+def history_newest_first():
+    now = time.time()
+    return [e for e in reversed(read_history()) if now - e.get("closed_at", 0) <= TTL]
+
+
+def entry_key(e):
+    return f"{int(e['closed_at'])}:{e['tab_id']}"
+
+
+def build_tab_new(e, space_ids):
+    """The `tab.new` arguments that re-create entry `e` (pure, so it can be dry-run)."""
+    first = (e.get("terminals") or [{}])[0]
+    args = {}
+    name = e.get("tab")
+    if name and not re.fullmatch(r"\d+", name):  # bare numbers are auto-names
+        args["name"] = name
+    if e.get("space") in space_ids:
+        args["space"] = space_ids[e["space"]]
+    cwd = first.get("cwd")
+    if cwd and os.path.isdir(cwd):
+        args["folder"] = cwd
+    tr = e.get("transcript")
+    if first.get("app") == "claude-code":
+        args["argv"] = ["claude", "--continue"]
+    elif tr and os.path.isfile(tr) and first.get("app") not in SKIP_APPS:
+        # Print the old output into the new terminal so it becomes real scrollback, drop
+        # the replayed last (old prompt) line, delete the file, then become a login shell.
+        q = shlex.quote(tr)
+        args["argv"] = ["/bin/sh", "-c",
+                        f"/bin/cat -- {q}; /bin/rm -f -- {q}; printf '\\r\\033[2K'; exec /bin/zsh -li"]
+    return args
+
+
+def restore(key, dry):
+    hist = history_newest_first()
+    if not hist:
+        print("herdr-tab-recorder: no closed tabs in the last "
+              f"{int(TTL // 3600)}h", file=sys.stderr)
+        return 1
+    e = next((h for h in hist if entry_key(h) == key), None) if key else hist[0]
+    if e is None:
+        print(f"herdr-tab-recorder: no such entry: {key}", file=sys.stderr)
+        return 1
+    ls = run_json([HERDR_APP, "ls"])
+    if not isinstance(ls, dict):
+        print("herdr-tab-recorder: Herdr app is not running", file=sys.stderr)
+        return 1
+    space_ids = {s["name"]: s["id"] for s in ls.get("spaces", []) if not s.get("machine")}
+    args = build_tab_new(e, space_ids)
+    if dry:
+        print(json.dumps(args, ensure_ascii=False))
+        return 0
+    if e.get("transcript") and os.path.isfile(e["transcript"]):
+        os.utime(e["transcript"])  # keep the garbage collector off it until the shell has read it
+    r = subprocess.run([HERDR_APP, "do", "tab.new", json.dumps(args)],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stderr or r.stdout, file=sys.stderr)
+        return 1
+    # Restored: drop it so it doesn't linger in the list.
+    remaining = [h for h in read_history() if entry_key(h) != entry_key(e)]
+    write_history(remaining, time.time())
+    return 0
+
+
+def main(argv):
+    cmd = argv[1] if len(argv) > 1 else "loop"
+    if cmd == "loop":
+        loop()
+    elif cmd == "once":
+        state, ok = cycle(load_state())
+        print(f"ok={ok} tabs={len(state)}")
+    elif cmd == "capture":  # one transcript round now (for tests)
+        state, ok = cycle(load_state())
+        capture_transcripts(state, {})
+        print(f"ok={ok} transcripts={len(os.listdir(TRANS_DIR)) if os.path.isdir(TRANS_DIR) else 0}")
+    elif cmd == "list":
+        for e in history_newest_first():
+            t = (e.get("terminals") or [{}])[0]
+            print(f"{entry_key(e)}\t{ago(e['closed_at'])}\t{e.get('space')}\t{e.get('tab')}\t"
+                  f"{t.get('app')}\t{t.get('cwd')}")
+    elif cmd == "restore":
+        rest = [a for a in argv[2:] if a != "--dry-run"]
+        return restore(rest[0] if rest else None, "--dry-run" in argv)
+    else:
+        print(__doc__)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
