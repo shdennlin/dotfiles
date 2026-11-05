@@ -5,14 +5,20 @@ Task tool's) are running in which Herdr terminal, so the Herdr sidebar can list 
 Herdr only knows about terminals started with `hc run`; Claude's own sub agents live inside
 Claude. The hook runs as a child of Claude, so $HC_TERMINAL_ID names the terminal it is in.
 
-State: ~/.config/herdr-app/data/subagents.json  {terminal: {agent_id: {name, started}}}
+State: ~/.config/herdr-app/data/subagents.json  {terminal: {agent_id: {name, started, stopped?}}}
 Only the agent type is stored, never the prompt or any other text from the event.
+
+SubagentStop fires when a sub agent's turn ends, which includes the case where it ends the turn
+to wait for a background job of its own and is still alive. So Stop does not delete the entry: it
+stamps `stopped`, the sidebar shows it faded as "waiting", and the entry is dropped GRACE seconds
+after that. A SubagentStart for the same id (it resumed) clears the stamp.
 """
 import fcntl, json, os, sys, tempfile, time
 
 APP_HOME = os.environ.get("HERDR_APP_HOME", os.path.expanduser("~/.config/herdr-app"))
 STORE = f"{APP_HOME}/data/subagents.json"
 TTL = 3600  # a Stop that never fires (agent killed) must not leave a row forever
+GRACE = 300  # how long a stopped sub agent stays listed (as "waiting") before it is dropped
 
 
 def main():
@@ -41,17 +47,18 @@ def main():
         now = time.time()
         for term in list(data):
             data[term] = {a: v for a, v in (data[term] or {}).items()
-                          if isinstance(v, dict) and now - v.get("started", 0) < TTL}
+                          if isinstance(v, dict) and now - v.get("started", 0) < TTL
+                          and not (v.get("stopped") and now - v["stopped"] > GRACE)}
             if not data[term]:
                 del data[term]
         mine = data.setdefault(terminal, {})
         if name == "SubagentStart":
             kind = ev.get("agent_type") or "subagent"
-            mine[aid] = {"name": str(kind)[:60], "started": now}
-        else:
-            mine.pop(aid, None)
-            if not mine:
-                del data[terminal]
+            mine[aid] = {"name": str(kind)[:60], "started": now}   # also clears an old `stopped`
+        elif aid in mine:
+            mine[aid]["stopped"] = now      # keep it: it may only be waiting on a background job
+        if not mine:
+            del data[terminal]
         tmp = tempfile.NamedTemporaryFile("w", dir=os.path.dirname(STORE), delete=False, suffix=".tmp")
         try:
             json.dump(data, tmp)
