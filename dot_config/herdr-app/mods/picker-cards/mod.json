@@ -1,0 +1,11 @@
+{
+  "place": "none",
+  "title": "Picker cards",
+  "overlay": {
+    "kind": "popup",
+    "at": "top",
+    "offset": 40,
+    "width": 0.85,
+    "height": 0.9
+  }
+}
