@@ -31,7 +31,8 @@
               "content": {
                 "mod": "spaces-agents",
                 "props": {
-                  "rev": 3
+                  "rev": 3,
+                  "hoverExpand": true
                 }
               },
               "size": {
@@ -55,9 +56,9 @@
         }
       ],
       "size": {
-        "px": 268
+        "px": 6
       },
-      "min": 44,
+      "min": 4,
       "max": 480,
       "background": "chrome",
       "resizable": false
