@@ -115,6 +115,8 @@ export default class SpacesAgents extends View {
         const c = await nextCommand();
         if (c === "close") this.guardedClose();
         else if (c === "last") this.goLast();
+        else if (c === "switch") this.switchTab(1);
+        else if (c === "switch-back") this.switchTab(-1);
         else if (c === "tab9") this.goTab9();
         else if (c === "pin") this.togglePin(cx);
         cx.notify();
@@ -145,6 +147,30 @@ export default class SpacesAgents extends View {
       return;
     }
     run("tab.next", {});
+  }
+
+  // ctrl-tab / ctrl-shift-tab: open the tab-switcher overlay (or, if it is already open, move its
+  // selection one card). The overlay goes to the chosen tab when ctrl is released. The first press
+  // selects the previous tab (the same one goLast would go to); ctrl-shift-tab starts from the oldest.
+  // Presses made before the overlay has finished opening still count: they only bump ts.delta.
+  switchTab(dir) {
+    this.trackActive();
+    const all = spaces();
+    const alive = Date.now() - (Number(shared("ts.alive")) || 0) < 800;
+    // Just asked to open and not up yet (and not already closed again): this press is an extra step.
+    const starting = (this.tsOpenedAt ?? 0) > (Number(shared("ts.closed")) || 0) && Date.now() - (this.tsOpenedAt ?? 0) < 800;
+    const opening = !alive && !starting;
+    if (opening) {
+      const list = this.recent.filter((r) => all.find((s) => s.id === r.space)?.tabs.some((x) => x.id === r.tab));
+      if (list.length < 2) return run("tab.next", {});
+      this.tsOpenedAt = Date.now();
+      setShared("ts.recent", list);
+      setShared("ts.start", dir > 0 ? 1 : list.length - 1);
+      setShared("ts.delta", 0);
+      run("mod.open", { name: "tab-switcher" });
+      return;
+    }
+    setShared("ts.delta", (Number(shared("ts.delta")) || 0) + dir);
   }
 
   // cmd-9: tab 9 if this space has one, otherwise the rightmost tab (browser-style "last tab").
