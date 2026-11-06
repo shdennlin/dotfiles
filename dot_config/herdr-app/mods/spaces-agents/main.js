@@ -259,15 +259,17 @@ export default class SpacesAgents extends View {
       .text_color(filled ? (t.chrome ?? "#1b1d25") : color).child(glyph);
   }
 
-  // The state symbol, same mapping as cmux: working a spinner, needs-you a filled "!", done a
-  // filled green check, idle (looked at) an outline check, long-idle an outline pause.
+  // The state symbol: working a spinner, needs-you a filled "!", done a filled green circle with a
+  // check, idle (looked at) a bare check, long-idle nothing (the age already says it).
   statusGlyph(a, old, t, ageS = 0) {
+    const check = (size, color) => svg("mods/spaces-agents/check.svg").size(size).flex_none().text_color(color);
     const tone = this.tone(a.status, old, ageS, t);
     if (a.status === "working") return div().w(14).flex_none().text_color(tone).frames(SPIN, 90).child(SPIN[0]);
     if (a.status === "blocked") return this.badge(tone, true, "!", t);
     if (a.status === "error") return this.badge(pal("error"), true, "×", t);
-    if (a.status === "done") return this.badge(tone, true, "✓", t);
-    return old ? this.badge(t.muted, false, "‖", t) : this.badge(tone, false, "✓", t);
+    if (a.status === "done") return div().w(14).h(14).flex_none().flex().items_center().justify_center().rounded(7).bg(tone).child(check(9, t.chrome ?? "#1b1d25"));
+    if (old) return div().w(14).h(14).flex_none();
+    return div().w(14).h(14).flex_none().flex().items_center().justify_center().child(check(12, tone));
   }
 
   // The row's color follows the state, like cmux's color(): hue = state and nothing else.
