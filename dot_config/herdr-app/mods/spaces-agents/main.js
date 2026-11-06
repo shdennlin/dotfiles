@@ -9,7 +9,7 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, agents, panes, terminals, run, hc, exec, theme, settings, shared, props, layout, window, nextCommand, openOverlay, readTextFile, watchFolder, appHome } from "herdr";
+import { spaces, agents, panes, terminals, run, hc, exec, theme, settings, shared, setShared, props, layout, window, nextCommand, openOverlay, readTextFile, watchFolder, appHome } from "herdr";
 
 const REFRESH_MS = 60000;
 const GRAY_AFTER_S = 6 * 3600; // an idle agent this old counts as "old idle" (same as cmux)
@@ -210,6 +210,7 @@ export default class SpacesAgents extends View {
         }
         this.info = info;
         this.rss = mem;
+        this.publish();
       } finally {
         this.loading = false;
         cx.notify();
@@ -269,6 +270,22 @@ export default class SpacesAgents extends View {
       .child(this.statusGlyph(a, old, t, age ?? 0));
   }
 
+  // What the Go-to picker (cmd-p) shows next to each tab: when each agent's status last changed,
+  // its process tree's memory and its live sub-agent tasks. Published only when it changed.
+  publish() {
+    const nowS = Date.now() / 1000;
+    const tasks = {};
+    for (const [addr, list] of Object.entries(this.subs)) {
+      tasks[addr] = list.filter((e) => !(e.stopped && nowS - e.stopped > SUB_GRACE_S)).length;
+    }
+    const info = Object.fromEntries(Object.entries(this.info).filter(([, v]) => v.since).map(([k, v]) => [k, v.since]));
+    const snap = { info, rss: this.rss, tasks };
+    const key = JSON.stringify(snap);
+    if (key === this.published) return;
+    this.published = key;
+    setShared("sa.snapshot", snap);
+  }
+
   loadSubs(cx) {
     cx.spawn(async (cx) => {
       let text = "";
@@ -291,6 +308,7 @@ export default class SpacesAgents extends View {
       } catch { /* torn write: keep nothing rather than guess */ }
       this.subs = out;
       this.hasStopped = stopped;
+      this.publish();
       cx.notify();
     });
   }
