@@ -81,5 +81,12 @@
     "ctrl-tab": "spaces-agents.last",
     "cmd-9": "spaces-agents.tab9",
     "cmd-p": "mod.open:picker-live"
+  },
+  "layout:shawn-style-float": {
+    "cmd-b": "spaces-agents.pin",
+    "cmd-w": "spaces-agents.close",
+    "ctrl-tab": "spaces-agents.last",
+    "cmd-9": "spaces-agents.tab9",
+    "cmd-p": "mod.open:picker-live"
   }
 }

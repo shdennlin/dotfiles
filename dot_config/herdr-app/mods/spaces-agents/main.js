@@ -9,7 +9,7 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { spaces, agents, panes, terminals, run, hc, exec, theme, settings, shared, nextCommand, openOverlay, readTextFile, watchFolder, appHome } from "herdr";
+import { spaces, agents, panes, terminals, run, hc, exec, theme, settings, shared, props, layout, window, nextCommand, openOverlay, readTextFile, watchFolder, appHome } from "herdr";
 
 const REFRESH_MS = 60000;
 const GRAY_AFTER_S = 6 * 3600; // an idle agent this old counts as "old idle" (same as cmux)
@@ -62,6 +62,16 @@ function treeRss(kids, rss, root) {
   return sum;
 }
 
+// Hover-expand (layouts/shawn-style-float.json passes props { hoverExpand: true }): the sidebar sits
+// at the left as a narrow rail and widens to WIDE while the pointer is on it, pushing the content.
+const DEFAULT_WIDE = 268;
+const wide = () => Number(localStorage.getItem("sa.width")) || DEFAULT_WIDE; // the width you last dragged it to
+const sidebarPx = () => {
+  const find = (n) => (n?.id === "sidebar" ? n : (n?.children ?? []).map(find).find(Boolean));
+  return find(layout())?.size?.px ?? Infinity;
+};
+const EDGE = 6; // the strip left when the sidebar is tucked away; the pointer on it brings it out
+
 export default class SpacesAgents extends View {
   init(_props, cx) {
     this.info = {};   // terminal address -> { since: ms, pid }
@@ -83,15 +93,30 @@ export default class SpacesAgents extends View {
     cx.timer.every(20000, (cx) => this.loadSubs(cx));
     this.refresh(cx);
     cx.timer.every(REFRESH_MS, (cx) => this.refresh(cx));
-    // keys.json "layout:shawn-style": cmd-w -> "spaces-agents.close" lands here.
-    // Uses `cx` each turn: after a hot reload the old build's loop ends at its next cx use,
-    // so reloads don't leave several loops all answering the same key.
+    // Hover-expand upkeep, twice a second:
+    //  - a width that isn't the one we set (and not just us still resizing) is the person dragging the
+    //    edge: remember it as the wide width, and leave the sidebar alone for a few seconds;
+    //  - a missed "pointer left" event must not leave the sidebar stuck open: not hovered, not pinned,
+    //    wide, and nobody dragging -> tuck it away.
+    cx.timer.every(500, () => {
+      if (props()?.hoverExpand !== true) return;
+      const px = sidebarPx();
+      if (px !== this.lastPx) {
+        if (this.lastPx !== undefined && px !== this.ours && Date.now() - (this.oursAt ?? 0) > 800) {
+          this.manualAt = Date.now();
+          if (px >= 120) localStorage.setItem("sa.width", String(Math.round(px)));
+        }
+        this.lastPx = px;
+      }
+      if (!this.hov && localStorage.getItem("sa.pinned") !== "1" && px > 40 && !this.dragging()) this.resizeTo(EDGE);
+    });
     cx.spawn(async (cx) => {
       for (;;) {
         const c = await nextCommand();
         if (c === "close") this.guardedClose();
         else if (c === "last") this.goLast();
         else if (c === "tab9") this.goTab9();
+        else if (c === "pin") this.togglePin(cx);
         cx.notify();
       }
     });
@@ -358,6 +383,35 @@ export default class SpacesAgents extends View {
       .children(groups.flatMap((g, i) => (i ? [div().text_size(11).text_color(t.dim).child("·"), g] : [g])));
   }
 
+  // Pointer on the sidebar: widen after a short pause (so sweeping past doesn't flash it), narrow again
+  // shortly after it leaves, unless pinned.
+  // keys.json "layout:shawn-style-float": cmd-b -> "spaces-agents.pin". Pinned = stays wide; unpinned =
+  // tucked into a thin strip at the left that widens while the pointer is on it. Survives a restart.
+  dragging() { return Date.now() - (this.manualAt ?? 0) < 2500; }
+
+  resizeTo(px) {
+    this.ours = px; this.oursAt = Date.now();
+    run("layout.resize", { id: "sidebar", px });
+  }
+
+  togglePin(cx) {
+    const on = localStorage.getItem("sa.pinned") !== "1";
+    localStorage.setItem("sa.pinned", on ? "1" : "0");
+    this.resizeTo(on ? wide() : EDGE);
+    cx.notify();
+  }
+
+  // Pointer on the sidebar: from the thin strip, widen after a short pause (so sweeping past doesn't
+  // flash it). Already wide (maybe dragged to its own width): leave the width alone. After it leaves,
+  // tuck it away shortly, unless pinned or being dragged.
+  onHover(hovered, cx) {
+    this.hov = hovered;
+    if (hovered) cx.timer.after(120, () => { if (this.hov && sidebarPx() < 40) this.resizeTo(wide()); });
+    else cx.timer.after(300, () => {
+      if (!this.hov && localStorage.getItem("sa.pinned") !== "1" && !this.dragging()) this.resizeTo(EDGE);
+    });
+  }
+
   render(cx) {
     const t = theme();
     const list = agents();
@@ -437,12 +491,22 @@ export default class SpacesAgents extends View {
       }
       if (mine.length) rows.push(this.summary(mine, t, now));
     }
+    const hoverExpand = props()?.hoverExpand === true;
+    if (hoverExpand && sidebarPx() < 40) {
+      return v_flex().id("spaces-agents").size_full().bg(t.chrome).on_hover((h, cx) => this.onHover(h, cx));
+    }
+    const pinned = localStorage.getItem("sa.pinned") === "1";
     return v_flex().id("spaces-agents").size_full().min_h(0).bg(t.chrome).text_color(t.foreground).text_size(13)
+      .when(hoverExpand, (e) => e.on_hover((h, cx) => this.onHover(h, cx)))
       .child(h_flex().h(34).flex_none().px(10).items_center()
         .child(div().flex_1().text_size(11).font_semibold().text_color(t.muted).child("Spaces"))
         .child(div().id("sa-new").w(22).h(22).flex().items_center().justify_center().rounded(6)
           .cursor_pointer().text_color(t.muted).hover((e) => e.bg(t.raised))
-          .on_click(() => run("space.new", {})).child("+")))
+          .on_click(() => run("space.new", {})).child("+"))
+        .when(hoverExpand, (e) => e.child(div().id("sa-pin").w(22).h(22).flex().items_center().justify_center().rounded(6)
+          .cursor_pointer().text_color(pinned ? t.foreground : t.muted).hover((x) => x.bg(t.raised))
+          .on_click((_e, cx) => this.togglePin(cx))
+          .child(svg(`mods/workspace-chrome/${pinned ? "pin" : "pin-off"}.svg`).size(13)))))
       .child(v_flex().id("sa-list").flex_1().min_h(0).overflow_y_scrollbar().px(4).pb(8).gap(1).children(rows));
   }
 }
