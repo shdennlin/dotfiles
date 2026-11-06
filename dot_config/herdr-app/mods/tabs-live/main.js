@@ -1,6 +1,6 @@
 import { View, div, svg, image } from "gpui-kit";
 import { h_flex } from "gpui-base";
-import { spaces, panes, run, openOverlay, theme, window, shared, layout, settings } from "herdr";
+import { spaces, panes, agents, run, openOverlay, theme, window, shared, layout, settings } from "herdr";
 
 function find(node, id) {
   if (node?.id === id) return node;
@@ -10,6 +10,12 @@ function find(node, id) {
   }
   return null;
 }
+
+// State colors and spinner: the same as the spaces-agents sidebar (name follows the state, long idle has none).
+const PAL = { done: ["#34C759", "#3FCF6E"], read: ["#6FB58A", "#4A9B6B"], running: ["#2F7BF5", "#4C8DFF"], need: ["#E8920A", "#F5A524"] };
+const pal = (name) => PAL[name][settings()?.dark === false ? 0 : 1];
+const SPIN = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
+const GRAY_AFTER_S = 6 * 3600;
 
 export default class Tabs extends View {
   init() {
@@ -64,8 +70,13 @@ export default class Tabs extends View {
       const shell = !c.named && !lead ? panes().find(p => p.tab === c.id && p.terminal) : null;
       const dir = shell?.cwd ? shell.cwd.replace(/\/+$/, "").split("/").pop() : "";
       const name = !c.named && telling ? live : dir ? dir : /^tb\d+$/.test(c.name) ? program?.name ?? "Terminal" : c.name;
+      // Name color follows the tab's agent state, like the sidebar row.
+      const snap = shared("sa.snapshot") ?? {};
+      const since = agents().filter(a => a.tab === c.id).map(a => snap.info?.[a.address]).filter(Boolean).map(ms => (Date.now() - ms) / 1000);
+      const stale = c.status === "idle" && since.length > 0 && Math.min(...since) > GRAY_AFTER_S;
+      const tone = c.status === "working" ? pal("running") : c.status === "blocked" ? pal("need") : c.status === "done" ? pal("done") : c.status === "idle" && !stale ? pal("read") : null;
       return h_flex().id(`tab-${c.id}`).h(25).px(8).gap(6).rounded(6).items_center().flex_none().text_size(12.8)
-        .border(1).border_color(c.active ? t.border : t.chrome).bg(c.active ? t.raised : t.chrome).text_color(c.active ? t.foreground : t.muted)
+        .border(1).border_color(c.active ? t.border : t.chrome).bg(c.active ? t.raised : t.chrome).text_color(tone ?? (c.active ? t.foreground : t.muted))
         .hover(s => s.bg(t.hover))
         .on_mouse_down("left", (e, cx) => { cx.stop_propagation(); this.pressed = i; if (e.click_count === 2) run("tab.rename", { id: c.id }); })
         .on_mouse_up("left", () => {
@@ -76,7 +87,7 @@ export default class Tabs extends View {
         .on_mouse_down("right", (_e, cx) => { cx.stop_propagation(); openOverlay({ mod: "menu", kind: "popup", width: 200, props: { tab: "tab", target: { id: c.id, space: space.id } } }); })
         .when(Boolean(program?.icon), el => el.child(program.tint ? svg(program.icon).size(14).text_color(t.muted) : image(program.icon).size(14)))
         .child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))
-        .when(c.status === "working", el => el.child(svg("mods/workspace-chrome/spinner.svg").size(12).flex_none().text_color(t.working).spin(900)))
+        .when(c.status === "working", el => el.child(div().w(12).flex_none().text_color(tone).frames(SPIN, 90).child(SPIN[0])))
         .when(c.status === "blocked" || c.status === "done", el => el.child(div().size(6).rounded(3).bg(t[c.status])))
         .when(c.active, el => el.child(div().id(`close-${c.id}`).text_color(t.dim).on_mouse_down("left", stop).on_click((_e, cx) => { cx.stop_propagation(); run("tab.close", { id: c.id }); }).child(svg("mods/pane/close.svg").size(12))));
     };

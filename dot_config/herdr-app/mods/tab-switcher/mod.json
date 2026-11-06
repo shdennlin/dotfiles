@@ -1,0 +1,5 @@
+{
+  "place": "none",
+  "title": "Tab switcher",
+  "overlay": { "kind": "popup", "at": "top", "offset": 120, "width": 560, "frame": "none" }
+}
