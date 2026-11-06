@@ -287,7 +287,10 @@ export default class SpacesAgents extends View {
     const i = this.info[a.address];
     const age = i?.since ? (now - i.since) / 1000 : null;
     const old = a.status === "idle" && age !== null && age > GRAY_AFTER_S;
-    const title = a.title && a.title.trim() ? a.title : a.tab_name;
+    // A tab you named keeps its name (same rule as the tab bar, cmd-p and the ctrl-tab switcher); an
+    // unnamed one follows its agent's live title.
+    const named = spaces().some((s) => s.tabs.some((x) => x.id === a.tab && x.named));
+    const title = named && a.tab_name ? a.tab_name : a.title && a.title.trim() ? a.title : a.tab_name;
     const tone = this.tone(a.status, old, age ?? 0, t);
     return h_flex().id(`sa-ag-${a.address}`).h(23).flex_none().pl(18).pr(10).gap(6).items_center().rounded(7)
       .cursor_pointer().when(a.focused, (e) => e.bg(t.selected)).hover((s) => s.bg(t.hover))
