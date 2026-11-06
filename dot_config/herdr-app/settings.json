@@ -1,7 +1,9 @@
 {
   "zoom": 0.9,
   "sounds": {
-    "enabled": true
+    "enabled": true,
+    "done": "mods/win98/sounds/tada.mp3",
+    "blocked": "mods/win98/sounds/chord.mp3"
   },
   "font": "MesloLGS NF",
   "font_size": 16.0,
