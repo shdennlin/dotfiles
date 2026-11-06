@@ -3,11 +3,12 @@
   "sounds": {
     "enabled": true
   },
-  "font_ligatures": false,
-  "minimum_contrast": 1,
-  "appearance": "dark",
-  "font_size": 16,
-  "theme": "dracula",
   "font": "MesloLGS NF",
-  "option_as_alt": "on"
+  "font_size": 16.0,
+  "font_ligatures": false,
+  "telemetry": false,
+  "minimum_contrast": 1.0,
+  "option_as_alt": "on",
+  "appearance": "dark",
+  "theme": "dracula"
 }
