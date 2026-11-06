@@ -1,6 +1,6 @@
 // ctrl-tab switcher: a list of tabs, most recently used first, one row each. spaces-agents opens it and
 // feeds it presses through shared "ts.*" values; holding ctrl and tapping tab walks the row,
-// releasing ctrl goes to the chosen tab. Esc (Herdr closes the dialog itself) leaves without going.
+// releasing ctrl goes to the chosen tab; ctrl+p hands over to the search picker. Esc (Herdr closes the dialog itself) leaves without going.
 //
 // Shared values (written by spaces-agents.switch / switch-back):
 //   ts.recent  [{ space, tab }]  tabs, newest first (index 0 is the tab you are on)
@@ -140,6 +140,19 @@ export default class TabSwitcher extends View {
     run("tab.select", { id: target.ctx.id });
   }
 
+  // ctrl+p while the switcher is up: leave without switching and open the search picker instead.
+  // "pc.guard" tells picker-cards to ignore ctrl+d for a moment (ctrl is probably still held).
+  search(cx) {
+    if (this.done) return;
+    this.done = true;
+    setShared("ts.alive", 0);
+    setShared("ts.closed", Date.now());
+    setShared("pc.guard", Date.now());
+    // Open the picker first, in this same tick: a timer would die with this view once it is closed.
+    run("mod.open", { name: "picker-cards" });
+    closeOverlay(props().overlay);
+  }
+
   render() {
     const t = theme();
     if (!this.shown) return div().id("ts");
@@ -148,6 +161,9 @@ export default class TabSwitcher extends View {
     const tone = (st) => (st === "working" ? pal("running") : st === "blocked" ? pal("need") : st === "done" ? pal("done") : pal("read"));
     return v_flex().id("ts").track_focus(this.handle).w(LIST_W).p(8).gap(2).rounded(12).border_1().border_color(t.border ?? t.dim)
       .bg(t.chrome ?? t.background)
+      .on_key_down((e, cx) => {
+        if (e.key === "p" && e.modifiers.control) { this.search(cx); cx.stop_propagation(); }
+      })
       .on_modifiers_changed((e, cx) => { if (!e.modifiers.control) this.commit(cx); })
       // Another key after ctrl went up (event missed): treat it as the release too.
       .on_key_up((e, cx) => { if (!e.modifiers.control) this.commit(cx); })

@@ -370,6 +370,8 @@ export default class PickerCards extends View {
             this.at = flat.findIndex((r) => r.ci === card.ci && r.match);
           }
         } else if (k === "d" && e.modifiers.control) {
+          // Just handed over from the ctrl-tab switcher, ctrl is likely still held: don't close a tab by accident.
+          if (Date.now() - (Number(shared("pc.guard")) || 0) < 500) return;
           if (sel?.match) { this.close(); run("tab.close", { id: sel.ctx.id }); }
         } else return;
         cx.stop_propagation();
