@@ -224,6 +224,7 @@ export default class PickerCards extends View {
 
   render() {
     const t = theme();
+    const PANEL = t.chrome ?? t.popover; // one panel color, same as the ctrl-tab switcher
     const { sections, grouped } = this.model();
     const flat = sections.flatMap((s) => s.cards.flatMap((c) => c.rows));
     const cardList = sections.flatMap((s) => s.cards);
@@ -308,8 +309,8 @@ export default class PickerCards extends View {
         .when(f && !dim && !on, (el) => el.bg(wash))
         // The keyboard selection: an accent outline (same purple as the search box) over the selected
         // background. Hover alone is only the faint background, so the two can't be mixed up.
-        .border_1().border_color(on ? PINK : t.background)
-        .when(on, (el) => el.bg(t.selected))
+        .border_1().border_color(on ? PINK : PANEL)
+        .when(on, (el) => el.bg(`${PINK}1f`)) // same light pink as the ctrl-tab switcher
         .hover((s) => s.bg(t.hover))
         .on_click(() => this.go(r))
         // Same marks as the sidebar: the agent's logo, ">_" for a shell, "▦" for a panel-only tab.
@@ -326,7 +327,7 @@ export default class PickerCards extends View {
 
     const cardEl = (c) => {
       const stat = [c.agents ? `${c.agents} agent${c.agents > 1 ? "s" : ""}` : "", c.mem ? memLabel(c.mem) : ""].filter(Boolean).join(" · ");
-      return v_flex().id(`pcard-${c.w.id}`).w_full().rounded(10).border_1().border_color(t.border).bg(t.background).pb(PAD / 2)
+      return v_flex().id(`pcard-${c.w.id}`).w_full().rounded(10).border_1().border_color(t.border).bg(PANEL).pb(PAD / 2)
         .child(h_flex().h(HEAD).px(10).gap(8).items_center().border_b(1).border_color(t.border)
           .child(div().w(12).flex_none().text_right().text_size(FONT.detail).text_color(t.dim).child(String(c.w.index ?? "")))
           .child(h_flex().size(20).flex_none().rounded(6).bg(spaceColor(t, c.w)).items_center().justify_center().text_size(11).font_bold().text_color("#ffffff").child([...c.w.name][0]?.toUpperCase() ?? "?"))
@@ -345,7 +346,7 @@ export default class PickerCards extends View {
     return v_flex()
       .id("picker-cards")
       .track_focus(this.handle)
-      .w_full().min_h(0).p(18).gap(10).bg(t.popover).text_size(13)
+      .w_full().min_h(0).p(18).gap(10).bg(PANEL).text_size(13)
       .on_key_down((e, cx) => {
         const k = e.key;
         if (k === "escape") return this.close();
