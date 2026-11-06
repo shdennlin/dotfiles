@@ -145,7 +145,18 @@
             }
           ],
           "padding": 0,
-          "gap": 0
+          "gap": 0,
+          "floating": [
+            {
+              "id": "needs-you",
+              "content": {
+                "mod": "needs-you"
+              },
+              "edge": "right",
+              "align": "start",
+              "peek": 36
+            }
+          ]
         },
         {
           "id": "node-1",
