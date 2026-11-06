@@ -396,11 +396,12 @@ export default class SpacesAgents extends View {
               localStorage.setItem("sa.folded", JSON.stringify([...folded]));
               cx.notify();
             })
+            .child(svg(`mods/workspace-chrome/${m ? "server" : "monitor"}.svg`).size(13).flex_none().text_color(t.dim))
             .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.dim).child(m ?? "This computer"))
             .child(div().id(`sa-mn-${key}`).w(22).h(22).flex().items_center().justify_center().rounded(6)
               .text_color(t.dim).hover((e) => e.bg(t.raised))
-              .on_click((_e, cx) => { cx.stop_propagation(); run("space.new", { machine: m ?? "" }); }).child("+"))
-            .child(div().w(12).flex_none().text_size(11).text_color(t.dim).child(closed ? "›" : "⌄")));
+              .on_click((_e, cx) => { cx.stop_propagation(); run("space.new", { machine: m ?? "" }); }).child(svg("mods/workspace-chrome/plus.svg").size(12)))
+            .child(svg(`mods/workspace-chrome/chevron-${closed ? "right" : "down"}.svg`).size(11).flex_none().text_color(t.dim)));
       }
       if (grouped && folded.has(m ?? "local")) continue;
       const mine = (bySpace.get(s.id) ?? []).slice().sort((a, b) => a.tab_index - b.tab_index || a.address.localeCompare(b.address));
