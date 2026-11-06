@@ -36,7 +36,7 @@ function logo(p, size, color) {
   return p.tint ? svg(p.icon).size(size).flex_none().text_color(color) : image(p.icon).w(size).h(size).flex_none();
 }
 // The state symbol at the row's right end, as in the sidebar: braille spinner while working, filled "!" when
-// it needs you, filled check when done, outline check when idle, pause when long idle.
+// it needs you, filled circle with a check when done, a bare check when idle, nothing when long idle.
 function badge(color, filled, glyph, t) {
   return div().w(14).h(14).flex_none().flex().items_center().justify_center().rounded(7)
     .border_1().border_color(color).when(filled, (e) => e.bg(color)).text_size(9).font_semibold()
@@ -45,8 +45,9 @@ function badge(color, filled, glyph, t) {
 function statusGlyph(st, old, tone, t) {
   if (st === "working") return div().w(14).flex_none().text_color(tone).frames(SPIN, 90).child(SPIN[0]);
   if (st === "blocked") return badge(tone, true, "!", t);
-  if (st === "done") return badge(tone, true, "✓", t);
-  if (st === "idle") return old ? badge(t.muted, false, "‖", t) : badge(tone, false, "✓", t);
+  const check = (size, color) => svg("mods/tab-switcher/check.svg").size(size).flex_none().text_color(color);
+  if (st === "done") return div().w(14).h(14).flex_none().flex().items_center().justify_center().rounded(7).bg(tone).child(check(9, t.chrome ?? "#1b1d25"));
+  if (st === "idle" && !old) return div().w(14).h(14).flex_none().flex().items_center().justify_center().child(check(12, tone));
   return div().w(14).h(14).flex_none();
 }
 function shortDir(cwd) {

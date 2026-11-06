@@ -213,12 +213,14 @@ export default class PickerCards extends View {
     return pal("read");
   }
 
-  // The state symbol at the row's right end: spinner, filled "!" / check, outline check, pause when long idle.
+  // The state symbol at the row's right end. Only what needs you gets a filled badge ("!" blocked,
+  // check done); a quiet idle is a bare check, and long idle draws nothing (the age already says it).
   statusGlyph(st, old, tone, t) {
+    const check = (size, color) => svg("mods/picker-cards/check.svg").size(size).flex_none().text_color(color);
     if (st === "working") return div().w(14).flex_none().text_color(tone).frames(SPIN, 90).child(SPIN[0]);
     if (st === "blocked") return this.badge(tone, true, "!", t);
-    if (st === "done") return this.badge(tone, true, "✓", t);
-    if (st === "idle") return old ? this.badge(t.muted, false, "‖", t) : this.badge(tone, false, "✓", t);
+    if (st === "done") return div().w(14).h(14).flex_none().flex().items_center().justify_center().rounded(7).bg(tone).child(check(9, t.chrome ?? "#1b1d25"));
+    if (st === "idle" && !old) return div().w(14).h(14).flex_none().flex().items_center().justify_center().child(check(12, tone));
     return div().w(14).h(14).flex_none();
   }
 
