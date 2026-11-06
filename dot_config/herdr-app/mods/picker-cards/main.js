@@ -1,6 +1,6 @@
 // Go to a tab, as cards: one card per space, one line per tab, machine headers above their cards.
 // Age, memory and sub-agent counts come from the sidebar's shared "sa.snapshot" (see spaces-agents).
-// Type to filter (non-matching rows dim, nothing moves), up/down walk the rows, left/right jump
+// Type to filter (non-matching rows dim, nothing moves), up/down walk the rows, left/right (ctrl+f / ctrl+b) jump
 // between cards, Enter goes, ctrl+d closes the tab, Esc leaves.
 
 import { View, div, svg, image } from "gpui-kit";
@@ -361,11 +361,11 @@ export default class PickerCards extends View {
         };
         if (k === "down" || (ctrl && k === "n")) step(1);
         else if (k === "up" || (ctrl && k === "p")) step(-1);
-        else if (k === "right" || k === "left") {
+        else if (k === "right" || k === "left" || (ctrl && (k === "f" || k === "b"))) {
           // Cards with at least one match; land on that card's first matching row.
           const live = cardList.filter((c) => c.rows.some((r) => r.match));
           if (live.length) {
-            const dir = k === "right" ? 1 : -1;
+            const dir = k === "right" || k === "f" ? 1 : -1;
             const pos = live.findIndex((c) => c.ci === sel?.ci);
             const card = live[pos === -1 ? (dir > 0 ? 0 : live.length - 1) : (pos + dir + live.length) % live.length];
             this.at = flat.findIndex((r) => r.ci === card.ci && r.match);
@@ -379,7 +379,7 @@ export default class PickerCards extends View {
         cx.notify();
       })
       .child(h_flex().items_center().child(div().flex_1().text_size(15).font_semibold().text_color(t.foreground).child("Go to…"))
-        .child(div().text_size(11).text_color(t.dim).child("↑↓ / ctrl+n p move · ←→ card · Enter go · ctrl+d close tab · Esc")))
+        .child(div().text_size(11).text_color(t.dim).child("↑↓ / ctrl+n p move · ←→ / ctrl+f b card · Enter go · ctrl+d close tab · Esc")))
       .child(h_flex().h(36).flex_none().px(10).gap(8).items_center().rounded(9).border_1().border_color(t.accent).bg(t.background)
         .child(svg("mods/workspace-chrome/search.svg").size(15).text_color(t.dim))
         .child(Input.new(this.input).flex_1().h_full().text_size(12.8).text_color(t.foreground)))

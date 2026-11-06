@@ -1,6 +1,6 @@
 // ctrl-tab switcher: a list of tabs, most recently used first, one row each. spaces-agents opens it and
 // feeds it presses through shared "ts.*" values; holding ctrl and tapping tab walks the row,
-// releasing ctrl goes to the chosen tab; ctrl+p hands over to the search picker. Esc (Herdr closes the dialog itself) leaves without going.
+// releasing ctrl goes to the chosen tab; ctrl+n / ctrl+p / up / down move, ctrl+s hands over to the search picker. Esc (Herdr closes the dialog itself) leaves without going.
 //
 // Shared values (written by spaces-agents.switch / switch-back):
 //   ts.recent  [{ space, tab }]  tabs, newest first (index 0 is the tab you are on)
@@ -140,7 +140,15 @@ export default class TabSwitcher extends View {
     run("tab.select", { id: target.ctx.id });
   }
 
-  // ctrl+p while the switcher is up: leave without switching and open the search picker instead.
+  // Move the selection by hand (ctrl+n / ctrl+p / arrows), on top of the presses spaces-agents feeds in.
+  step(dir, cx) {
+    const d = (Number(shared("ts.delta")) || 0) + dir;
+    setShared("ts.delta", d);
+    this.seen = d;
+    cx.notify();
+  }
+
+  // ctrl+s while the switcher is up: leave without switching and open the search picker instead.
   // "pc.guard" tells picker-cards to ignore ctrl+d for a moment (ctrl is probably still held).
   search(cx) {
     if (this.done) return;
@@ -162,7 +170,12 @@ export default class TabSwitcher extends View {
     return v_flex().id("ts").track_focus(this.handle).w(LIST_W).p(8).gap(2).rounded(12).border_1().border_color(t.border ?? t.dim)
       .bg(t.chrome ?? t.background)
       .on_key_down((e, cx) => {
-        if (e.key === "p" && e.modifiers.control) { this.search(cx); cx.stop_propagation(); }
+        const ctrl = e.modifiers.control;
+        if (e.key === "s" && ctrl) this.search(cx);
+        else if (e.key === "down" || (ctrl && e.key === "n")) this.step(1, cx);
+        else if (e.key === "up" || (ctrl && e.key === "p")) this.step(-1, cx);
+        else return;
+        cx.stop_propagation();
       })
       .on_modifiers_changed((e, cx) => { if (!e.modifiers.control) this.commit(cx); })
       // Another key after ctrl went up (event missed): treat it as the release too.
