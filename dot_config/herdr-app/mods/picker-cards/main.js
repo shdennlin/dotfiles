@@ -5,7 +5,7 @@
 
 import { View, div, svg, image } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
-import { agents, spaces, panes, terminals, run, hc, theme, settings, props, closeOverlay, openOverlay, shared, setShared, home } from "herdr";
+import { exec, agents, spaces, panes, terminals, run, hc, theme, settings, props, closeOverlay, openOverlay, shared, setShared, home } from "herdr";
 
 // State colors and the tab label rule are the same as the spaces-agents sidebar and the
 // tabs-live tab bar (cmux-local's palette): done bright green, idle quiet green, working blue,
@@ -120,6 +120,8 @@ function logo(p, size, color) {
 }
 const FONT = { name: 15, detail: 12.5, head: 14, machine: 13 };
 
+const US_SOURCE = "com.apple.keylayout.US";
+
 export default class PickerCards extends View {
   init(_props, cx) {
     this.filter = "";
@@ -136,13 +138,25 @@ export default class PickerCards extends View {
     });
     // Enter goes only to a row that matches the search; with nothing matching it does nothing.
     this.input.on("submit", () => { const r = this.flat()[this.at]; if (r?.match) this.go(r); });
+    // Switch to the U.S. layout while the panel is open; close() puts the previous source back.
+    this.imRestored = false;
+    this.imChain = exec("im-select").then((r) => {
+      const prev = r.stdout.trim();
+      if (prev && prev !== US_SOURCE) { this.imPrev = prev; return exec("im-select", [US_SOURCE]); }
+    }).catch(() => {});
     this.input.focus();
     cx.timer.after(600, () => this.input.focus());
     cx.timer.every(5000, (cx) => cx.notify()); // ages tick on
     this.handle = cx.focus_handle();
   }
 
-  close() { closeOverlay(props().overlay); }
+  restoreInput() {
+    if (this.imRestored) return;
+    this.imRestored = true;
+    this.imChain.then(() => { if (this.imPrev) return exec("im-select", [this.imPrev]); }).catch(() => {});
+  }
+
+  close() { this.restoreInput(); closeOverlay(props().overlay); }
 
   go(r) {
     if (!r) return;
