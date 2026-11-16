@@ -430,18 +430,27 @@ _wsg_status_one() {
     | awk '$1 ~ /^[0-9]+$/ {a+=$1} $2 ~ /^[0-9]+$/ {d+=$2} END {print a+0, d+0}')
   add=${nums% *}; del=${nums#* }
 
-  # Relative to the remote default branch (origin/HEAD, else origin/main|master)
+  # Relative to the likely base branch: among origin/develop, origin/main and origin/master
+  # (those that exist, and are not this branch), the one HEAD is fewest commits ahead of —
+  # i.e. the closest ancestor, which is where a feature branch / worktree was most likely cut
+  # from. Ties go to the earlier candidate (develop first). If none exist, fall back to origin/HEAD.
   if [[ $branch != "(detached)" ]]; then
-    dref=$(git -C $repo symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)
-    if [[ -z $dref ]]; then
-      for dref in origin/main origin/master; do
-        git -C $repo rev-parse -q --verify refs/remotes/$dref >/dev/null 2>&1 && break
-        dref=
-      done
-    fi
-    if [[ -n $dref && $branch != ${dref#origin/} ]]; then
-      c=(${=$(git -C $repo rev-list --left-right --count HEAD...$dref 2>/dev/null)})
-      if (( ${#c} == 2 )); then dname=${dref#origin/}; dahead=$c[1]; dbehind=$c[2]; fi
+    local cand best_ahead=-1
+    for cand in origin/develop origin/main origin/master; do
+      [[ $branch == ${cand#origin/} ]] && continue
+      git -C $repo rev-parse -q --verify refs/remotes/$cand >/dev/null 2>&1 || continue
+      c=(${=$(git -C $repo rev-list --left-right --count HEAD...$cand 2>/dev/null)})
+      (( ${#c} == 2 )) || continue
+      if (( best_ahead < 0 || c[1] < best_ahead )); then
+        best_ahead=$c[1]; dname=${cand#origin/}; dahead=$c[1]; dbehind=$c[2]
+      fi
+    done
+    if [[ -z $dname ]]; then
+      dref=$(git -C $repo symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)
+      if [[ -n $dref && $branch != ${dref#origin/} ]]; then
+        c=(${=$(git -C $repo rev-list --left-right --count HEAD...$dref 2>/dev/null)})
+        if (( ${#c} == 2 )); then dname=${dref#origin/}; dahead=$c[1]; dbehind=$c[2]; fi
+      fi
     fi
   fi
 
@@ -453,7 +462,10 @@ _wsg_status_one() {
   fi
   (( verbose )) && decor=$(git -C $repo log -1 --format=%D 2>/dev/null)
 
-  print -r -- "${name}${US}${label}${US}${ahead}${US}${behind}${US}${add}${US}${del}${US}${markers}${US}${dname}${US}${dahead}${US}${dbehind}${US}${stale}${US}${decor}"
+  # Short commit hash of HEAD (field 13, appended last so earlier field numbers do not move). Empty on an unborn HEAD.
+  local sha=$(git -C $repo rev-parse --short HEAD 2>/dev/null)
+
+  print -r -- "${name}${US}${label}${US}${ahead}${US}${behind}${US}${add}${US}${del}${US}${markers}${US}${dname}${US}${dahead}${US}${dbehind}${US}${stale}${US}${decor}${US}${sha}"
 }
 
 # Store one table cell: _wsg_st_cell <row> <col> <colored> <plain>.
@@ -536,6 +548,7 @@ _wsg_cmd_status() {
         vs_default:(if $dname == "" then null
           else {branch:$dname, ahead:($dahead|n), behind:($dbehind|n)} end),
         stale_submodules:($stale|n), stale:$stale_list, decoration:($decor|s),
+        sha:($sha|s),
         worktree: wt}'
     local stale_list skip   # declared once: `local` inside the loop would echo its value
     i=0
@@ -546,7 +559,7 @@ _wsg_cmd_status() {
       if [[ $f[2] == '!' ]]; then
         jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg err unreachable \
           --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jq_bad"
-      elif (( ${#f} != 12 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
+      elif (( ${#f} != 13 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
         jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg err "invalid record" \
           --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jq_bad"
       else
@@ -562,7 +575,7 @@ _wsg_cmd_status() {
         jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg branch "$f[2]" --argjson stale_list "$stale_list" \
           --arg ahead "$f[3]" --arg behind "$f[4]" --arg add "$f[5]" --arg del "$f[6]" \
           --arg mk "$f[7]" --arg dname "$f[8]" --arg dahead "$f[9]" --arg dbehind "$f[10]" \
-          --arg stale "$f[11]" --arg decor "$f[12]" \
+          --arg stale "$f[11]" --arg decor "$f[12]" --arg sha "$f[13]" \
           --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jqf"
       fi
     done | jq -s '{repos: .}'
@@ -590,8 +603,8 @@ _wsg_cmd_status() {
       continue
     fi
     # Fields below feed (( )), which evaluates strings as expressions — so
-    # refuse any record that isn't exactly 12 fields with digit-only counts.
-    if (( ${#f} != 12 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
+    # refuse any record that isn't exactly 13 fields with digit-only counts.
+    if (( ${#f} != 13 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
       _wsg_st_cell $i 2 "${C_ERR}(invalid record)${R}" "(invalid record)"
       tails[$i]=""
       continue
@@ -980,6 +993,196 @@ _wsg_cmd_groups() {
   done
 }
 
+# ---- pointers: is each submodule's recorded commit on the base branch? -----
+# Shown lines are cut to the terminal width (colour codes kept, CJK counted as 2 columns),
+# so one commit stays one line. Only used when stdout is a terminal; w=0 means no cut.
+typeset -g _WSG_PTR_TRUNC='
+import re, sys, unicodedata
+w = int(sys.argv[1])
+ansi = re.compile(r"(\x1b\[[0-9;]*m)")
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    if w <= 0:
+        print(line)
+        continue
+    out, vis, cut = [], 0, False
+    for part in ansi.split(line):
+        if part.startswith("\x1b"):
+            out.append(part)
+            continue
+        for ch in part:
+            cw = 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+            if vis + cw > w - 1:
+                cut = True
+                break
+            out.append(ch)
+            vis += cw
+        if cut:
+            break
+    if cut:
+        out.append("\x1b[0m…")
+    print("".join(out))
+'
+#
+# For each submodule the superproject records (HEAD's gitlink), show the commit and
+# whether it is an ancestor of $WSG_BUMP_BASE (default origin/develop). Then show the
+# real history graph around it: N commit lines above and N below the pointer, merges
+# and side branches included, ◀ marking the pointer. If the pointer is not on the base,
+# the graph draws both tips, so you see where its branch forks off the base.
+# Nested submodules are followed too (indented). Read-only: never fetches.
+
+_wsg_cmd_pointers() {
+  local n=5 super="" rev="" base at
+  typeset -g _WSG_PTR_ALL=0
+  while (( $# )); do
+    case $1 in
+      -n) n=$(_wsg_int "$2" 5); shift 2 ;;
+      -n*) n=$(_wsg_int "${1#-n}" 5); shift ;;
+      -a|--all) typeset -g _WSG_PTR_ALL=1; shift ;;
+      *)  if [[ -d $1 ]]; then super=$1; else rev=$1; fi; shift ;;
+    esac
+  done
+  if [[ -z $super ]]; then
+    super=$(git rev-parse --show-toplevel 2>/dev/null) \
+      || { print -u2 -- "wsg pointers: not in a git repo (pass the superproject path)"; return 1 }
+  fi
+  super=${super:A}
+  git -C $super rev-parse --git-dir &>/dev/null \
+    || { print -u2 -- "wsg pointers: not a git repo: $super"; return 1 }
+  base=${WSG_BUMP_BASE:-origin/develop}
+  at=$(git -C $super rev-parse --verify -q "${rev:-HEAD}^{commit}") \
+    || { print -u2 -- "wsg pointers: unknown commit: ${rev:-HEAD}"; return 1 }
+  local w=${COLUMNS:-0}; (( w > 0 )) || w=$(tput cols 2>/dev/null); (( w > 0 )) || w=120
+  typeset -g _WSG_PTR_W=0
+  [[ -t 1 ]] && _WSG_PTR_W=$w
+  typeset -g _WSG_PTR_RULE=$w
+  [[ -t 1 ]] || _WSG_PTR_RULE=80
+  print -r -- "pointers in ${super:t}  (base: $base, ±$n commits${rev:+, at ${at[1,7]}})   ▶ pointer"
+  _wsg_pointers_list $super "" $n $base 0 $at
+}
+
+# One level of submodules; $2 is the indent, $5 the nesting depth (capped).
+_wsg_pointers_list() {
+  local super=$1 indent=$2 n=$3 base=$4 depth=$5 at=$6
+  local -a subs
+  subs=(${(f)"$(git -C $super config --blob "$at:.gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}')"})
+  if (( ${#subs} == 0 )); then
+    (( depth == 0 )) && print -r -- "no submodules in $super"
+    return 0
+  fi
+  local rel
+  for rel in $subs; do _wsg_pointer_one $super $rel "$indent" $n $base $depth $at; done
+}
+
+_wsg_pointer_one() {
+  local super=$1 rel=$2 indent=$3 n=$4 base=$5 depth=$6 at=$7
+  local E=$'\033'
+  local C_OK="${E}[32m" C_BAD="${E}[1;31m" C_WARN="${E}[33m" C_DIM="${E}[2m" C_PTR="${E}[1;35m" R="${E}[0m"
+  (( depth == 0 )) && print -r -- "${C_DIM}${(l:$_WSG_PTR_RULE::─:)}${R}"
+  local subdir=$super/$rel
+  local rec=$(git -C $super ls-tree $at -- $rel 2>/dev/null | awk '{print $3}')
+  if [[ -z $rec ]]; then
+    print -r -- "${indent}${C_WARN}?${R} $rel  ${C_DIM}not recorded at this commit${R}"
+    return
+  fi
+  local short=${rec[1,7]}
+  if ! git -C $subdir rev-parse --git-dir &>/dev/null; then
+    print -r -- "${indent}${C_WARN}-${R} $rel  $short  ${C_DIM}not initialized (git submodule update --init)${R}"
+    return
+  fi
+  if ! git -C $subdir cat-file -e "${rec}^{commit}" 2>/dev/null; then
+    print -r -- "${indent}${C_WARN}?${R} $rel  $short  ${C_DIM}commit not in local clone (wsg fetch first)${R}"
+    return
+  fi
+  local subj=$(git -C $subdir log -1 --format=%s $rec 2>/dev/null)
+  local cdate=$(git -C $subdir log -1 --format=%cd --date=short $rec 2>/dev/null)
+  local head=$(git -C $subdir rev-parse HEAD 2>/dev/null)
+  local -a tips
+  local verdict note
+  if ! git -C $subdir rev-parse -q --verify "$base" &>/dev/null; then
+    verdict="${C_WARN}?${R}"; note="no $base to compare"; tips=($rec)
+  elif git -C $subdir merge-base --is-ancestor $rec $base 2>/dev/null; then
+    verdict="${C_OK}✓${R}"; note="on $base"; tips=($base $rec)
+  else
+    verdict="${C_BAD}✗${R}"; note="NOT on $base"; tips=($base $rec)
+  fi
+  # A checkout that differs from the pointer is noted; if unpushed, its commits are summarised under the header.
+  # Which branch the submodule is checked out on; anything but develop (or detached) is flagged.
+  local cur=$(git -C $subdir symbolic-ref --short -q HEAD 2>/dev/null) wtext="" wflag=""
+  if [[ -z $cur ]]; then wtext="detached HEAD"
+  elif [[ $cur != develop ]]; then wtext="on $cur (not develop)"; fi
+  [[ -n $wtext ]] && wflag="  ${C_WARN}⚠ ${wtext}${R}"
+  local hkey="" unp=0 ucount=0
+  if [[ $head != $rec ]]; then
+    if ! git -C $subdir branch -r --contains $head 2>/dev/null | grep -q .; then
+      ucount=$(git -C $subdir rev-list --count "$base..$head" 2>/dev/null)
+      if (( ${ucount:-0} > 0 )); then note+="${note:+, }$ucount unpushed"; unp=1; fi
+    fi
+    note+="${note:+, }checkout is ${head[1,7]}"
+  fi
+  # Shorten the subject first so the [note] survives on a narrow terminal (only when cutting is on).
+  local budget=$(( _WSG_PTR_W - ${#indent} - ${#rel} - ${#short} - ${#note} - ${#cdate} - ${#wtext} - 16 ))
+  local subj_show=$subj
+  (( _WSG_PTR_W > 0 && budget > 10 && ${#subj} > budget )) && subj_show="${subj[1,budget-1]}…"
+  print -r -- "${indent}$verdict $rel  ${C_PTR}$short${R}$wflag  ${C_DIM}$cdate${R}  $subj_show  ${C_DIM}[$note]${R}" | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+
+  if (( unp )); then
+    local -a recent
+    recent=(${(f)"$(git -C $subdir log --format='%h %s' -n 5 "$base..$head" 2>/dev/null)"})
+    print -r -- "${indent}    ${C_WARN}⚠ $ucount unpushed on ${cur:-detached HEAD}:${R}" | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+    local ln
+    for ln in $recent; do
+      print -r -- "${indent}      ${C_DIM}$ln${R}" | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+    done
+    (( ucount > 5 )) && print -r -- "${indent}      ${C_DIM}… +$((ucount - 5)) more${R}"
+  fi
+  # The real graph: base tip(s) plus the pointer, so merges and side branches show.
+  # -a/--all adds every branch and tag as a tip (noisier, but shows where new branches fork).
+  local -a refs=(${tips[@]})
+  (( _WSG_PTR_ALL )) && refs=(--all ${tips[@]})
+  # The window is N commit lines above and N below the pointer's commit line.
+  # Colour like 'git log' on a terminal; piped output stays plain.
+  local colorarg=--color=never; [[ -t 1 ]] && colorarg=--color=always
+  git -C $subdir log --graph --format='%C(auto)%h%C(reset) %C(dim)%cd%C(reset)%C(auto)%d%C(reset) %s' --date=short $colorarg -n ${WSG_PTR_LIMIT:-20000} ${refs[@]} 2>/dev/null \
+    | awk -v key="$short" -v n="$n" -v ind="$indent    " -v hkey="$hkey" -v lim="${WSG_PTR_LIMIT:-20000}" '
+        # Match on the line without colour codes; print the coloured line.
+        { L[NR] = $0; t = $0; gsub(/\033\[[0-9;]*m/, "", t); Q[NR] = t }
+        Q[NR] ~ /^[ |\/\\]*[*]/ { cn++; C[cn] = NR }
+        # Print commit lines a..b (and the connector lines between them), marking pointer and checkout.
+        function show(a, b,   i, mark) {
+          for (i = C[a]; i <= C[b]; i++) {
+            # Marker goes in front, over two indent spaces, so it survives the width cut and columns stay aligned.
+            pre = ind
+            if (i == C[p]) pre = substr(ind, 1, length(ind) - 2) "\033[1;95m▶\033[0m "
+            else if (hp && i == C[hp]) pre = substr(ind, 1, length(ind) - 2) "\033[1;96m▷\033[0m "
+            print pre L[i]
+          }
+        }
+        END {
+          for (k = 1; k <= cn; k++) if (Q[C[k]] ~ ("[*][ ]+" key)) { p = k; break }
+          for (k = 1; k <= cn; k++) if (hkey != "" && Q[C[k]] ~ ("[*][ ]+" hkey)) { hp = k; break }
+          if (!p) { print ind "(pointer not in the newest " lim " commits; raise WSG_PTR_LIMIT)"; exit }
+          ps = p - n; if (ps < 1) ps = 1; pe = p + n; if (pe > cn) pe = cn
+          if (!hp) { show(ps, pe); exit }
+          cs = hp - n; if (cs < 1) cs = 1; ce = hp + n; if (ce > cn) ce = cn
+          if (cs <= ps) { fs = cs; fe = ce; ss = ps; se = pe } else { fs = ps; fe = pe; ss = cs; se = ce }
+          if (ss > fe + 1) {
+            show(fs, fe)
+            print ind "\033[2m⋮ " (ss - fe - 1) " commits not shown\033[0m"
+            show(ss, se)
+          } else {
+            s0 = (fs < ss) ? fs : ss; e0 = (fe > se) ? fe : se
+            show(s0, e0)
+          }
+        }' | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+  print ""
+
+  # Nested submodules: the checkout of this submodule has its own .gitmodules.
+  if (( depth < 5 )) && git -C $subdir cat-file -e "$rec:.gitmodules" 2>/dev/null; then
+    _wsg_pointers_list $subdir "$indent  " $n $base $((depth + 1)) $rec
+  fi
+}
+
 # ---- help ------------------------------------------------------------------
 
 _wsg_help() {
@@ -998,6 +1201,12 @@ USAGE
                              working trees; shows ↓N behind upstream)
   wsg pull | pl [repos]      parallel 'git pull --ff-only'; skips detached HEAD
                              and branches with no upstream; never merges
+  wsg pointers | bump [-n N] [superproject] [rev] [-a|--all]
+                             -a, --all: also draw every branch (noisier; shows new branches)
+                             for each submodule: the commit the superproject records,
+                             whether it is on $WSG_BUMP_BASE (default origin/develop),
+                             and N commits above/below it on that branch (default 5).
+                             Read-only; run 'wsg fetch' first to see fresh commits.
   wsg -h | --help            this help
 
   Subcommand shortcuts: s = status, wt = worktrees, p = pick, w = wall, g = groups, f = fetch,
@@ -1084,6 +1293,7 @@ wsg() {
     worktrees|wt) resolved=worktrees ;;
     fetch|f)   resolved=fetch ;;
     pull|pl)   resolved=pull ;;
+    pointers|ptr|bump) resolved=pointers ;;
     -h|--help) resolved=help ;;
     *)         resolved=dump ;;
   esac
@@ -1104,6 +1314,7 @@ wsg() {
     worktrees|wt) shift; _wsg_cmd_status --worktrees-only "$@" ;;
     fetch|f)   shift; _wsg_cmd_sync fetch "$@" ;;
     pull|pl)   shift; _wsg_cmd_sync pull "$@" ;;
+    pointers|ptr|bump) shift; _wsg_cmd_pointers "$@" ;;
     -h|--help) _wsg_help ;;
     *)         _wsg_cmd_dump "$@" ;;
   esac
