@@ -5,7 +5,7 @@
   <key>Label</key><string>dev.shdennlin.herdr-tab-recorder</string>
   <key>ProgramArguments</key>
   <array>
-    <string>/Users/shdennlin/.local/bin/herdr-tab-recorder</string>
+    <string>{{ .chezmoi.homeDir }}/.local/bin/herdr-tab-recorder</string>
     <string>loop</string>
   </array>
   <key>RunAtLoad</key><true/>
@@ -14,7 +14,7 @@
   <key>Nice</key><integer>10</integer>
   <key>LowPriorityBackgroundIO</key><true/>
   <key>ThrottleInterval</key><integer>30</integer>
-  <key>StandardErrorPath</key><string>/Users/shdennlin/.cache/herdr-tab-recorder/err.log</string>
+  <key>StandardErrorPath</key><string>{{ .chezmoi.homeDir }}/.cache/herdr-tab-recorder/err.log</string>
   <key>StandardOutPath</key><string>/dev/null</string>
 </dict>
 </plist>
