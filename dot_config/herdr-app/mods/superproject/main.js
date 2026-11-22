@@ -1,13 +1,18 @@
 import { View, div } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { exec, theme, panes, spaces, settings } from "herdr";
+import { exec, theme, panes, spaces, settings, readTextFile, appHome } from "herdr";
 
 // Superproject panel: one row per repo, grouped by `wsg` groups.
 // It updates when it is brought into view (first open, or its tab gets selected) and when you press
 // Refresh. There is no timer and no polling: Git state only matters while someone is looking at it.
 // Data comes from `wsg status --json @<group>` (the single source of truth for
 // the git logic). Props: { root?: string, groups?: string[] }.
-const DEFAULT_ROOT = "<redacted-root>";
+// Without a root prop, the repo path is read from <app home>/superproject-root (one line, kept out of
+// the dotfiles repo on purpose). Without either, the panel says so instead of guessing.
+const ROOT_FILE = "superproject-root";
+async function localRoot() {
+  try { return ((await readTextFile(`${appHome()}/${ROOT_FILE}`)) ?? "").trim(); } catch { return ""; }
+}
 const DEFAULT_GROUPS = ["basic", "service", "exploit", "other"];
 const MIN_GAP_MS = 3000;   // switching away and straight back does not refresh twice
 const PR_LIMIT = 3;        // open PRs shown per repo
@@ -25,7 +30,7 @@ const ROW_PAD = 8, ROW_GAP = 7, WT_INDENT = 12, LIST_PAD = 6;
 
 export default class Superproject extends View {
   init(props, cx) {
-    this.root = props?.root ?? DEFAULT_ROOT;
+    this.root = props?.root ?? "";
     this.groups = props?.groups ?? DEFAULT_GROUPS;
     this.data = {};          // group -> { repos } | { error }
     this.prs = {};           // repo path -> [{ number, title, url, isDraft }] (open PRs, up to PR_LIMIT)
@@ -82,6 +87,8 @@ export default class Superproject extends View {
   // `.envrc` in the root defines the groups (WSG_GROUPS_RAW), so run under direnv.
   async load(group) {
     if (!/^[A-Za-z0-9_-]+$/.test(group)) return { error: `bad group name: ${group}` };
+    if (!this.root) this.root = await localRoot();
+    if (!this.root) return { error: `no root: write the repo path to <app home>/${ROOT_FILE}` };
     try {
       // WSG_NO_LOG=1: don't count panel refreshes in wsg's usage log.
       const script = `export WSG_NO_LOG=1; source "$HOME/.zsh/wsg.zsh"; wsg status --json @${group}`;
