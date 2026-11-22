@@ -36,26 +36,3 @@ CLAUDE.local.md
 .claude
 .gitignore
 .config/nvim/README.md
-
-# Herdr is a macOS app and its helpers call macOS tools (open, pbcopy, top -l, launchd):
-# ignore them everywhere else, even when syncHerdr is true.
-{{ if or (ne .chezmoi.os "darwin") (not (default false .syncHerdr)) }}
-.config/herdr-app
-.local/bin/herdr-tab-recorder
-Library/LaunchAgents/dev.shdennlin.herdr-tab-recorder.plist
-{{ end }}
-
-# Herdr runtime state, history and backups: never managed, whatever syncHerdr says.
-.config/herdr-app/data
-.config/herdr-app/layouts/.state
-.config/herdr-app/layouts/shawn-style.json
-.config/herdr-app/shared.json
-.config/herdr-app/seen.json
-.config/herdr-app/view.json
-.config/herdr-app/window.json
-.config/herdr-app/windows.json
-.config/herdr-app/installed.json
-.config/herdr-app/update-notes*.md
-.config/herdr-app/superproject-root
-.config/herdr-app/**/*.bak*
-.config/herdr-app/herdr-app.sock
