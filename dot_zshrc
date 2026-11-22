@@ -6,6 +6,9 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 export ZSH_CONFIG_DIR="$HOME/.zsh"
+# Znap maintenance check: confirmed low-activity but alive 2026-04 (last push 2025-08).
+# Re-evaluate 2027-04 — switch only if archived, broken on zsh upgrade, or author goes silent.
+# Migration candidates if needed: antidote (closest match) or zinit (turbo mode, fastest).
 # Znap init
 [[ -r $ZSH_CONFIG_DIR/znap/znap.zsh ]] ||
   git clone --depth 1 -- https://github.com/marlonrichert/zsh-snap.git $ZSH_CONFIG_DIR/znap
@@ -53,6 +56,7 @@ znap source olets/zsh-window-title
 
 # from oh-my-zsh
 [[ ! -d $ZSH_CONFIG_DIR/ohmyzsh/ohmyzsh ]] && znap install ohmyzsh/ohmyzsh
+znap source ohmyzsh/ohmyzsh lib/clipboard
 znap source ohmyzsh/ohmyzsh lib/directories
 znap source ohmyzsh/ohmyzsh lib/history.zsh
 znap source ohmyzsh/ohmyzsh lib/key-bindings
@@ -86,11 +90,26 @@ if [[ "$ZSH_VI_MODE" == "1" ]]; then
       source ~/.fzf.zsh
     elif [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]; then
       source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+    elif [ -f /usr/share/doc/fzf/examples/key-bindings.zsh ]; then
+      source /usr/share/doc/fzf/examples/key-bindings.zsh
     elif [ -f /usr/share/fzf/key-bindings.zsh ]; then
       source /usr/share/fzf/key-bindings.zsh
     fi
+    # zsh-vi-mode resets keymaps at init; rebind fzf widgets explicitly to viins
+    # so ^R / ^T / Alt-c work on the first prompt (not only after toggling normal mode).
+    bindkey -M viins '^R' fzf-history-widget
+    bindkey -M viins '^T' fzf-file-widget
+    bindkey -M viins '\ec' fzf-cd-widget
     bindkey -M viins '\ef' forward-word
     bindkey -M viins '\eb' backward-word
+
+    # Self-heal: if something later flips the main keymap back to emacs (seen in long-lived
+    # Herdr panes), `jk` / ESC stop working because they are only bound in viins. Re-link it.
+    autoload -Uz add-zsh-hook
+    _zvm_keep_viins() {
+      [[ $ZSH_VI_MODE == 1 && $(bindkey -lL main) != *viins* ]] && bindkey -A viins main
+    }
+    add-zsh-hook precmd _zvm_keep_viins
   }
 
   znap source jeffreytse/zsh-vi-mode
@@ -102,12 +121,10 @@ fi
 [[ ! -f $HOME/.p10k.zsh ]]                  || source $HOME/.p10k.zsh
 [[ ! -f $HOME/.zprofile ]]                  || source $HOME/.zprofile
 [[ ! -f $ZSH_CONFIG_DIR/aliases.zsh ]]      || source $ZSH_CONFIG_DIR/aliases.zsh
+[[ ! -f $ZSH_CONFIG_DIR/clipboard.zsh ]]    || source $ZSH_CONFIG_DIR/clipboard.zsh
+[[ ! -f $ZSH_CONFIG_DIR/wsg.zsh ]]          || source $ZSH_CONFIG_DIR/wsg.zsh
+[[ ! -f $ZSH_CONFIG_DIR/mdv.zsh ]]          || source $ZSH_CONFIG_DIR/mdv.zsh
 [[ ! -f $ZSH_CONFIG_DIR/package_init.zsh ]] || source $ZSH_CONFIG_DIR/package_init.zsh
 # ======================== source end ========================
 
 znap fpath _ '#' # Fix the issue where fpath sometimes does not work
-
-# Added by Spectra
-if [[ -z ${path[(r)$HOME/.local/bin]} ]]; then
-  path=("$HOME/.local/bin" $path)
-fi

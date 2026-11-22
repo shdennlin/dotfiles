@@ -1,0 +1,1321 @@
+# wsg — workspace graph: multi-repo git visualization for super-repo + submodule workflows
+#
+# Provides:
+#   wsg [opts] [repos...]    — dump mini graph + status header per repo
+#   wsg status [repos]       — one line per repo: branch, ↑↓, (+/- lines), markers
+#                              (plus its linked worktrees, indented; -W to hide them)
+#   wsg worktrees [repos]    — only the linked worktrees (alias: wt)
+#   wsg pick                 — fzf interactive picker with live graph preview
+#   wsg wall [opts] [repos]  — tmux tiled multi-pane monitoring wall
+#   wsg groups               — list defined repo groups
+#   wsg fetch [repos]        — parallel `git fetch --all --prune` (safe anytime)
+#   wsg pull [repos]         — parallel `git pull --ff-only`; skips detached HEAD
+#   wsg -h | --help          — full help
+#
+# Discovery (when no repos given):
+#   1. $WSG_ROOTS (colon-separated) → find -name .git
+#   2. else if pwd is in a git repo → repo toplevel + submodules (recursive)
+#   3. else → error hint
+#
+# Groups: define WSG_GROUPS[name]="repo1 repo2" in the groups file
+# (default: $ZSH_CONFIG_DIR/wsg.groups.zsh, override with $WSG_GROUPS_FILE)
+#
+# Env vars:
+#   WSG_ROOTS        — colon-separated search roots (unset by default)
+#   WSG_DEPTH        — find max depth (default 4)
+#   WSG_LINES        — commits per graph (default 20)
+#   WSG_REFRESH      — `wsg wall` refresh seconds (default 10)
+#   WSG_WALL_SUBJECT — `wsg wall` commit subject column width (default 0=full)
+#                      set to e.g. 60 to truncate long subjects to one line
+#   WSG_STATUS_MAX   — max `git status --short` lines per repo (default 8)
+#   WSG_GROUPS_FILE  — path to groups file (default $ZSH_CONFIG_DIR/wsg.groups.zsh)
+#   WSG_GROUPS_RAW   — inline groups as plain string (for direnv / CI):
+#                      "name=repo1,repo2;name2=repo3,repo4"
+#
+# Deps: git (always), fzf (pick), tmux (wall). No `watch` needed — wall
+# uses a native shell loop with `printf '\033[2J\033[H'` (ANSI clear).
+
+typeset -gA WSG_GROUPS
+
+# Absolute path of this file, captured at source time. `wsg wall` panes run
+# in a fresh shell and re-source it to recompute the header every tick.
+typeset -g _WSG_SELF=${${(%):-%x}:A}
+
+: ${WSG_GROUPS_FILE:=${ZSH_CONFIG_DIR:-$HOME/.zsh}/wsg.groups.zsh}
+[[ -f $WSG_GROUPS_FILE ]] && source $WSG_GROUPS_FILE
+
+# Sed expression to compact git's `%ar` output ("3 days ago" → "3d").
+# "ago" is implicit (git history is the past) so we drop it. Symbol choices:
+#   s=seconds, min=minutes, h=hours, d=days, w=weeks, m=months, y=years
+# `min` (not `m`) for minutes to disambiguate from months.
+typeset -g _WSG_COMPACT_AGO='s/([0-9]+) seconds? ago/\1s/g; s/([0-9]+) minutes? ago/\1min/g; s/([0-9]+) hours? ago/\1h/g; s/([0-9]+) days? ago/\1d/g; s/([0-9]+) weeks? ago/\1w/g; s/([0-9]+) months? ago/\1m/g; s/([0-9]+) years? ago/\1y/g'
+
+# Validate that $1 is a non-negative integer; print it if so, else print $2.
+# Used to defend numeric env vars (WSG_LINES, WSG_REFRESH, etc.) against
+# malformed values that would otherwise inject shell metacharacters via
+# unquoted interpolation into the wall watch command.
+_wsg_int() {
+  [[ $1 == <-> ]] && print -r -- "$1" || print -r -- "$2"
+}
+
+# Tracks which WSG_GROUPS keys came from $WSG_GROUPS_RAW so we can clear
+# them on reload — otherwise removing a group from RAW would silently
+# leave the old entry behind (direnv reload would not really remove it).
+typeset -ga _WSG_RAW_KEYS
+
+# Parse $WSG_GROUPS_RAW (a plain-string env var, suitable for direnv / CI).
+# Format: name=repo1,repo2;name2=repo3,repo4
+# Separators: `;` OR newline between entries; `,` OR space between repos.
+# Called at file load AND at the top of `wsg()` so direnv changes take effect.
+# Caveat: if a group name is defined in BOTH the groups file AND RAW, the
+# clear-and-reload step here will remove the file-defined version too.
+_wsg_load_raw() {
+  # Remove keys we previously sourced from RAW (so dropping an entry from
+  # RAW removes it from WSG_GROUPS on next call).
+  local k
+  for k in $_WSG_RAW_KEYS; do
+    unset "WSG_GROUPS[$k]"
+  done
+  _WSG_RAW_KEYS=()
+
+  [[ -z $WSG_GROUPS_RAW ]] && return
+  local normalized=${WSG_GROUPS_RAW//$'\n'/;}
+  local entry name members
+  for entry in ${(s.;.)normalized}; do
+    entry=${entry##[[:space:]]##}
+    entry=${entry%%[[:space:]]##}
+    [[ -z $entry || $entry != *=* ]] && continue
+    name=${entry%%=*}
+    members=${entry#*=}
+    WSG_GROUPS[$name]=${members//,/ }
+    _WSG_RAW_KEYS+=($name)
+  done
+}
+_wsg_load_raw
+
+# ---- discovery -------------------------------------------------------------
+
+# Discover repos via $WSG_ROOTS, or current git repo + submodules.
+# Prints one path per line.
+_wsg_discover() {
+  if [[ -n $WSG_ROOTS ]]; then
+    local depth=$(_wsg_int "${WSG_DEPTH}" 4)
+    local -a roots
+    roots=(${(s/:/)WSG_ROOTS})
+    local r
+    for r in $roots; do
+      [[ -d ${~r} ]] || continue
+      find ${~r} -maxdepth $depth -type d -name .git 2>/dev/null \
+        | sed 's|/\.git$||'
+    done
+    return 0
+  fi
+  local top
+  top=$(git rev-parse --show-toplevel 2>/dev/null) || return 1
+  print -r -- $top
+  # --recursive: include nested submodules (e.g. exploit-server/script/exploit-tools);
+  # $displaypath carries the full relative prefix in recursive mode.
+  git -C $top submodule foreach --quiet --recursive 'echo "$displaypath"' 2>/dev/null \
+    | while read -r sub; do
+        [[ -n $sub ]] && print -r -- "$top/$sub"
+      done
+}
+
+# Resolve a single token to one or more repo paths.
+# Token forms: /abs/path | ./rel | basename | @group-name
+_wsg_expand_token() {
+  local token=$1
+  if [[ $token == @* ]]; then
+    local group=${token#@}
+    local members=${WSG_GROUPS[$group]}
+    if [[ -z $members ]]; then
+      print -u2 -- "wsg: unknown group @$group (try: wsg groups)"
+      return 1
+    fi
+    local m
+    for m in ${(z)members}; do _wsg_expand_token $m || return 1; done
+    return 0
+  fi
+  if [[ -d $token ]] && git -C $token rev-parse --git-dir &>/dev/null; then
+    print -r -- "${token:A}"
+    return 0
+  fi
+  local p
+  for p in ${(f)"$(_wsg_discover)"}; do
+    if [[ ${p:t} == $token ]]; then
+      print -r -- $p
+      return 0
+    fi
+  done
+  print -u2 -- "wsg: cannot resolve repo: $token"
+  return 1
+}
+
+# ---- worktrees -------------------------------------------------------------
+
+# Linked worktrees (`git worktree add`) are where AI agents often work: each has its own branch,
+# changes and ahead/behind, but a `.git` FILE rather than a directory, so neither the .git-dir `find`
+# nor `git submodule foreach` ever finds them.
+#
+# _wsg_with_worktrees <repo>...   sets $reply to each repo followed by its linked worktrees, in order,
+# and fills these maps, keyed by the worktree's canonical path (the repos themselves have no entry):
+#   _WSG_WT_PARENT  the repo it belongs to
+#   _WSG_WT_LABEL   a short name: its path inside the repo, else the last two path parts
+#   _WSG_WT_FLAGS   "locked", "prunable" (its directory is gone), "detached"
+# Call it directly, never inside $(...): the maps would be lost in the subshell.
+typeset -gA _WSG_WT_PARENT _WSG_WT_LABEL _WSG_WT_FLAGS
+
+_wsg_with_worktrees() {
+  _WSG_WT_PARENT=(); _WSG_WT_LABEL=(); _WSG_WT_FLAGS=()
+  reply=()
+  local -A seen
+  local repo own common line wpath wc flags
+  local -a lines
+  for repo in $argv; do
+    own=${repo:A}
+    [[ -n $seen[$own] ]] || { reply+=($repo); seen[$own]=1 }
+    # In a submodule, `git worktree list` reports the MAIN worktree as the gitdir
+    # (.git/modules/<name>), so skip an entry that is the repo, or the common git dir.
+    common=$(git -C $repo rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+    lines=("${(@f)$(git -C $repo worktree list --porcelain 2>/dev/null)}" "")   # "" flushes the last block
+    wpath=""; flags=""
+    for line in "${lines[@]}"; do      # quoted: unquoted, zsh drops the empty lines that end each block
+      case $line in
+        "worktree "*) wpath=${line#worktree }; flags="" ;;
+        locked*)      flags+="locked " ;;
+        prunable*)    flags+="prunable " ;;
+        detached)     flags+="detached " ;;
+        bare)         flags+="bare " ;;
+        "")
+          [[ -z $wpath ]] && continue
+          wc=${wpath:A}
+          if [[ $flags != *bare* && $wc != $own && ( -z $common || $wc != ${common:A} ) && -z $seen[$wc] ]]; then
+            reply+=($wc); seen[$wc]=1
+            _WSG_WT_PARENT[$wc]=$own
+            if [[ $wc == $own/* ]]; then _WSG_WT_LABEL[$wc]=${wc#$own/}
+            else _WSG_WT_LABEL[$wc]=${${wc:h}:t}/${wc:t}; fi
+            _WSG_WT_FLAGS[$wc]=${flags% }
+          fi
+          wpath=""; flags=""
+          ;;
+      esac
+    done
+  done
+}
+
+# ---- header (one-line status) ----------------------------------------------
+
+# Build status header for $1, with ANSI colors per segment.
+# Format: ═══ <name> · <branch> · <markers> · <ahead/behind> [· ⚙N stale] ═══
+#
+# Uses actual ESC bytes via $'\033' (not literal \033) so the resulting
+# string can flow through ${(q)} and printf %s without escape interpretation.
+_wsg_header() {
+  # NOTE: never name a local var `path` — zsh ties $path to $PATH (array).
+  local repo=$1
+  local name=${repo:t}
+
+  # ANSI palette (using actual ESC bytes; safe to embed in shell args)
+  local E=$'\033'
+  local C_FRAME="${E}[1;36m"     # bright cyan ═══
+  local C_NAME="${E}[1;34m"      # bold blue for repo name (contrast vs other segments)
+  local C_DOT="${E}[2m"          # dim · separator
+  local C_BRANCH="${E}[32m"      # green for branch
+  local C_DIRTY="${E}[1;33m"     # yellow for * + ?
+  local C_CLEAN="${E}[2;32m"     # dim green for ≡
+  local C_DETACH="${E}[1;33m"    # yellow for (detached @sha)
+  local C_AHEAD="${E}[36m"       # cyan for ↑
+  local C_BEHIND="${E}[31m"      # red for ↓
+  local C_STALE="${E}[1;31m"     # bright red for ⚙ stale (warning)
+  local C_ERR="${E}[31m"         # red for (unreachable)
+  local R="${E}[0m"              # reset
+
+  local info
+  info=$(git -C $repo status --porcelain=v2 --branch 2>/dev/null) \
+    || { print -r -- "${C_FRAME}═══${R} ${C_NAME}${name}${R} ${C_DOT}·${R} ${C_ERR}(unreachable)${R} ${C_FRAME}═══${R}"; return }
+
+  local branch ab
+  branch=$(print -r -- "$info" | awk '/^# branch.head/ {print $3; exit}')
+  ab=$(print -r -- "$info" | awk '/^# branch.ab/ {print $3" "$4; exit}')
+
+  local ahead=0 behind=0
+  if [[ -n $ab ]]; then
+    local a=${ab%% *}; ahead=${a#+}
+    local b=${ab##* }; behind=${b#-}
+  fi
+
+  # status markers: * mod, + staged, ? untracked, ≡ clean
+  local mod staged untracked
+  mod=$(print -r -- "$info"      | awk '/^[12] / && substr($2,2,1) ~ /[MADRC]/' | wc -l | tr -d ' ')
+  staged=$(print -r -- "$info"   | awk '/^[12] / && substr($2,1,1) ~ /[MADRC]/' | wc -l | tr -d ' ')
+  untracked=$(print -r -- "$info"| awk '/^\?/'                                  | wc -l | tr -d ' ')
+
+  local markers=""
+  (( mod > 0 ))       && markers+="*"
+  (( staged > 0 ))    && markers+="+"
+  (( untracked > 0 )) && markers+="?"
+  local marker_seg
+  if [[ -z $markers ]]; then
+    marker_seg="${C_CLEAN}≡${R}"
+  else
+    marker_seg="${C_DIRTY}${markers}${R}"
+  fi
+
+  # detached HEAD
+  local branch_seg
+  if [[ $branch == "(detached)" ]]; then
+    local sha=$(git -C $repo rev-parse --short HEAD 2>/dev/null)
+    branch_seg="${C_DETACH}(detached @${sha})${R}"
+  else
+    branch_seg="${C_BRANCH}${branch}${R}"
+  fi
+
+  # Assemble: ═══ name · branch · markers [· ↑N ↓M] [· ⚙N stale] ═══
+  local out="${C_FRAME}═══${R} ${C_NAME}${name}${R} ${C_DOT}·${R} ${branch_seg} ${C_DOT}·${R} ${marker_seg}"
+  if (( ahead > 0 || behind > 0 )); then
+    local ab_seg=""
+    (( ahead > 0 ))  && ab_seg+="${C_AHEAD}↑${ahead}${R}"
+    (( behind > 0 )) && { [[ -n $ab_seg ]] && ab_seg+=" "; ab_seg+="${C_BEHIND}↓${behind}${R}"; }
+    out+=" ${C_DOT}·${R} ${ab_seg}"
+  fi
+
+  # super-repo: count out-of-sync submodules
+  if [[ -f $repo/.gitmodules ]]; then
+    local stale
+    stale=$(git -C $repo submodule status 2>/dev/null | grep -c '^[+\-U]')
+    (( stale > 0 )) && out+=" ${C_DOT}·${R} ${C_STALE}⚙${stale} stale${R}"
+  fi
+
+  # closing frame
+  out+=" ${C_FRAME}═══${R}"
+  print -r -- "$out"
+}
+
+# ---- per-repo render -------------------------------------------------------
+
+# Print short-status block (header + cap + truncation footer).
+# Prints nothing if status is empty. Caller controls whether to invoke.
+_wsg_status_block() {
+  local repo=$1
+  local s=$(git -C $repo status --short 2>/dev/null)
+  [[ -z $s ]] && return
+  printf '\e[2m── status ──\e[0m\n'
+  local smax=$(_wsg_int "${WSG_STATUS_MAX}" 8)
+  local total=$(print -r -- "$s" | wc -l | tr -d ' ')
+  if (( total > smax )); then
+    print -r -- "$s" | head -$smax
+    print -- "  ... +$((total - smax)) more"
+  else
+    print -r -- "$s"
+  fi
+  printf '\n'
+}
+
+# Print header (with ─ padding) + optional short status + graph.
+# Status comes BEFORE graph so it stays visible when terminal is short.
+# Args: repo, show_status, width
+_wsg_render_one() {
+  local repo=$1
+  local show_status=${2:-0}
+  local width=${3:-100}
+
+  # _wsg_header already returns a fully colored "═══ ... ═══" line.
+  # Just emit it as-is (escapes are real ESC bytes, terminal interprets).
+  local header=$(_wsg_header $repo)
+  print -r -- "$header"
+
+  # status first (more actionable than history)
+  (( show_status )) && _wsg_status_block $repo
+
+  # graph: compact format if narrow. Pipe through sed to compact "%ar"
+  # ("3 days ago" → "3d") for max info density per line.
+  local -a fmt
+  if (( width < 60 )); then
+    fmt=(--format='%C(yellow)%h%C(reset) %C(dim white)%ar%C(reset) %<(40,trunc)%s')
+  else
+    fmt=(--format='%C(yellow)%h%C(reset) %C(dim white)%ar%C(reset)%C(auto)%d%C(reset) %s')
+  fi
+  local lines=$(_wsg_int "${WSG_LINES}" 20)
+  git -C $repo log --graph $fmt --all -$lines --color=always 2>/dev/null \
+    | sed -E "$_WSG_COMPACT_AGO"
+  printf '\n'
+}
+
+# ---- subcommand: dump ------------------------------------------------------
+
+_wsg_cmd_dump() {
+  local show_status=0 out
+  # Scope -n/-N to this call (wsg runs in the interactive shell; a bare
+  # assignment would leak into every later `wsg`). Callees see it — zsh
+  # locals are dynamically scoped.
+  local WSG_LINES=$WSG_LINES
+  local -a paths
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -s|--status) show_status=1; shift ;;
+      -n|--lines)  WSG_LINES=$2; shift 2 ;;
+      -<->)        WSG_LINES=${1#-}; shift ;;   # git-style -N; -0 = no graph
+      -h|--help)   _wsg_help; return 0 ;;
+      *)
+        # `local out` must stay outside the loop: re-running `local` on an
+        # existing var makes zsh print "out=<value>".
+        out=$(_wsg_expand_token $1) || return 1
+        paths+=(${(f)out})
+        shift
+        ;;
+    esac
+  done
+
+  if (( ${#paths} == 0 )); then
+    paths=(${(f)"$(_wsg_discover)"})
+  fi
+  if (( ${#paths} == 0 )); then
+    print -u2 -- "wsg: no repos found."
+    print -u2 -- "    cd into a git repo, or set WSG_ROOTS, or pass a path / @group."
+    return 1
+  fi
+
+  local width=$(( ${COLUMNS:-0} > 0 ? COLUMNS : $(tput cols 2>/dev/null || echo 100) ))
+  (( width < 40 )) && { print -u2 -- "wsg: terminal too narrow (need >=40 cols)"; return 1 }
+
+  local p
+  for p in $paths; do _wsg_render_one $p $show_status $width; done | less -RFX
+}
+
+# ---- subcommand: status ----------------------------------------------------
+
+# Collect ONE repo's status as 0x1f-separated plain-text fields (the caller
+# aligns and paints). Order:
+#   1 name  2 branch/label  3 ahead  4 behind  5 +lines  6 -lines  7 markers
+#   8 default-branch name  9 ahead  10 behind  11 stale submodules  12 decoration
+# Empty ahead/behind = no upstream. Empty 8-10 = comparison not shown.
+# Field 2 == "!" means the repo is unreachable.
+_wsg_status_one() {
+  local repo=$1 verbose=$2 name=${1:t} US=$'\037'
+  local info branch label markers="" ahead behind nums add del
+  local dref dname dahead dbehind stale=0 decor=""
+  local -a f c
+  # Dir names may hold control chars (incl. our 0x1f delimiter): neutralise
+  # so a crafted name can't shift fields in the record.
+  name=${name//[[:cntrl:]]/?}
+
+  info=$(git -C $repo status --porcelain=v2 --branch 2>/dev/null) \
+    || { print -r -- "${name}${US}!"; return }
+
+  # One awk pass: head, +ahead, -behind, then 0/1 flags for * + ?
+  f=("${(@f)$(print -r -- $info | awk '
+    /^# branch.head/ { h=$3 }
+    /^# branch.ab/   { a=$3; b=$4 }
+    /^[12] /         { if (substr($2,2,1) ~ /[MADRC]/) m=1; if (substr($2,1,1) ~ /[MADRC]/) s=1 }
+    /^u /            { m=1 }
+    /^\?/            { u=1 }
+    END { print h; print a; print b; print m+0; print s+0; print u+0 }')}")
+  branch=$f[1]
+  ahead=${f[2]#+}; behind=${f[3]#-}
+  (( f[4] )) && markers+="*"
+  (( f[5] )) && markers+="+"
+  (( f[6] )) && markers+="?"
+
+  if [[ $branch == "(detached)" ]]; then
+    label="(detached @$(git -C $repo rev-parse --short HEAD 2>/dev/null))"
+  else
+    label=$branch
+  fi
+
+  # Uncommitted line counts (staged + unstaged vs HEAD). Binary files show
+  # "-" and are skipped; submodule pointer bumps are excluded (they would
+  # count as +1/-1 "Subproject commit" lines); untracked files are invisible
+  # to git diff. No HEAD yet (fresh repo) → diff fails → 0 0.
+  nums=$(git -C $repo diff HEAD --numstat --ignore-submodules=all 2>/dev/null \
+    | awk '$1 ~ /^[0-9]+$/ {a+=$1} $2 ~ /^[0-9]+$/ {d+=$2} END {print a+0, d+0}')
+  add=${nums% *}; del=${nums#* }
+
+  # Relative to the likely base branch: among origin/develop, origin/main and origin/master
+  # (those that exist, and are not this branch), the one HEAD is fewest commits ahead of —
+  # i.e. the closest ancestor, which is where a feature branch / worktree was most likely cut
+  # from. Ties go to the earlier candidate (develop first). If none exist, fall back to origin/HEAD.
+  if [[ $branch != "(detached)" ]]; then
+    local cand best_ahead=-1
+    for cand in origin/develop origin/main origin/master; do
+      [[ $branch == ${cand#origin/} ]] && continue
+      git -C $repo rev-parse -q --verify refs/remotes/$cand >/dev/null 2>&1 || continue
+      c=(${=$(git -C $repo rev-list --left-right --count HEAD...$cand 2>/dev/null)})
+      (( ${#c} == 2 )) || continue
+      if (( best_ahead < 0 || c[1] < best_ahead )); then
+        best_ahead=$c[1]; dname=${cand#origin/}; dahead=$c[1]; dbehind=$c[2]
+      fi
+    done
+    if [[ -z $dname ]]; then
+      dref=$(git -C $repo symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)
+      if [[ -n $dref && $branch != ${dref#origin/} ]]; then
+        c=(${=$(git -C $repo rev-list --left-right --count HEAD...$dref 2>/dev/null)})
+        if (( ${#c} == 2 )); then dname=${dref#origin/}; dahead=$c[1]; dbehind=$c[2]; fi
+      fi
+    fi
+  fi
+
+  if [[ -f $repo/.gitmodules ]]; then
+    # A linked worktree starts with its submodules uninitialized ('-'); that is not "out of sync".
+    local pat='^[-+U]'
+    [[ -n ${_WSG_WT_PARENT[${repo:A}]} ]] && pat='^[+U]'
+    stale=$(git -C $repo submodule status 2>/dev/null | grep -c -- $pat)
+  fi
+  (( verbose )) && decor=$(git -C $repo log -1 --format=%D 2>/dev/null)
+
+  # Short commit hash of HEAD (field 13, appended last so earlier field numbers do not move). Empty on an unborn HEAD.
+  local sha=$(git -C $repo rev-parse --short HEAD 2>/dev/null)
+
+  print -r -- "${name}${US}${label}${US}${ahead}${US}${behind}${US}${add}${US}${del}${US}${markers}${US}${dname}${US}${dahead}${US}${dbehind}${US}${stale}${US}${decor}${US}${sha}"
+}
+
+# Store one table cell: _wsg_st_cell <row> <col> <colored> <plain>.
+# Writes the caller's `cell`, `plen`, `w` (zsh locals are dynamically scoped)
+# so column widths are tracked by *visible* length, not escape-code length.
+_wsg_st_cell() {
+  cell[$1:$2]=$3
+  plen[$1:$2]=${#4}
+  (( ${#4} > w[$2] )) && w[$2]=${#4}
+}
+
+_wsg_cmd_status() {
+  setopt local_options extended_glob
+  local verbose=0 json=0 only_wt=0 out p rec i k line pad wt_of wt_label wt_flags
+  local worktrees=1; [[ ${WSG_WORKTREES:-1} == 0 ]] && worktrees=0
+  local -a paths recs f tails
+  local -A cell plen
+  local -a w=(0 0 0 0 0 0)
+
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -v|--verbose) verbose=1; shift ;;
+      -j|--json)    json=1; shift ;;
+      -W|--no-worktrees) worktrees=0; shift ;;
+      --worktrees-only)  only_wt=1; worktrees=1; shift ;;   # `wsg wt`
+      -h|--help)    _wsg_help; return 0 ;;
+      *)
+        out=$(_wsg_expand_token $1) || return 1
+        paths+=(${(f)out})
+        shift
+        ;;
+    esac
+  done
+  (( ${#paths} == 0 )) && paths=(${(f)"$(_wsg_discover)"})
+  (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos found."; return 1 }
+
+  # Add each repo's linked worktrees right under it (-W / WSG_WORKTREES=0 to leave them out).
+  _WSG_WT_PARENT=(); _WSG_WT_LABEL=(); _WSG_WT_FLAGS=()
+  if (( worktrees )); then
+    _wsg_with_worktrees $paths
+    paths=($reply)
+    if (( only_wt )); then
+      local -a keep=()
+      for p in $paths; do [[ -n $_WSG_WT_PARENT[$p] ]] && keep+=($p); done
+      (( ${#keep} == 0 )) && { print -u2 -- "wsg: no linked worktrees."; return 0 }
+      paths=($keep)
+    fi
+  fi
+
+  # Palette (matches _wsg_header); empty when piped or NO_COLOR is set.
+  local E=$'\033' R="" C_NAME="" C_BR="" C_UP="" C_DN="" C_DIM="" C_DIRTY="" C_CLEAN="" C_WARN="" C_ERR=""
+  if [[ -t 1 && -z $NO_COLOR ]]; then
+    R="${E}[0m"; C_NAME="${E}[1;34m"; C_BR="${E}[32m"; C_UP="${E}[36m"; C_DN="${E}[31m"
+    C_DIM="${E}[2m"; C_DIRTY="${E}[1;33m"; C_CLEAN="${E}[2;32m"; C_WARN="${E}[1;33m"; C_ERR="${E}[1;31m"
+  fi
+
+  for p in $paths; do recs+=("$(_wsg_status_one $p $verbose)"); done
+
+  # --json: machine-readable output for dashboards (e.g. Herdr mods). Reuses
+  # the same records as the table, so there is one source of truth. ahead/behind
+  # are null when there is no upstream; vs_default is null when not applicable.
+  if (( json )); then
+    command -v jq &>/dev/null || { print -u2 -- "wsg: jq required for --json"; return 1 }
+    # `worktree` is null for a repo, else {of: <its repo>, label, locked, prunable, detached}.
+    # Each case has its own filter: jq refuses to compile a filter that names an --arg it was not given,
+    # so one shared filter silently dropped every unreachable repo (e.g. a worktree whose directory is gone).
+    local wt='def wt: if $wt_of == "" then null
+        else {of:$wt_of, label:$wt_label, locked:($wt_flags|contains("locked")),
+              prunable:($wt_flags|contains("prunable")), detached:($wt_flags|contains("detached"))} end;'
+    local jq_bad="$wt {name:\$name, path:\$path, error:\$err, worktree: wt}"
+    local jqf="$wt"'
+      def n: if . == "" then null else tonumber end;
+      def s: if . == "" then null else . end;
+      {name:$name, path:$path, branch:$branch,
+        detached:($branch|startswith("(detached")),
+        ahead:($ahead|n), behind:($behind|n),
+        added:($add|n), deleted:($del|n),
+        modified:($mk|contains("*")), staged:($mk|contains("+")),
+        untracked:($mk|contains("?")), dirty:($mk != ""),
+        vs_default:(if $dname == "" then null
+          else {branch:$dname, ahead:($dahead|n), behind:($dbehind|n)} end),
+        stale_submodules:($stale|n), stale:$stale_list, decoration:($decor|s),
+        sha:($sha|s),
+        worktree: wt}'
+    local stale_list skip   # declared once: `local` inside the loop would echo its value
+    i=0
+    for rec in $recs; do
+      (( i++ ))
+      f=("${(@ps:\037:)rec}")
+      wt_of=${_WSG_WT_PARENT[$paths[i]]}; wt_label=${_WSG_WT_LABEL[$paths[i]]}; wt_flags=${_WSG_WT_FLAGS[$paths[i]]}
+      if [[ $f[2] == '!' ]]; then
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg err unreachable \
+          --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jq_bad"
+      elif (( ${#f} != 13 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg err "invalid record" \
+          --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jq_bad"
+      else
+        # Which submodule pointers are out of sync (same rule as the count):
+        # '+' moved (checked-out commit != recorded), '-' uninitialized, 'U' conflict.
+        # A linked worktree starts with its submodules uninitialized, so '-' is skipped there.
+        # Paths containing whitespace are not supported (awk splits on it).
+        stale_list="[]"
+        skip=0; [[ -n $wt_of ]] && skip=1
+        [[ -f $paths[i]/.gitmodules ]] && stale_list=$(git -C $paths[i] submodule status 2>/dev/null \
+          | awk -v skip=$skip '/^[+U-]/ { s = substr($1,1,1); if (skip && s == "-") next; st = (s=="+") ? "moved" : (s=="-") ? "uninitialized" : "conflict"; print st, $2 }' \
+          | jq -R 'split(" ") | {state: .[0], path: .[1]}' | jq -sc .)
+        jq -nc --arg name "$f[1]" --arg path "$paths[i]" --arg branch "$f[2]" --argjson stale_list "$stale_list" \
+          --arg ahead "$f[3]" --arg behind "$f[4]" --arg add "$f[5]" --arg del "$f[6]" \
+          --arg mk "$f[7]" --arg dname "$f[8]" --arg dahead "$f[9]" --arg dbehind "$f[10]" \
+          --arg stale "$f[11]" --arg decor "$f[12]" --arg sha "$f[13]" \
+          --arg wt_of "$wt_of" --arg wt_label "$wt_label" --arg wt_flags "$wt_flags" "$jqf"
+      fi
+    done | jq -s '{repos: .}'
+    return 0
+  fi
+
+  # Pass 1: build colored cells + track visible widths per column.
+  #   cols: 1 name | 2 branch | 3 ↑↓ | 4 (+,-) | 5 markers | 6 vs default branch
+  local branch_c ab_c ab_p ln_c mk_c mk_p df_c df_p ca cd tail_c
+  i=0
+  for rec in $recs; do
+    (( i++ ))
+    f=("${(@ps:\037:)rec}")
+    wt_of=${_WSG_WT_PARENT[$paths[i]]}; wt_label=${_WSG_WT_LABEL[$paths[i]]}; wt_flags=${_WSG_WT_FLAGS[$paths[i]]}
+    if [[ -z $wt_of ]]; then
+      _wsg_st_cell $i 1 "${C_NAME}${f[1]}${R}" $f[1]
+    elif (( only_wt )); then      # no repo row above it to hang under: say whose worktree it is
+      _wsg_st_cell $i 1 "${C_DIM}${wt_of:t}${R} ${C_DIM}↳${R} ${C_NAME}${wt_label}${R}" "${wt_of:t} ↳ ${wt_label}"
+    else
+      _wsg_st_cell $i 1 "  ${C_DIM}↳${R} ${C_NAME}${wt_label}${R}" "  ↳ ${wt_label}"
+    fi
+    if [[ $f[2] == '!' ]]; then
+      _wsg_st_cell $i 2 "${C_ERR}(unreachable)${R}" "(unreachable)"
+      tails[$i]=${wt_flags:+"  ${C_WARN}[${wt_flags}]${R}"}
+      continue
+    fi
+    # Fields below feed (( )), which evaluates strings as expressions — so
+    # refuse any record that isn't exactly 13 fields with digit-only counts.
+    if (( ${#f} != 13 )) || [[ ${f[3]}${f[4]}${f[5]}${f[6]}${f[9]}${f[10]}${f[11]} != [0-9]# ]]; then
+      _wsg_st_cell $i 2 "${C_ERR}(invalid record)${R}" "(invalid record)"
+      tails[$i]=""
+      continue
+    fi
+
+    branch_c=$C_BR; [[ $f[2] == "(detached"* ]] && branch_c=$C_WARN
+    _wsg_st_cell $i 2 "${branch_c}⎇ ${f[2]}${R}" "⎇ ${f[2]}"
+
+    if [[ -z $f[3] ]]; then
+      ab_p="no upstream"; ab_c="${C_DIM}no upstream${R}"
+    else
+      ab_p="↑${f[3]}↓${f[4]}"
+      ab_c="$( (( f[3] > 0 )) && print -rn -- $C_UP || print -rn -- $C_DIM )↑${f[3]}${R}$( (( f[4] > 0 )) && print -rn -- $C_DN || print -rn -- $C_DIM )↓${f[4]}${R}"
+    fi
+    _wsg_st_cell $i 3 $ab_c $ab_p
+
+    ca=$C_DIM; (( f[5] > 0 )) && ca=$C_BR
+    cd=$C_DIM; (( f[6] > 0 )) && cd=$C_DN
+    ln_c="${C_DIM}(${R}${ca}+${f[5]}${R}${C_DIM},${R}${cd}-${f[6]}${R}${C_DIM})${R}"
+    _wsg_st_cell $i 4 $ln_c "(+${f[5]},-${f[6]})"
+
+    if [[ -z $f[7] ]]; then mk_p="≡"; mk_c="${C_CLEAN}≡${R}"
+    else mk_p=$f[7]; mk_c="${C_DIRTY}${f[7]}${R}"; fi
+    _wsg_st_cell $i 5 $mk_c $mk_p
+
+    if [[ -n $f[8] ]]; then
+      df_p="│ ${f[8]} ↑${f[9]}↓${f[10]}"
+      df_c="${C_DIM}│${R} ${f[8]} $( (( f[9] > 0 )) && print -rn -- $C_UP || print -rn -- $C_DIM )↑${f[9]}${R}$( (( f[10] > 0 )) && print -rn -- $C_DN || print -rn -- $C_DIM )↓${f[10]}${R}"
+      _wsg_st_cell $i 6 $df_c $df_p
+    else
+      _wsg_st_cell $i 6 "" ""
+    fi
+
+    tail_c=""
+    (( f[11] > 0 )) && tail_c+="  ${E}[1;31m⚙${f[11]} stale${R}"
+    [[ -n $f[12] ]] && tail_c+="  ${C_DIM}(${f[12]})${R}"
+    [[ -n $wt_flags ]] && tail_c+="  ${C_WARN}[${wt_flags}]${R}"
+    tails[$i]=$tail_c
+  done
+
+  # Pass 2: pad each cell to its column's visible width and print.
+  for i in {1..${#recs}}; do
+    line=""
+    for k in {1..6}; do
+      pad=$(( w[k] - ${plen[$i:$k]:-0} ))
+      (( pad < 0 )) && pad=0
+      line+="${cell[$i:$k]}${(l:$pad:: :)}  "
+    done
+    line+=${tails[$i]}
+    print -r -- "${line%%[[:space:]]#}"
+  done
+}
+
+# ---- subcommand: pick ------------------------------------------------------
+
+_wsg_cmd_pick() {
+  command -v fzf &>/dev/null || { print -u2 -- "wsg: fzf required"; return 1 }
+  local -a paths
+  paths=(${(f)"$(_wsg_discover)"})
+  (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos found"; return 1 }
+
+  local lines=$(_wsg_int "${WSG_LINES}" 20)
+  local listing="" p hdr
+  for p in $paths; do
+    hdr=$(_wsg_header $p)
+    listing+="${hdr}	${p}"$'\n'
+  done
+
+  # Preview prints status first (only if non-empty), then graph with timestamp.
+  # All quoting is single-line to keep fzf --preview happy.
+  local preview_cmd='s=$(git -C {2} status --short 2>/dev/null); [ -n "$s" ] && { printf "\033[2m── status ──\033[0m\n"; echo "$s"; echo; }; git -C {2} log --graph --format="%C(auto)%h%C(reset) %C(dim white)%ar%C(reset)%C(auto)%d%C(reset) %s" --all -'$lines' --color=always 2>/dev/null | sed -E "'$_WSG_COMPACT_AGO'"'
+  print -rn -- "$listing" | fzf \
+    --multi \
+    --ansi \
+    --delimiter=$'\t' \
+    --with-nth=1 \
+    --preview="$preview_cmd" \
+    --preview-window='right:60%:wrap' \
+    --bind='ctrl-/:change-preview-window(down,60%|hidden|right,60%)'
+}
+
+# ---- subcommand: wall ------------------------------------------------------
+
+_wsg_cmd_wall() {
+  command -v tmux &>/dev/null || { print -u2 -- "wsg: tmux required"; return 1 }
+  [[ -z $TMUX ]] && { print -u2 -- "wsg: must be inside a tmux session"; return 1 }
+
+  local layout=tiled
+  local show_status=1  # default ON for wall (monitoring → status is the point)
+  local -a tokens
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      -l|--layout)    layout=$2; shift 2 ;;
+      -s|--status)    show_status=1; shift ;;   # explicit on (redundant w/ default)
+      -S|--no-status) show_status=0; shift ;;   # opt-out
+      -h|--help)      _wsg_help; return 0 ;;
+      *)              tokens+=($1); shift ;;
+    esac
+  done
+
+  local -a paths
+  if (( ${#tokens} > 0 )); then
+    local t out
+    for t in $tokens; do
+      out=$(_wsg_expand_token $t) || return 1
+      paths+=(${(f)out})
+    done
+  else
+    local picked
+    picked=$(_wsg_cmd_pick) || return 0
+    [[ -z $picked ]] && return 0
+    paths=(${${(f)picked}##*$'\t'})
+  fi
+  (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos selected"; return 1 }
+
+  local tmux_layout
+  case $layout in
+    tiled) tmux_layout=tiled ;;
+    cols)  tmux_layout=even-horizontal ;;
+    rows)  tmux_layout=even-vertical ;;
+    main)  tmux_layout=main-vertical ;;
+    mainh) tmux_layout=main-horizontal ;;
+    *) print -u2 -- "wsg: unknown layout '$layout' (use tiled|cols|rows|main|mainh)"; return 1 ;;
+  esac
+
+  local refresh=$(_wsg_int "${WSG_REFRESH}" 10)
+  local lines=${WSG_LINES:-20}
+
+  # Build the per-pane refresh command for a given raw repo path.
+  # Order: header → status (if any) → graph. Header identifies the pane;
+  # status is the most actionable info; graph is the historical context.
+  #
+  # Implementation: explicit `while true; clear; ...; sleep N; done` loop
+  # instead of `watch`. Reasons:
+  #   1. No external dependency (`watch` is procps, not on default macOS)
+  #   2. Better SIGWINCH behavior — `clear` runs each tick so pane resize
+  #      gets a clean redraw on next iteration (some `watch` builds defer
+  #      redraw until the next tick AND mis-handle multi-pane resize)
+  #   3. Simpler quoting — no nested `-c '...'` layer
+  local smax=$(_wsg_int "${WSG_STATUS_MAX}" 8)
+  local subj_width=$(_wsg_int "${WSG_WALL_SUBJECT}" 0)  # 0 = full (wrap); N = truncate to N
+  _wsg_wall_cmd() {
+    local repo=$1
+    local pq=${(q)repo}
+    # Header is recomputed EVERY tick so ↑N ↓M / markers / ⚙ stale / branch
+    # reflect `wsg fetch` / `wsg pull` / checkouts without relaunching the wall.
+    # The pane shell doesn't have wsg's functions, so it spawns `zsh -f` that
+    # re-sources this file ($_WSG_SELF) and calls _wsg_header. Nested ${(q)}:
+    # inner quotes the args for the zsh -c script, outer quotes that script
+    # as one word for the pane shell.
+    local header_script="source ${(q)_WSG_SELF}; _wsg_header ${(q)repo}"
+    local header_cmd="zsh -fc ${(q)header_script}"
+
+    # Default log format: short hash, dim relative timestamp, decorations,
+    # subject. %ar is "3 days ago"-style; we pipe through sed to compact
+    # ("3 days ago" → "3d") for max info density per line.
+    local log_fmt
+    if (( subj_width > 0 )); then
+      # When subject truncation is requested, encode the whole format in
+      # one --format=… arg (double-quoted so the embedded space stays in
+      # one shell token for git after sh re-parses).
+      log_fmt='--format="%C(auto)%h%C(reset) %C(dim white)%ar%C(reset)%C(auto)%d%C(reset) %<('$subj_width',trunc)%s"'
+    else
+      log_fmt='--format="%C(auto)%h%C(reset) %C(dim white)%ar%C(reset)%C(auto)%d%C(reset) %s"'
+    fi
+    local graph_part="git -C $pq log --graph $log_fmt --all -$lines --color=always | sed -E '$_WSG_COMPACT_AGO'"
+
+    # Build the status sub-pipeline. We pre-compute the total line count
+    # with `wc -l < <file>` BEFORE piping the file to head, because the
+    # naive `{ head -N; n=$(wc -l); ... }` pattern fails: head's buffered
+    # I/O drains the pipe so wc reads 0 and the "+N more" footer is never
+    # printed. The fix uses a temp file via process substitution so both
+    # head and wc can independently consume the full content.
+    local body
+    if (( show_status )); then
+      body="$header_cmd; "'s=$(git -C '$pq' status --short); if [ -n "$s" ]; then total=$(printf %s "$s" | grep -c .); echo "── status ──"; printf %s "$s" | head -'$smax'; echo; [ "$total" -gt '$smax' ] && echo "  ... +$((total - '$smax')) more"; echo; fi; '$graph_part
+    else
+      body="$header_cmd; $graph_part"
+    fi
+    # ANSI escapes per tick:
+    #   \033[?7l  — disable auto-wrap: long lines hard-cut at pane width
+    #               (without this, long commit subjects wrap to 2+ physical
+    #               lines, exceeding pane height even though `head` says OK)
+    #   \033[2J   — clear screen
+    #   \033[H    — cursor to home (1,1)
+    # `| head -n $((H-1))` caps total LOGICAL lines to one less than pane
+    # height — combined with auto-wrap-off, the output never triggers scroll.
+    #
+    # Why "H-1" not "H": each output line ends with \n; writing exactly H
+    # lines means cursor advances past line H → terminal scrolls UP by 1,
+    # pushing the header (line 1) into scrollback. Leaving 1 blank row at
+    # the bottom is harmless; losing the header is the bug we're fixing.
+    #
+    # Why `stty size` not `tput lines`: tput in a non-interactive subshell
+    # falls back to terminfo's static `lines#` capability (usually 24),
+    # NOT the live pane size. `stty size` reads TIOCGWINSZ from the tty,
+    # which IS the pane size and updates on SIGWINCH.
+    #
+    # `sleep 0.3` BEFORE the loop: pane creation + select-layout takes
+    # a few ms; without delay the first tick may read pre-resize size.
+    # awk: BEGIN sets default 24, first record overrides, END always prints.
+    # This survives stty failure (no records) and gives head a sane value.
+    #
+    # `trap ... EXIT` restores \033[?7h (auto-wrap on) when the loop dies
+    # (Ctrl-C, SIGTERM, normal exit). Without this, killing the wall loop
+    # while keeping the pane open leaves the terminal in wrap-off forever.
+    printf 'trap "printf \\"\\033[?7h\\"" EXIT; sleep 0.3; while true; do printf "\\033[?7l\\033[2J\\033[H"; { %s; } | head -n $(($(stty size 2>/dev/null | awk "BEGIN{n=24}{n=\\$1}END{print n}") - 1)); sleep %s; done' "$body" $refresh
+  }
+
+  # Derive window name from args so different groups coexist:
+  #   wsg wall @payment   → "wsg-wall-payment"
+  #   wsg wall @auth      → "wsg-wall-auth"      (both windows alive)
+  #   wsg wall @payment   → overwrites "wsg-wall-payment" (same group)
+  #   wsg wall repo1 ...  → "wsg-wall-repo1"     (uses first basename)
+  #   wsg wall (no args)  → "wsg-wall"           (fzf-picker path)
+  local wname=wsg-wall
+  if (( ${#tokens} > 0 )); then
+    local first=${tokens[1]}
+    if [[ $first == @* ]]; then
+      wname="wsg-wall-${first#@}"
+    else
+      wname="wsg-wall-${first:t}"  # basename for paths
+    fi
+    # Sanitize: tmux dislikes some chars in window names
+    wname=${wname//[^a-zA-Z0-9_-]/-}
+  fi
+
+  # Kill only the SAME-named window (so different groups don't clobber each
+  # other). Without this, re-running wsg wall would leave zombie panes
+  # running the OLD watch command. 2>/dev/null swallows "no such window".
+  tmux kill-window -t "$wname" 2>/dev/null
+
+  # `-c <repo>` sets each pane's cwd to the repo path. This makes tmux's
+  # built-in `#{pane_current_path}` resolve to the repo, so users can bind
+  # integrations in tmux.conf without wsg needing to know about them:
+  #   bind o run-shell 'code "#{pane_current_path}"'         # open in VSCode
+  #   bind g run-shell 'gh repo view --web -R "#{pane_current_path}"'
+  #   bind -n DoubleClick1Pane run-shell 'code "#{pane_current_path}"'
+  tmux new-window -n "$wname" -c "${paths[1]}" "$(_wsg_wall_cmd ${paths[1]})"
+  local p
+  for p in $paths[2,-1]; do
+    tmux split-window -t "$wname" -c "$p" "$(_wsg_wall_cmd $p)"
+  done
+  tmux select-layout -t "$wname" $tmux_layout
+
+  # Record the directory `wsg wall` was launched from (typically the
+  # super-repo root). User-defined tmux bindings can read this via
+  # #{@wsg_launch_dir} — useful for IDEs that prefer opening the whole
+  # project rather than an individual submodule:
+  #   bind O run-shell 'code "#{@wsg_launch_dir}"'    # open super-repo
+  #   bind G run-shell 'gh repo view --web -R "#{pane_current_path}"'
+  tmux set-option -t "$wname" -w @wsg_launch_dir "$PWD"
+
+  unfunction _wsg_wall_cmd
+}
+
+# ---- subcommand: fetch / pull ----------------------------------------------
+
+# Pick the informative line out of git's stderr: the first fatal:/error: line
+# (git often ends with a generic "Aborting"), else the last line.
+_wsg_errline() {
+  local hit=${${(M)${(f)1}:#(fatal|error):*}[1]}
+  print -r -- ${hit:-${1##*$'\n'}}
+}
+
+# One repo, one result line. Args: mode (fetch|pull), repo path.
+#   ✓ changed   · no-op   ⏭ skipped   ✗ failed (git's fatal:/error: line)
+# fetch: "changed" = any remote-tracking ref moved/appeared/was pruned;
+#   ↓N is appended whenever HEAD is behind its upstream, changed or not.
+# --no-recurse-submodules: repos run in parallel and each submodule is already
+# its own job; letting the super's fetch recurse (fetch.recurseSubmodules
+# defaults to on-demand) would race the submodule's own job for ref locks.
+_wsg_sync_one() {
+  local mode=$1 repo=$2 name=${2:t} err
+  if [[ $mode == fetch ]]; then
+    local refs_before refs_after behind mark='·'
+    refs_before=$(git -C $repo for-each-ref --format='%(objectname) %(refname)' refs/remotes)
+    err=$(git -C $repo fetch --all --prune --quiet --no-recurse-submodules 2>&1) \
+      || { print -r -- "✗ $name: $(_wsg_errline $err)"; return }
+    refs_after=$(git -C $repo for-each-ref --format='%(objectname) %(refname)' refs/remotes)
+    [[ $refs_before != $refs_after ]] && mark='✓'
+    behind=$(git -C $repo rev-list --count HEAD..@{u} 2>/dev/null)
+    if [[ -n $behind && $behind != 0 ]]; then
+      print -r -- "$mark $name ↓$behind"
+    else
+      print -r -- "$mark $name"
+    fi
+    return
+  fi
+
+  # pull: fast-forward only, never manufacture a merge commit in a batch op
+  git -C $repo symbolic-ref -q HEAD >/dev/null \
+    || { print -r -- "⏭ $name (detached)"; return }
+  git -C $repo rev-parse -q --verify @{u} >/dev/null 2>&1 \
+    || { print -r -- "⏭ $name (no upstream)"; return }
+  local before after
+  before=$(git -C $repo rev-parse --short HEAD)
+  err=$(git -C $repo pull --ff-only --quiet --no-recurse-submodules 2>&1) \
+    || { print -r -- "✗ $name ($(git -C $repo branch --show-current)): $(_wsg_errline $err)"; return }
+  after=$(git -C $repo rev-parse --short HEAD)
+  if [[ $before == $after ]]; then
+    print -r -- "· $name"
+  else
+    print -r -- "✓ $name $before..$after (+$(git -C $repo rev-list --count $before..$after))"
+  fi
+}
+
+# Colorize one plain _wsg_sync_one result line ("<sym> <name>[ <rest>]").
+# Palette matches _wsg_header: bold blue name, red ↓, yellow detached.
+# Symbols stay, so color never carries meaning on its own.
+_wsg_sync_paint() {
+  setopt local_options extended_glob
+  local E=$'\033' R=$'\033[0m'
+  local sym=${1%% *} rest=${1#* }
+  local name=${rest%% *} tail=${rest#${rest%% *}}
+  [[ $name == *: ]] && { name=${name%:}; tail=":$tail" }   # fetch's "✗ name: err"
+  local C_SYM
+  case $sym in
+    ✓) C_SYM="${E}[1;32m" ;;   # bold green: something changed
+    ·) C_SYM="${E}[2m"    ;;   # dim: no-op
+    ⏭) C_SYM="${E}[1;33m" ;;   # yellow: skipped
+    ✗) C_SYM="${E}[1;31m"      # bright red: failed (error text red too)
+       print -r -- "${C_SYM}${sym}${R} ${E}[1;34m${name}${R}${E}[31m${tail}${R}"
+       return ;;
+    *) print -r -- $1; return ;;
+  esac
+  tail=${tail//(#b)(↓[0-9]##)/${E}[31m${match[1]}${R}}
+  print -r -- "${C_SYM}${sym}${R} ${E}[1;34m${name}${R}${tail}"
+}
+
+# Run _wsg_sync_one over all resolved repos in parallel; print results in
+# discovery order (each job writes its own temp file, printed after wait).
+# Jobs write plain text; color is added here, only when stdout is a tty and
+# NO_COLOR is unset (a job can't test -t 1 — its stdout is the temp file).
+# Returns 1 if any repo failed.
+_wsg_cmd_sync() {
+  local mode=$1; shift
+  local -a paths
+  local t out
+  for t in "$@"; do
+    [[ $t == -h || $t == --help ]] && { _wsg_help; return 0 }
+    out=$(_wsg_expand_token $t) || return 1
+    paths+=(${(f)out})
+  done
+  (( ${#paths} == 0 )) && paths=(${(f)"$(_wsg_discover)"})
+  (( ${#paths} == 0 )) && { print -u2 -- "wsg: no repos found"; return 1 }
+
+  setopt local_options no_monitor no_notify
+  local tmp=$(mktemp -d) i
+  local -a pids
+  for i in {1..${#paths}}; do
+    _wsg_sync_one $mode ${paths[i]} >$tmp/$i &
+    pids+=($!)
+  done
+  # Wait only on our own jobs: wsg runs in the interactive shell, so a bare
+  # `wait` would also block on the user's unrelated background jobs.
+  wait $pids
+
+  local rc=0 color=0 line
+  [[ -t 1 && -z $NO_COLOR ]] && color=1
+  for i in {1..${#paths}}; do
+    while IFS= read -r line; do
+      [[ $line == ✗* ]] && rc=1
+      if (( color )); then _wsg_sync_paint $line; else print -r -- $line; fi
+    done < $tmp/$i
+  done
+  rm -rf $tmp
+  return $rc
+}
+
+# ---- subcommand: groups ----------------------------------------------------
+
+_wsg_cmd_groups() {
+  if (( ${#WSG_GROUPS} == 0 )); then
+    print -- "No groups defined. Add some via either:"
+    print -- "  1. Edit $WSG_GROUPS_FILE"
+    print -- "  2. Add WSG_GROUPS[name]=\"repo1 repo2\" to your .zshrc"
+    print -- "(override file path with: export WSG_GROUPS_FILE=/your/path.zsh)"
+    return 0
+  fi
+  print -- "# WSG_GROUPS_FILE = $WSG_GROUPS_FILE"
+  print -- "# (groups may also be defined inline in .zshrc / direnv / etc.)"
+  local g
+  for g in ${(ok)WSG_GROUPS}; do
+    print -r -- "@$g  →  ${WSG_GROUPS[$g]}"
+  done
+}
+
+# ---- pointers: is each submodule's recorded commit on the base branch? -----
+# Shown lines are cut to the terminal width (colour codes kept, CJK counted as 2 columns),
+# so one commit stays one line. Only used when stdout is a terminal; w=0 means no cut.
+typeset -g _WSG_PTR_TRUNC='
+import re, sys, unicodedata
+w = int(sys.argv[1])
+ansi = re.compile(r"(\x1b\[[0-9;]*m)")
+for line in sys.stdin:
+    line = line.rstrip("\n")
+    if w <= 0:
+        print(line)
+        continue
+    out, vis, cut = [], 0, False
+    for part in ansi.split(line):
+        if part.startswith("\x1b"):
+            out.append(part)
+            continue
+        for ch in part:
+            cw = 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+            if vis + cw > w - 1:
+                cut = True
+                break
+            out.append(ch)
+            vis += cw
+        if cut:
+            break
+    if cut:
+        out.append("\x1b[0m…")
+    print("".join(out))
+'
+#
+# For each submodule the superproject records (HEAD's gitlink), show the commit and
+# whether it is an ancestor of $WSG_BUMP_BASE (default origin/develop). Then show the
+# real history graph around it: N commit lines above and N below the pointer, merges
+# and side branches included, ◀ marking the pointer. If the pointer is not on the base,
+# the graph draws both tips, so you see where its branch forks off the base.
+# Nested submodules are followed too (indented). Read-only: never fetches.
+
+_wsg_cmd_pointers() {
+  local n=5 super="" rev="" base at
+  typeset -g _WSG_PTR_ALL=0
+  while (( $# )); do
+    case $1 in
+      -n) n=$(_wsg_int "$2" 5); shift 2 ;;
+      -n*) n=$(_wsg_int "${1#-n}" 5); shift ;;
+      -a|--all) typeset -g _WSG_PTR_ALL=1; shift ;;
+      *)  if [[ -d $1 ]]; then super=$1; else rev=$1; fi; shift ;;
+    esac
+  done
+  if [[ -z $super ]]; then
+    super=$(git rev-parse --show-toplevel 2>/dev/null) \
+      || { print -u2 -- "wsg pointers: not in a git repo (pass the superproject path)"; return 1 }
+  fi
+  super=${super:A}
+  git -C $super rev-parse --git-dir &>/dev/null \
+    || { print -u2 -- "wsg pointers: not a git repo: $super"; return 1 }
+  base=${WSG_BUMP_BASE:-origin/develop}
+  at=$(git -C $super rev-parse --verify -q "${rev:-HEAD}^{commit}") \
+    || { print -u2 -- "wsg pointers: unknown commit: ${rev:-HEAD}"; return 1 }
+  local w=${COLUMNS:-0}; (( w > 0 )) || w=$(tput cols 2>/dev/null); (( w > 0 )) || w=120
+  typeset -g _WSG_PTR_W=0
+  [[ -t 1 ]] && _WSG_PTR_W=$w
+  typeset -g _WSG_PTR_RULE=$w
+  [[ -t 1 ]] || _WSG_PTR_RULE=80
+  print -r -- "pointers in ${super:t}  (base: $base, ±$n commits${rev:+, at ${at[1,7]}})   ▶ pointer"
+  _wsg_pointers_list $super "" $n $base 0 $at
+}
+
+# One level of submodules; $2 is the indent, $5 the nesting depth (capped).
+_wsg_pointers_list() {
+  local super=$1 indent=$2 n=$3 base=$4 depth=$5 at=$6
+  local -a subs
+  subs=(${(f)"$(git -C $super config --blob "$at:.gitmodules" --get-regexp '^submodule\..*\.path$' 2>/dev/null | awk '{print $2}')"})
+  if (( ${#subs} == 0 )); then
+    (( depth == 0 )) && print -r -- "no submodules in $super"
+    return 0
+  fi
+  local rel
+  for rel in $subs; do _wsg_pointer_one $super $rel "$indent" $n $base $depth $at; done
+}
+
+_wsg_pointer_one() {
+  local super=$1 rel=$2 indent=$3 n=$4 base=$5 depth=$6 at=$7
+  local E=$'\033'
+  local C_OK="${E}[32m" C_BAD="${E}[1;31m" C_WARN="${E}[33m" C_DIM="${E}[2m" C_PTR="${E}[1;35m" R="${E}[0m"
+  (( depth == 0 )) && print -r -- "${C_DIM}${(l:$_WSG_PTR_RULE::─:)}${R}"
+  local subdir=$super/$rel
+  local rec=$(git -C $super ls-tree $at -- $rel 2>/dev/null | awk '{print $3}')
+  if [[ -z $rec ]]; then
+    print -r -- "${indent}${C_WARN}?${R} $rel  ${C_DIM}not recorded at this commit${R}"
+    return
+  fi
+  local short=${rec[1,7]}
+  if ! git -C $subdir rev-parse --git-dir &>/dev/null; then
+    print -r -- "${indent}${C_WARN}-${R} $rel  $short  ${C_DIM}not initialized (git submodule update --init)${R}"
+    return
+  fi
+  if ! git -C $subdir cat-file -e "${rec}^{commit}" 2>/dev/null; then
+    print -r -- "${indent}${C_WARN}?${R} $rel  $short  ${C_DIM}commit not in local clone (wsg fetch first)${R}"
+    return
+  fi
+  local subj=$(git -C $subdir log -1 --format=%s $rec 2>/dev/null)
+  local cdate=$(git -C $subdir log -1 --format=%cd --date=short $rec 2>/dev/null)
+  local head=$(git -C $subdir rev-parse HEAD 2>/dev/null)
+  local -a tips
+  local verdict note
+  if ! git -C $subdir rev-parse -q --verify "$base" &>/dev/null; then
+    verdict="${C_WARN}?${R}"; note="no $base to compare"; tips=($rec)
+  elif git -C $subdir merge-base --is-ancestor $rec $base 2>/dev/null; then
+    verdict="${C_OK}✓${R}"; note="on $base"; tips=($base $rec)
+  else
+    verdict="${C_BAD}✗${R}"; note="NOT on $base"; tips=($base $rec)
+  fi
+  # A checkout that differs from the pointer is noted; if unpushed, its commits are summarised under the header.
+  # Which branch the submodule is checked out on; anything but develop (or detached) is flagged.
+  local cur=$(git -C $subdir symbolic-ref --short -q HEAD 2>/dev/null) wtext="" wflag=""
+  if [[ -z $cur ]]; then wtext="detached HEAD"
+  elif [[ $cur != develop ]]; then wtext="on $cur (not develop)"; fi
+  [[ -n $wtext ]] && wflag="  ${C_WARN}⚠ ${wtext}${R}"
+  local hkey="" unp=0 ucount=0
+  if [[ $head != $rec ]]; then
+    if ! git -C $subdir branch -r --contains $head 2>/dev/null | grep -q .; then
+      ucount=$(git -C $subdir rev-list --count "$base..$head" 2>/dev/null)
+      if (( ${ucount:-0} > 0 )); then note+="${note:+, }$ucount unpushed"; unp=1; fi
+    fi
+    note+="${note:+, }checkout is ${head[1,7]}"
+  fi
+  # Shorten the subject first so the [note] survives on a narrow terminal (only when cutting is on).
+  local budget=$(( _WSG_PTR_W - ${#indent} - ${#rel} - ${#short} - ${#note} - ${#cdate} - ${#wtext} - 16 ))
+  local subj_show=$subj
+  (( _WSG_PTR_W > 0 && budget > 10 && ${#subj} > budget )) && subj_show="${subj[1,budget-1]}…"
+  print -r -- "${indent}$verdict $rel  ${C_PTR}$short${R}$wflag  ${C_DIM}$cdate${R}  $subj_show  ${C_DIM}[$note]${R}" | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+
+  if (( unp )); then
+    local -a recent
+    recent=(${(f)"$(git -C $subdir log --format='%h %s' -n 5 "$base..$head" 2>/dev/null)"})
+    print -r -- "${indent}    ${C_WARN}⚠ $ucount unpushed on ${cur:-detached HEAD}:${R}" | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+    local ln
+    for ln in $recent; do
+      print -r -- "${indent}      ${C_DIM}$ln${R}" | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+    done
+    (( ucount > 5 )) && print -r -- "${indent}      ${C_DIM}… +$((ucount - 5)) more${R}"
+  fi
+  # The real graph: base tip(s) plus the pointer, so merges and side branches show.
+  # -a/--all adds every branch and tag as a tip (noisier, but shows where new branches fork).
+  local -a refs=(${tips[@]})
+  (( _WSG_PTR_ALL )) && refs=(--all ${tips[@]})
+  # The window is N commit lines above and N below the pointer's commit line.
+  # Colour like 'git log' on a terminal; piped output stays plain.
+  local colorarg=--color=never; [[ -t 1 ]] && colorarg=--color=always
+  git -C $subdir log --graph --format='%C(auto)%h%C(reset) %C(dim)%cd%C(reset)%C(auto)%d%C(reset) %s' --date=short $colorarg -n ${WSG_PTR_LIMIT:-20000} ${refs[@]} 2>/dev/null \
+    | awk -v key="$short" -v n="$n" -v ind="$indent    " -v hkey="$hkey" -v lim="${WSG_PTR_LIMIT:-20000}" '
+        # Match on the line without colour codes; print the coloured line.
+        { L[NR] = $0; t = $0; gsub(/\033\[[0-9;]*m/, "", t); Q[NR] = t }
+        Q[NR] ~ /^[ |\/\\]*[*]/ { cn++; C[cn] = NR }
+        # Print commit lines a..b (and the connector lines between them), marking pointer and checkout.
+        function show(a, b,   i, mark) {
+          for (i = C[a]; i <= C[b]; i++) {
+            # Marker goes in front, over two indent spaces, so it survives the width cut and columns stay aligned.
+            pre = ind
+            if (i == C[p]) pre = substr(ind, 1, length(ind) - 2) "\033[1;95m▶\033[0m "
+            else if (hp && i == C[hp]) pre = substr(ind, 1, length(ind) - 2) "\033[1;96m▷\033[0m "
+            print pre L[i]
+          }
+        }
+        END {
+          for (k = 1; k <= cn; k++) if (Q[C[k]] ~ ("[*][ ]+" key)) { p = k; break }
+          for (k = 1; k <= cn; k++) if (hkey != "" && Q[C[k]] ~ ("[*][ ]+" hkey)) { hp = k; break }
+          if (!p) { print ind "(pointer not in the newest " lim " commits; raise WSG_PTR_LIMIT)"; exit }
+          ps = p - n; if (ps < 1) ps = 1; pe = p + n; if (pe > cn) pe = cn
+          if (!hp) { show(ps, pe); exit }
+          cs = hp - n; if (cs < 1) cs = 1; ce = hp + n; if (ce > cn) ce = cn
+          if (cs <= ps) { fs = cs; fe = ce; ss = ps; se = pe } else { fs = ps; fe = pe; ss = cs; se = ce }
+          if (ss > fe + 1) {
+            show(fs, fe)
+            print ind "\033[2m⋮ " (ss - fe - 1) " commits not shown\033[0m"
+            show(ss, se)
+          } else {
+            s0 = (fs < ss) ? fs : ss; e0 = (fe > se) ? fe : se
+            show(s0, e0)
+          }
+        }' | python3 -c "$_WSG_PTR_TRUNC" $_WSG_PTR_W
+  print ""
+
+  # Nested submodules: the checkout of this submodule has its own .gitmodules.
+  if (( depth < 5 )) && git -C $subdir cat-file -e "$rec:.gitmodules" 2>/dev/null; then
+    _wsg_pointers_list $subdir "$indent  " $n $base $((depth + 1)) $rec
+  fi
+}
+
+# ---- help ------------------------------------------------------------------
+
+_wsg_help() {
+  cat <<'EOF'
+wsg — workspace graph: multi-repo git visualization
+
+USAGE
+  wsg [opts] [repos...]      dump mini graph + status header per repo (less -R)
+  wsg worktrees | wt [repos]  only the linked worktrees of those repos, one line each
+  wsg status | s [-v] [repos] one line per repo, no graph, no pager:
+                             ⎇ branch  ↑ahead↓behind  (+add,-del)  markers  │ vs default branch
+  wsg pick | p               fzf interactive picker with live graph preview
+  wsg wall | w [opts] [repos] tmux tiled monitoring wall (must be inside tmux)
+  wsg groups | g             list defined repo groups
+  wsg fetch | f [repos]      parallel 'git fetch --all --prune' (never touches
+                             working trees; shows ↓N behind upstream)
+  wsg pull | pl [repos]      parallel 'git pull --ff-only'; skips detached HEAD
+                             and branches with no upstream; never merges
+  wsg pointers | bump [-n N] [superproject] [rev] [-a|--all]
+                             -a, --all: also draw every branch (noisier; shows new branches)
+                             for each submodule: the commit the superproject records,
+                             whether it is on $WSG_BUMP_BASE (default origin/develop),
+                             and N commits above/below it on that branch (default 5).
+                             Read-only; run 'wsg fetch' first to see fresh commits.
+  wsg -h | --help            this help
+
+  Subcommand shortcuts: s = status, wt = worktrees, p = pick, w = wall, g = groups, f = fetch,
+                        pl = pull
+
+  Typical loop: keep 'wsg wall' open, run 'wsg f', read ↓N in the pane
+  headers (recomputed every tick), then 'wsg pl' when ready.
+
+DUMP OPTIONS
+  -s, --status             also show 'git status --short' under each graph
+  -n N, --lines N, -N      show N commits per graph (default 20), e.g. -3
+                           -s -0 = status only (header + status, no graph)
+
+STATUS OPTIONS
+  -v, --verbose            append the tip commit's ref decoration
+                           (HEAD -> x, origin/x, ...)
+  -j, --json               machine-readable JSON ({"repos":[...]}); needs jq.
+                           ahead/behind null = no upstream; worktree = null for a
+                           repo, else {of, label, locked, prunable, detached}
+  -W, --no-worktrees       leave linked worktrees out (or WSG_WORKTREES=0)
+  Linked worktrees (git worktree add) are listed under their repo as '↳ <path>':
+  AI agents often work in them. A [locked] / [prunable] tag marks those states;
+  a worktree's uninitialized submodules are not counted as stale.
+  Columns: (+add,-del) = uncommitted lines vs HEAD (staged + unstaged;
+  untracked files and submodule pointer bumps not counted). '│ main ↑3↓0' =
+  current branch vs origin default branch, shown only when on another branch.
+
+WALL OPTIONS
+  -l NAME, --layout NAME   tiled (default) | cols | rows | main | mainh
+  -s, --status             show 'git status --short' in each pane (DEFAULT)
+  -S, --no-status          suppress status block (graph only)
+
+REPO TOKENS
+  /abs/path or ./rel       use that path directly
+  name                     look up by basename in discovered repos
+  @group-name              expand from $WSG_GROUPS (see 'wsg groups')
+
+DISCOVERY (when no repos given)
+  1. $WSG_ROOTS (colon-separated) → find -name .git -maxdepth $WSG_DEPTH
+  2. else if pwd in git repo → toplevel + submodules (recursive, incl. nested)
+  3. else → error hint
+
+ENV VARS
+  WSG_ROOTS        colon-separated search roots (unset by default)
+  WSG_DEPTH        find max depth (default 4)
+  WSG_LINES        commits per graph (default 20)
+  WSG_REFRESH      'wsg wall' refresh seconds (default 10)
+  WSG_WALL_SUBJECT 'wsg wall' commit subject width (default 0 = no truncation;
+                   set N to cap each commit subject at N chars / 1 line)
+  WSG_STATUS_MAX   max 'git status --short' lines per repo (default 8)
+                   excess lines collapsed to "... +N more"
+  WSG_GROUPS_FILE  path to groups file
+                   (default $ZSH_CONFIG_DIR/wsg.groups.zsh)
+  WSG_GROUPS_RAW   inline groups as plain exportable string (for direnv/CI)
+                   format: "name=repo1,repo2;name2=repo3,repo4"
+                   separators: ';' or newline between entries;
+                               ',' or space between repos
+
+GROUPS
+  WSG_GROUPS is a global zsh associative array. Define entries any of these:
+    1. In $WSG_GROUPS_FILE (default, chezmoi-tracked):
+         WSG_GROUPS[payment]="super-repo auth api frontend"
+    2. Inline in .zshrc (after wsg.zsh is sourced):
+         WSG_GROUPS[basic]="super-repo docs api-contract"
+    3. Via direnv .envrc — must use WSG_GROUPS_RAW (bash can't export
+       assoc arrays):
+         export WSG_GROUPS_RAW="basic=super-repo,docs,api-contract;\\
+service=api-contract,core-api,central,frontend"
+  All sources merge. WSG_GROUPS_RAW is re-parsed on every 'wsg' call,
+  so direnv changes take effect immediately. Inspect with: wsg groups
+EOF
+}
+
+# ---- entry point -----------------------------------------------------------
+
+wsg() {
+  _wsg_load_raw  # re-parse $WSG_GROUPS_RAW so direnv updates take effect
+  local sub=$1 resolved
+  case $sub in
+    pick|p)    resolved=pick ;;
+    wall|w)    resolved=wall ;;
+    groups|g)  resolved=groups ;;
+    status|s)  resolved=status ;;
+    worktrees|wt) resolved=worktrees ;;
+    fetch|f)   resolved=fetch ;;
+    pull|pl)   resolved=pull ;;
+    pointers|ptr|bump) resolved=pointers ;;
+    -h|--help) resolved=help ;;
+    *)         resolved=dump ;;
+  esac
+  # 30-day usage log (2026-05-25 ~ 2026-06-25, for 砍-feature evaluation):
+  #   awk '{print $2}' ~/.cache/wsg-usage.log | sort | uniq -c | sort -rn
+  # WSG_NO_LOG=1 skips the log: automated callers (e.g. the Herdr superproject
+  # panel) would otherwise drown out real human usage in the evaluation.
+  if [[ -z $WSG_NO_LOG ]]; then
+    [[ -d $HOME/.cache ]] || mkdir -p $HOME/.cache
+    print -r -- "$(date +%Y-%m-%d_%H:%M) $resolved" >> $HOME/.cache/wsg-usage.log
+  fi
+
+  case $sub in
+    pick|p)    shift; _wsg_cmd_pick "$@" ;;
+    wall|w)    shift; _wsg_cmd_wall "$@" ;;
+    groups|g)  shift; _wsg_cmd_groups "$@" ;;
+    status|s)  shift; _wsg_cmd_status "$@" ;;
+    worktrees|wt) shift; _wsg_cmd_status --worktrees-only "$@" ;;
+    fetch|f)   shift; _wsg_cmd_sync fetch "$@" ;;
+    pull|pl)   shift; _wsg_cmd_sync pull "$@" ;;
+    pointers|ptr|bump) shift; _wsg_cmd_pointers "$@" ;;
+    -h|--help) _wsg_help ;;
+    *)         _wsg_cmd_dump "$@" ;;
+  esac
+}

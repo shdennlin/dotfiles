@@ -83,6 +83,7 @@ nnn_cd() {
 
 # global alias
 alias -g R='| rg'
+alias -g J='| jq'
 alias -g ee='--help'
 alias -g vv='--version'
 alias -g el='--help | less'
@@ -99,20 +100,7 @@ fi
 
 change_alias 'batcat' 'bat' 'batcat'
 
-change_alias 'pbcopy' 'c' 'pbcopy'
-change_alias_global 'pbcopy' 'C' '| c'
-change_alias_global 'pbcopy' 'pwdc' 'pwd | c'
-
-# copy last command/output to clipboard
-if (( $+commands[pbcopy] )); then
-    cpc() { print -r "$ $(fc -ln -1 | sed 's/^ *//')" | pbcopy; print "✓ cmd" }
-    cpo() { eval "$(fc -ln -1)" 2>&1 | pbcopy; print "✓ out" }
-    cpa() {
-        local cmd=$(fc -ln -1 | sed 's/^ *//')
-        { print -r "[${PWD/#$HOME/~}]"; print -r "$ $cmd"; eval "$cmd" 2>&1 } | pbcopy
-        print "✓ all"
-    }
-fi
+# Clipboard utilities (cp* family, copybuffer, c/C/pwdc) live in clipboard.zsh.
 
 change_alias 'chezmoi' 'cz' 'chezmoi'
 
@@ -146,8 +134,17 @@ change_alias "${eza}" 'll' "${eza} -lghH"
 change_alias 'vim' 'v' 'vim'
 change_alias 'nvim' 'v' 'nvim'
 
-# nnn file manager
-change_alias 'nnn' 'n' 'nnn_cd'
+# yazi
+function n() {
+  local tmp="$(mktemp -t 'yazi-cwd.XXXXXX')"
+  yazi "$@" --cwd-file="$tmp"
+  if [[ -f "$tmp" ]]; then
+    local cwd
+    IFS= read -r -d '' cwd < "$tmp"
+    [[ -n "$cwd" && "$cwd" != "$PWD" && -d "$cwd" ]] && builtin cd -- "$cwd"
+    rm -f -- "$tmp"
+  fi
+}
 
 # Common shell functions
 alias cl='clear'
@@ -162,7 +159,7 @@ alias s='sudo'
 {{ if eq .chezmoi.os "linux" }}alias sv='sudoedit'{{ end }}
 {{ if eq .chezmoi.os "darwin" }}alias timeout='gtimeout'{{ end }}
 alias rp='realpath'
-rpc() { realpath "$@" | pbcopy; print "✓ copied" }
+rpc() { realpath "$@" | clipcopy; print "✓ copied" }
 # relative path from git root (toplevel, not submodule)
 grp() {
     local root
@@ -175,12 +172,12 @@ grp() {
     realpath --relative-to="$root" "${@:-.}"
     {{- end }}
 }
-grpc() { grp "$@" | pbcopy; print "✓ copied" }
+grpc() { grp "$@" | clipcopy; print "✓ copied" }
 
 # git
 alias gb='fzf-git-branch'
 alias gco='fzf-git-checkout'
-alias lg='lazygit'
+change_alias 'lazygit' 'lzg' 'lazygit'
 
 # kill
 alias ka9='killall -9'
@@ -194,6 +191,7 @@ alias spk9='sudo pkill -9'
 alias dk='docker'
 alias dknw='docker inspect -f "{{ "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" }}"'
 alias dirn='docker image prune --filter="dangling=true"'
+change_alias 'lazydocker' 'lzd' 'lazydocker'
 
 # network
 alias lsofp='sudo lsof -i -P -n | grep LISTEN'
