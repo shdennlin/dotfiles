@@ -148,24 +148,6 @@
           "gap": 0,
           "floating": [
             {
-              "id": "needs-you",
-              "content": {
-                "mod": "needs-you"
-              },
-              "edge": "right",
-              "align": "start",
-              "peek": 36
-            },
-            {
-              "id": "spectra-panel",
-              "content": {
-                "mod": "spectra-panel"
-              },
-              "edge": "right",
-              "align": "center",
-              "peek": 34
-            },
-            {
               "id": "resume-banner",
               "content": {
                 "mod": "resume-banner"
@@ -183,27 +165,17 @@
               "id": "status",
               "type": "block",
               "content": {
-                "mod": "workspace-status-quiet"
+                "mod": "workspace-status"
               },
               "size": {
                 "weight": 1
               }
             },
             {
-              "id": "spectra",
-              "type": "block",
-              "content": {
-                "mod": "spectra-status"
-              },
-              "size": {
-                "px": 400
-              }
-            },
-            {
               "id": "usage",
               "type": "block",
               "content": {
-                "mod": "usage-status-tolerant"
+                "mod": "usage-status"
               },
               "size": {
                 "px": 440
