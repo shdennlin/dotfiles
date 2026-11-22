@@ -15,9 +15,18 @@ Restore = same space, same name, same folder. A Claude Code tab is started with
 `claude --continue` (resumes the folder's latest conversation); the process itself
 cannot be brought back, and only the first terminal of a multi-terminal tab is.
 
+  herdr-tab-recorder resume-all [--dry-run] [--min-delay S] [--min-idle P] [--max-wait S]
+                                  after a reboot, type `claude --resume <id>` into each tab
+                                  whose Claude session was recorded. After each one it waits
+                                  at least S seconds (default 3), then until the CPU is at
+                                  least P% idle right now (default 50; `top -l 2`, second
+                                  sample), but never more than --max-wait seconds (default
+                                  6). `--delay` = --min-delay.
+
 Env: HERDR_TAB_INTERVAL (seconds, default 5), HERDR_TAB_TTL_HOURS (default 48),
 HERDR_APP_HOME (default ~/.config/herdr-app).
 """
+import glob
 import json
 import os
 import re
@@ -217,6 +226,90 @@ def cycle(prev):
     return cur, True
 
 
+def cpu_idle():
+    """Current CPU idle percent (second `top` sample = the last second), or None if unreadable."""
+    try:
+        r = subprocess.run(["top", "-l", "2", "-n", "0", "-s", "1"],
+                           capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    m = re.findall(r"([\d.]+)% idle", r.stdout)
+    return float(m[-1]) if m else None
+
+
+def wait_for_idle(min_delay, min_idle, max_wait):
+    """Sleep >= min_delay, then until CPU idle >= min_idle or max_wait passes.
+    Returns (seconds waited, idle % at the end, True if it gave up)."""
+    start = time.time()
+    time.sleep(min_delay)
+    while True:
+        idle = cpu_idle()  # takes about a second by itself
+        waited = time.time() - start
+        if idle is None or idle >= min_idle:  # unreadable: don't block the resume
+            return waited, idle, False
+        if waited + 2 > max_wait:
+            return waited, idle, True
+        time.sleep(1)
+
+
+def terminal_label(address, key):
+    """A label value on a herdr-core terminal, or None."""
+    info = run_json([HC, "get", address])
+    return ((info or {}).get("labels") or {}).get(key) or None
+
+
+def resume_all(dry, min_delay=3.0, min_idle=50.0, max_wait=6.0):
+    """Type `claude --resume <id>` into every shell tab that carries a `claude-session` label.
+
+    The label is written by the SessionStart hook (herdr-session-label), survives a reboot or a
+    stopped core, and is dropped by the SessionEnd hook when the session was ended on purpose."""
+    min_delay = min(min_delay, max_wait)  # the cap is for the whole pause after one send
+    snap = snapshot()
+    if snap is None:
+        print("herdr-tab-recorder: Herdr is not readable", file=sys.stderr)
+        return 1
+    cur, _ = snap
+    todo = []
+    for tid, e in cur.items():
+        first = (e.get("terminals") or [{}])[0]
+        label = f"{e.get('space')} / {e.get('tab')}"
+        if first.get("app") != "zsh":  # running claude (or anything else): nothing to resume
+            if first.get("app") == "claude-code":
+                print(f"skip  {label}: claude already running")
+            continue
+        sid, src = terminal_label(first["terminal"], "claude-session"), "label"
+        if not sid:
+            continue  # a plain shell that never ran Claude
+        if not glob.glob(f"{HOME}/.claude/projects/*/{sid}.jsonl"):
+            print(f"skip  {label}: no transcript for {sid} ({src})")
+            continue
+        todo.append((label, first["terminal"], f"claude --resume {sid}", src))
+    idle0 = cpu_idle()
+    print(f"gate: after each one wait >= {min_delay:g}s, then until CPU idle >= {min_idle:g}% "
+          f"(now {'?' if idle0 is None else f'{idle0:.0f}'}%), giving up after {max_wait:g}s")
+    for i, (label, term, cmd, src) in enumerate(todo):
+        print(f"{'would send' if dry else 'send'}  {term}  {label}  ->  {cmd}  [{src}]")
+        last = i == len(todo) - 1
+        if dry:
+            if not last:
+                idle = cpu_idle()
+                if idle is None or idle >= min_idle:
+                    verdict = f"idle {'?' if idle is None else f'{idle:.0f}'}% >= {min_idle:g}%: would wait {min_delay:g}s"
+                else:
+                    verdict = f"idle {idle:.0f}% < {min_idle:g}%: would wait up to {max_wait:g}s"
+                print(f"      then: {verdict}")
+            continue
+        r = subprocess.run([HC, "send", term, cmd], capture_output=True, text=True)
+        if r.returncode != 0:
+            print(f"  failed: {(r.stderr or r.stdout).strip()}", file=sys.stderr)
+        if not last:
+            waited, idle, gave_up = wait_for_idle(min_delay, min_idle, max_wait)
+            print(f"      waited {waited:.0f}s, idle {'?' if idle is None else f'{idle:.0f}'}%"
+                  + (" (gave up, still busy)" if gave_up else ""))
+    print(f"{len(todo)} to resume")
+    return 0
+
+
 def loop():
     state = load_state()
     write_history(read_history(), time.time())  # prune on start
@@ -319,6 +412,14 @@ def main(argv):
             t = (e.get("terminals") or [{}])[0]
             print(f"{entry_key(e)}\t{ago(e['closed_at'])}\t{e.get('space')}\t{e.get('tab')}\t"
                   f"{t.get('app')}\t{t.get('cwd')}")
+    elif cmd == "resume-all":
+        def opt(name, default, alias=None):
+            for n in (name, alias):
+                if n and n in argv:
+                    return float(argv[argv.index(n) + 1])
+            return default
+        return resume_all("--dry-run" in argv, opt("--min-delay", 3.0, "--delay"),
+                          opt("--min-idle", 50.0), opt("--max-wait", 6.0))
     elif cmd == "restore":
         rest = [a for a in argv[2:] if a != "--dry-run"]
         return restore(rest[0] if rest else None, "--dry-run" in argv)

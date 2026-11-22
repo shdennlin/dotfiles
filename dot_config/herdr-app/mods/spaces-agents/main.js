@@ -12,6 +12,18 @@ import { v_flex, h_flex } from "gpui-base";
 import { spaces, agents, panes, terminals, run, hc, exec, theme, settings, shared, setShared, props, layout, window, nextCommand, openOverlay, readTextFile, watchFolder, appHome } from "herdr";
 
 const REFRESH_MS = 60000;
+const CALL_TIMEOUT_MS = 5000;   // one hc/ps call: longer than this and it is treated as hung
+const WATCHDOG_MS = 15000;      // a refresh still "loading" after this is abandoned so the next can run
+const STALE_AFTER_MS = 150000;  // no successful refresh for this long: ages are shown as "?" instead of a stale number
+
+// A call that never returns would leave `loading` set for ever and freeze every age, so every
+// external call gets a deadline. Mods have no setTimeout (AGENTS.md), so the deadline is a
+// cx.timer.after task, cancelled once the call settles.
+function withTimeout(cx, p, ms, what) {
+  let task;
+  const dl = new Promise((_, rej) => { task = cx.timer.after(ms, () => rej(new Error(`timeout: ${what}`))); });
+  return Promise.race([p, dl]).finally(() => { try { task?.cancel(); } catch { /* already fired */ } });
+}
 const GRAY_AFTER_S = 6 * 3600; // an idle agent this old counts as "old idle" (same as cmux)
 // One hex per state, (light, dark): copied from cmux-local's agent-status-daemon.py (PALETTE).
 //   done    finished and not looked at yet     read   finished and looked at: the same green, quieter
@@ -78,6 +90,9 @@ export default class SpacesAgents extends View {
     this.rss = {};    // terminal address -> kB of its process tree
     this.sig = "";
     this.loading = false;
+    this.loadingAt = 0; // when the running refresh started (watchdog)
+    this.gen = 0;       // bumped per refresh; an abandoned refresh must not overwrite a newer one
+    this.okAt = Date.now(); // last refresh that finished with no timeout
     this.again = false;
     this.recent = []; // most recently shown tabs, newest first: { space, tab }
     this.subs = {};   // terminal -> Claude's own sub agents there: [{ id, name, started(s) }]
@@ -205,23 +220,35 @@ export default class SpacesAgents extends View {
   }
 
   refresh(cx) {
-    if (this.loading) { this.again = true; return; }
+    if (this.loading) {
+      // Watchdog: a refresh that has not finished is hung, not slow. Abandon it (its result is
+      // discarded through `gen`) and start a fresh one instead of waiting for ever.
+      if (Date.now() - this.loadingAt < WATCHDOG_MS) { this.again = true; return; }
+      console?.warn?.("spaces-agents: refresh hung, abandoning it");
+    }
     this.loading = true;
+    this.loadingAt = Date.now();
+    const gen = ++this.gen;
+    let timedOut = false;
     cx.spawn(async (cx) => {
       try {
         const local = agents().filter((a) => !a.address.includes("/"));
         const got = await Promise.all(local.map(async (a) => {
           try {
-            const r = await hc(["get", a.address]);
+            const r = await withTimeout(cx, hc(["get", a.address]), CALL_TIMEOUT_MS, `hc get ${a.address}`);
             if (r.code !== 0) return null;
             const j = JSON.parse(r.stdout);
             return [a.address, { since: j.status_ms ?? null, pid: j.pid ?? null }];
-          } catch { return null; }
+          } catch (e) {
+            if (String(e?.message).startsWith("timeout")) timedOut = true;
+            else console?.warn?.("spaces-agents: hc get failed:", e?.message ?? e);
+            return null;
+          }
         }));
         const info = Object.fromEntries(got.filter(Boolean));
         const kids = new Map(), rss = new Map();
         try {
-          const ps = await exec("ps", ["-axo", "pid=,ppid=,rss="]);
+          const ps = await withTimeout(cx, exec("ps", ["-axo", "pid=,ppid=,rss="]), CALL_TIMEOUT_MS, "ps");
           for (const line of ps.stdout.split("\n")) {
             const [pid, ppid, kb] = line.trim().split(/\s+/).map(Number);
             if (!Number.isFinite(pid) || !Number.isFinite(ppid)) continue;
@@ -229,18 +256,31 @@ export default class SpacesAgents extends View {
             if (!kids.has(ppid)) kids.set(ppid, []);
             kids.get(ppid).push(pid);
           }
-        } catch { /* ps unreadable: leave memory out rather than guess */ }
+        } catch (e) {
+          if (String(e?.message).startsWith("timeout")) timedOut = true;
+          else console?.warn?.("spaces-agents: ps failed:", e?.message ?? e);
+          /* ps unreadable: leave memory out rather than guess */
+        }
         const mem = {};
         for (const [addr, i] of Object.entries(info)) {
           if (i.pid && rss.has(i.pid)) mem[addr] = treeRss(kids, rss, i.pid);
         }
-        this.info = info;
-        this.rss = mem;
+        if (gen !== this.gen) return; // abandoned by the watchdog: a newer refresh owns the state
+        // A refresh with a timed-out call holds partial data: the hung terminal is simply missing.
+        // Keep the last known values instead of wiping them, so the rows still carry a time that
+        // turns into "?" once it is too old, rather than going blank.
+        if (!timedOut) {
+          this.info = info;
+          this.rss = mem;
+          this.okAt = Date.now();
+        }
         this.publish();
       } finally {
-        this.loading = false;
-        cx.notify();
-        if (this.again) { this.again = false; this.refresh(cx); }
+        if (gen === this.gen) {
+          this.loading = false;
+          cx.notify();
+          if (this.again) { this.again = false; this.refresh(cx); }
+        }
       }
     });
   }
@@ -286,7 +326,9 @@ export default class SpacesAgents extends View {
   agentRow(a, t, now) {
     const i = this.info[a.address];
     const age = i?.since ? (now - i.since) / 1000 : null;
-    const old = a.status === "idle" && age !== null && age > GRAY_AFTER_S;
+    // No successful refresh for a while: `since` may be out of date, so say so rather than show a number.
+    const stale = now - this.okAt > STALE_AFTER_MS;
+    const old = !stale && a.status === "idle" && age !== null && age > GRAY_AFTER_S;
     // A tab you named keeps its name (same rule as the tab bar, cmd-p and the ctrl-tab switcher); an
     // unnamed one follows its agent's live title.
     const named = spaces().some((s) => s.tabs.some((x) => x.id === a.tab && x.named));
@@ -297,7 +339,7 @@ export default class SpacesAgents extends View {
       .on_click(() => run("agent.focus", { terminal: a.address }))
       .child(logo(a.program, 16, old ? t.dim : t.foreground))
       .child(div().flex_1().min_w(0).truncate().text_size(12.5).text_color(tone).child(title))
-      .child(div().flex_none().text_size(11).text_color(tone).child(age === null ? "" : ageLabel(age)))
+      .child(div().flex_none().text_size(11).text_color(tone).child(stale ? "?" : age === null ? "" : ageLabel(age)))
       .child(this.statusGlyph(a, old, t, age ?? 0));
   }
 

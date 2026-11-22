@@ -1,5 +1,5 @@
 {
-  "zoom": 0.9,
+  "zoom": 0.8999999761581421,
   "sounds": {
     "enabled": true,
     "done": "mods/win98/sounds/tada.mp3",
@@ -8,6 +8,9 @@
   "font": "MesloLGS NF",
   "font_size": 16.0,
   "font_ligatures": false,
+  "terminal_line_height": 1.0,
+  "terminal_cell_width": 1.0,
+  "terminal_scroll_speed": 1.0,
   "telemetry": false,
   "minimum_contrast": 1.0,
   "option_as_alt": "on",
