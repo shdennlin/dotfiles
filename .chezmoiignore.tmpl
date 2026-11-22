@@ -37,7 +37,9 @@ CLAUDE.local.md
 .gitignore
 .config/nvim/README.md
 
-{{ if not (default false .syncHerdr) }}
+# Herdr is a macOS app and its helpers call macOS tools (open, pbcopy, top -l, launchd):
+# ignore them everywhere else, even when syncHerdr is true.
+{{ if or (ne .chezmoi.os "darwin") (not (default false .syncHerdr)) }}
 .config/herdr-app
 .local/bin/herdr-tab-recorder
 Library/LaunchAgents/dev.shdennlin.herdr-tab-recorder.plist
